@@ -60,6 +60,7 @@ const cars: Car[] = [
 ];
 
 export default function BookingPage() {
+  const [bookingConfirmed, setBookingConfirmed] = useState(false);
   const searchParams = useSearchParams();
 
   const carId = searchParams.get("car") || "hyundai-creta";
@@ -82,6 +83,13 @@ export default function BookingPage() {
 
   const [error, setError] = useState("");
 
+  const [pickupMethod, setPickupMethod] = useState("office");
+  const [deliveryAddress, setDeliveryAddress] = useState("");
+
+  const [couponCode, setCouponCode] = useState("");
+  const [couponDiscount, setCouponDiscount] = useState(0);
+  const [couponMessage, setCouponMessage] = useState("");
+
   const today = new Date().toISOString().split("T")[0];
 
   const rentalDays = useMemo(() => {
@@ -101,10 +109,27 @@ export default function BookingPage() {
 
   const rentalAmount = rentalDays * (car?.price || 0);
 
-  const tax = Math.round(rentalAmount * 0.18);
+const tax = Math.round(rentalAmount * 0.18);
 
-  const totalAmount = rentalAmount + tax + (car?.deposit || 0);
+// Delivery charges — temporary demo values
+const deliveryCharges: Record<string, number> = {
+  Delhi: 500,
+  Goa: 700,
+  Bangalore: 600,
+};
 
+const deliveryCharge =
+  pickupMethod === "delivery"
+    ? deliveryCharges[pickupLocation] || 0
+    : 0;
+
+    const totalBeforeDiscount = rentalAmount + tax + deliveryCharge;
+
+    const totalAfterDiscount = totalBeforeDiscount - couponDiscount;
+
+    const finalAmount = totalAfterDiscount + (car?.deposit || 0);
+
+  
   if (!car) {
     return (
       <main className="flex min-h-screen items-center justify-center px-6">
@@ -125,6 +150,26 @@ export default function BookingPage() {
       </main>
     );
   }
+
+  const handleApplyCoupon = () => {
+    const code = couponCode.trim().toUpperCase();
+
+    if(!code) {
+      setCouponMessage("Please enter a coupon code.");
+      setCouponDiscount(0);
+      return;
+    }
+    if(code === "PRIME10"){
+      const discount = Math.round(rentalAmount * 0.10);
+
+      setCouponDiscount(discount);
+      setCouponMessage("Coupon applied successfully.");
+      return;
+    }
+
+    setCouponDiscount(0);
+    setCouponMessage("Invalid coupon code.");
+  };
 
   const handleContinue = () => {
     setError("");
@@ -402,7 +447,8 @@ export default function BookingPage() {
         type="radio"
         name="pickupMethod"
         value="office"
-        defaultChecked
+        checked={pickupMethod === "office"}
+        onChange={() => setPickupMethod("office")}
         className="peer sr-only"
       />
 
@@ -427,6 +473,8 @@ export default function BookingPage() {
         type="radio"
         name="pickupMethod"
         value="delivery"
+        checked={pickupMethod === "delivery"}
+        onChange={() => setPickupMethod("delivery")}
         className="peer sr-only"
       />
 
@@ -443,9 +491,31 @@ export default function BookingPage() {
           Delivery charges applicable
         </p>
       </div>
+
+
+    </label>
+  </div>
+
+  {/* {Delivery Address} */}
+     {pickupMethod === "delivery" && (
+  <div className="mt-5 rounded-xl border p-5">
+    <label className="text-sm font-medium">
+      Delivery Address
     </label>
 
+    <textarea
+      value={deliveryAddress}
+      onChange={(e) => setDeliveryAddress(e.target.value)}
+      placeholder="Enter your complete delivery address"
+      rows={4}
+      className="mt-2 w-full rounded-lg border bg-background p-3 text-sm outline-none focus:ring-2 focus:ring-ring"
+    />
+
+    <p className="mt-2 text-xs text-muted-foreground">
+      Delivery charges may vary depending on location.
+    </p>
   </div>
+)}
 </section>
 
             {/* Error */}
@@ -498,83 +568,128 @@ export default function BookingPage() {
 
             {/* Price */}
             <div className="mt-6 space-y-4">
-
               <div className="flex justify-between text-sm">
-                <span className="text-muted-foreground">
-                  Daily Rate
-                </span>
-
-                <span>
-                  ₹{car.price.toLocaleString("en-IN")}
-                </span>
+                <span className="text-muted-foreground">Daily Rate</span>
+                <span>₹{car.price.toLocaleString("en-IN")}</span>
               </div>
 
               <div className="flex justify-between text-sm">
-                <span className="text-muted-foreground">
-                  Rental Days
-                </span>
+                <span className="text-muted-foreground">Rental Days</span>
+                <span>{rentalDays || 0}</span>
+              </div>
 
-                <span>
-                  {rentalDays || 0}
+              <div className="flex justify-between text-sm">
+                <span className="text-muted-foreground">Rental Amount</span>
+                <span>₹{rentalAmount.toLocaleString("en-IN")}</span>
+              </div>
+
+              <div className="flex justify-between text-sm">
+                <span className="text-muted-foreground">GST (18%)</span>
+                <span>₹{tax.toLocaleString("en-IN")}</span>
+              </div>
+
+              <div className="flex justify-between text-sm">
+                <span className="text-muted-foreground">Delivery Charge</span>
+                <span>₹{deliveryCharge.toLocaleString("en-IN")}</span>
+              </div>
+
+              <div className="flex justify-between text-sm">
+                <span className="text-muted-foreground">Coupon Discount</span>
+                <span className="text-green-600">
+                  - ₹{couponDiscount.toLocaleString("en-IN")}
+                </span>
+              </div>
+            </div>
+
+            <div className="border-t pt-4 space-y-2">
+              <div className="flex justify-between text-sm">
+                <span className="font-medium">Total Before Discount</span>
+                <span className="font-medium">
+                  ₹{totalBeforeDiscount.toLocaleString("en-IN")}
                 </span>
               </div>
 
               <div className="flex justify-between text-sm">
-                <span className="text-muted-foreground">
-                  Rental Amount
-                </span>
-
-                <span>
-                  ₹{rentalAmount.toLocaleString("en-IN")}
+                <span className="font-medium">Total After Discount</span>
+                <span className="font-semibold text-green-600">
+                  ₹{totalAfterDiscount.toLocaleString("en-IN")}
                 </span>
               </div>
+            </div>
 
-              <div className="flex justify-between text-sm">
-                <span className="text-muted-foreground">
-                  GST (18%)
-                </span>
-
-                <span>
-                  ₹{tax.toLocaleString("en-IN")}
-                </span>
+            {/* Coupon */}
+            <div className="mt-6">
+              <label className="text-sm font-medium">Coupon Code</label>
+              <div className="mt-2 flex gap-2">
+                <input
+                  type="text"
+                  value={couponCode}
+                  onChange={(e) => setCouponCode(e.target.value)}
+                  placeholder="Enter coupon"
+                  className="h-11 flex-1 rounded-lg border bg-background px-3 text-sm outline-none focus:ring-2 focus:ring-ring"
+                />
+                <button
+                  type="button"
+                  onClick={handleApplyCoupon}
+                  className="h-11 rounded-lg bg-black px-4 text-sm font-medium text-white"
+                >
+                  Apply
+                </button>
               </div>
 
-              <div className="flex justify-between text-sm">
-                <span className="text-muted-foreground">
-                  Security Deposit
-                </span>
+              {couponMessage && (
+                <p
+                  className={`mt-2 text-xs ${
+                    couponDiscount > 0 ? "text-green-600" : "text-red-600"
+                  }`}
+                >
+                  {couponMessage}
+                </p>
+              )}
+            </div>
 
-                <span>
-                  ₹{car.deposit.toLocaleString("en-IN")}
+            <div className="mt-4 flex justify-between text-sm">
+              <span className="text-muted-foreground">Security Deposit</span>
+              <span>₹{car.deposit.toLocaleString("en-IN")}</span>
+            </div>
+
+            <div className="border-t pt-4 mt-4">
+              <div className="flex items-center justify-between">
+                <span className="font-semibold">Final Amount</span>
+                <span className="text-2xl font-bold">
+                  ₹{finalAmount.toLocaleString("en-IN")}
                 </span>
               </div>
-
-              <div className="border-t pt-4">
-
-                <div className="flex items-center justify-between">
-                  <span className="font-semibold">
-                    Total
-                  </span>
-
-                  <span className="text-2xl font-bold">
-                    ₹{totalAmount.toLocaleString("en-IN")}
-                  </span>
-                </div>
-
-              </div>
-
             </div>
 
             {/* Note */}
             <div className="mt-6 rounded-lg bg-muted p-4 text-xs leading-5 text-muted-foreground">
-              Security deposit is refundable after the vehicle is
-              returned and inspected according to the rental policy.
+              Security deposit is refundable after the vehicle is returned and inspected according to the rental policy.
             </div>
-
           </aside>
-
         </div>
 
+        <button 
+          type="button"
+          onClick={() => setBookingConfirmed(true)}
+          className="mt-6 h-12 w-full rounded-lg bg-black text-white font-medium hover:bg-zinc-800"
+        >
+          Confirm Booking
+        </button>
+
+        {bookingConfirmed && (
+          <div className="mt-6 rounded-xl border border-green-200 bg-green-50 p-6">
+            <h3 className="text-lg font-semibold text-green-700">
+              Booking Confirmed!
+            </h3>
+            <p className="mt-2 text-sm text-green-700">
+              Your car booking has been successfully confirmed.
+            </p>
+            <p className="mt-3 text-sm text-muted-foreground">
+              Booking ID: PR-{Date.now()}
+            </p>
+          </div>
+        )}
       </div>
     </main>
   );

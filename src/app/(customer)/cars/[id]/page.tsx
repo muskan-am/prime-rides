@@ -1,3 +1,5 @@
+import { getServerSession } from "next-auth";
+import { authOptions } from "@/auth";
 import Link from "next/link";
 
 type Car = {
@@ -163,10 +165,12 @@ export default async function CarDetailPage({
   params: Promise<{ id: string }>;
 }) {
   const { id } = await params;
+  const session = await getServerSession(authOptions);
 
   const car = cars.find((item) => item.id === id);
 
   if (!car) {
+    
     return (
       <main className="flex min-h-screen items-center justify-center px-6">
         <div className="text-center">
@@ -186,6 +190,11 @@ export default async function CarDetailPage({
       </main>
     );
   }
+
+  const bookingUrl = `/booking?car=${car.id}`;
+
+    const bookingHref = session?.user ? bookingUrl :
+    `/login?callbackUrl=${encodeURIComponent(bookingUrl)}`;
 
   return (
     <main className="min-h-screen bg-background">
@@ -322,7 +331,7 @@ export default async function CarDetailPage({
 
             {/* Book Button */}
             <Link
-              href={`/booking?car=${car.id}`}
+              href={bookingHref}
               className="mt-6 flex h-12 w-full items-center justify-center rounded-lg bg-black text-sm font-semibold text-white transition hover:bg-zinc-800"
             >
               Book This Car
@@ -567,7 +576,7 @@ export default async function CarDetailPage({
           </div>
 
           <Link
-            href={`/booking?car=${car.id}`}
+            href={bookingHref}
             className="mt-8 flex h-12 w-full items-center justify-center rounded-lg bg-black text-sm font-semibold text-white transition hover:bg-zinc-800"
           >
             Continue to Booking
