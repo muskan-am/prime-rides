@@ -7,7 +7,7 @@ export default function GoogleButton() {
     const handleGoogleLogin = async () => {
     const params = new URLSearchParams(window.location.search);
     
-    const callbackUrl = params.get("callbackUrl") || "/";
+    const callbackUrl = params.get("callbackUrl") || "/dashboard";
     await signIn("google", {
       callbackUrl,
     });
