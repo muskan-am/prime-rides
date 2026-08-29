@@ -1,5 +1,9 @@
+"use client";
+
 import Link from "next/link";
 import { Car } from "lucide-react";
+import { signIn } from "next-auth/react";
+import { useState } from "react";
 import GoogleButton from "@/components/auth/GoogleButton";
 
 export default function LoginPage() {

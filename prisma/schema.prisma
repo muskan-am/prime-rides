@@ -1,12 +1,5 @@
-// This is your Prisma schema file,
-// learn more about it in the docs: https://pris.ly/d/prisma-schema
-
-// Looking for ways to speed up your queries, or scale easily with your serverless or edge functions?
-// Try Prisma Accelerate: https://pris.ly/cli/accelerate-init
-
 generator client {
-  provider = "prisma-client"
-  output   = "../src/generated/prisma"
+  provider = "prisma-client-js"
 }
 
 datasource db {
@@ -15,14 +8,522 @@ datasource db {
 }
 
 
+enum BookingStatus {
+  PENDING
+  CONFIRMED
+  CANCELLED
+  COMPLETED
+}
+
+enum VehicleAvailabilityStatus {
+  AVAILABLE
+  UNAVAILABLE
+}
+
+enum VehicleMaintenanceStatus {
+  GOOD
+  MAINTENANCE
+}
+
+enum DiscountType {
+  FIXED
+  PERCENTAGE
+}
+
+enum PaymentStatus {
+  PENDING
+  SUCCESS
+  FAILED
+  REFUNDED
+}
+
+enum RefundStatus {
+  PENDING
+  SUCCESS
+  FAILED
+}
+
+enum NotificationType {
+  BOOKING
+  PAYMENT
+  ENQUIRY
+  SYSTEM
+}
+
+enum EnquiryStatus {
+  OPEN
+  IN_PROGRESS
+  RESOLVED
+  CLOSED
+}
+
+enum AuditAction {
+  CREATE
+  UPDATE
+  DELETE
+  LOGIN
+  LOGOUT
+}
+
+
+
 model User {
   id        String   @id @default(cuid())
   name      String?
   email     String   @unique
   password  String?
   image     String?
+  mobile    String?
   role      String   @default("CUSTOMER")
+
+  teamMember       TeamMember?
+  customerProfile  CustomerProfile?
+
+  bookings         Booking[]
+  couponUsages     CouponUsage[]
+  reviews          Review[]
+  notifications    Notification[]
+  enquiries        Enquiry[]
+  enquiryFollowUps EnquiryFollowUp[]
+  auditLogs        AuditLog[]
+
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 }
 
+model Role {
+  id          String           @id @default(cuid())
+  name        String           @unique
+  description String?
+
+  permissions RolePermission[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model Permission {
+  id          String           @id @default(cuid())
+  name        String           @unique
+  description String?
+
+  roles RolePermission[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model RolePermission {
+  id           String @id @default(cuid())
+  roleId       String
+  permissionId String
+
+  role       Role       @relation(fields: [roleId], references: [id], onDelete: Cascade)
+  permission Permission @relation(fields: [permissionId], references: [id], onDelete: Cascade)
+
+  @@unique([roleId, permissionId])
+}
+
+model TeamMember {
+  id     String @id @default(cuid())
+  userId String @unique
+
+  designation String?
+  isActive    Boolean @default(true)
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model CustomerProfile {
+  id     String @id @default(cuid())
+  userId String @unique
+
+  address    String?
+  city       String?
+  state      String?
+  postalCode String?
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+
+model Location {
+  id        String   @id @default(cuid())
+  name      String
+  address   String?
+  phone     String?
+  latitude  Decimal?
+  longitude Decimal?
+  isActive  Boolean  @default(true)
+
+  deliveryCharges DeliveryCharge[]
+  inventory       Inventory[]
+  bookings        Booking[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+
+model Vehicle {
+  id String @id @default(cuid())
+
+  brand                String
+  model                String
+  variant              String?
+  registrationNumber   String? @unique
+  fuelType             String?
+  transmission         String?
+  seatingCapacity      Int?
+
+  basePrice            Decimal
+  deposit              Decimal @default(0)
+  speedLimit           Int?
+  rentalTerms          String?
+
+  availabilityStatus   VehicleAvailabilityStatus @default(AVAILABLE)
+  maintenanceStatus    VehicleMaintenanceStatus @default(GOOD)
+  searchPriority       Int      @default(0)
+
+  primaryImage         String?
+
+  images               VehicleImage[]
+  features             VehicleFeature[]
+  specifications       VehicleSpecification[]
+  rentalPackages       RentalPackage[]
+  monthlyPlans         MonthlyPlan[]
+  bookings             Booking[]
+  reviews              Review[]
+  enquiries            Enquiry[]
+  inventory            Inventory[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+
+model VehicleImage {
+  id        String @id @default(cuid())
+  vehicleId String
+
+  url       String
+  isPrimary Boolean @default(false)
+  sortOrder Int     @default(0)
+
+  vehicle Vehicle @relation(fields: [vehicleId], references: [id], onDelete: Cascade)
+
+  createdAt DateTime @default(now())
+}
+
+model VehicleFeature {
+  id        String @id @default(cuid())
+  vehicleId String
+
+  name String
+
+  vehicle Vehicle @relation(fields: [vehicleId], references: [id], onDelete: Cascade)
+
+  createdAt DateTime @default(now())
+}
+
+model VehicleSpecification {
+  id        String @id @default(cuid())
+  vehicleId String
+
+  name  String
+  value String
+
+  vehicle Vehicle @relation(fields: [vehicleId], references: [id], onDelete: Cascade)
+
+  createdAt DateTime @default(now())
+}
+
+
+model RentalPackage {
+  id        String @id @default(cuid())
+  vehicleId String
+
+  name        String
+  description String?
+  duration    Int
+  price       Decimal
+  isActive    Boolean @default(true)
+
+  vehicle  Vehicle  @relation(fields: [vehicleId], references: [id], onDelete: Cascade)
+  bookings Booking[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model MonthlyPlan {
+  id        String @id @default(cuid())
+  vehicleId String
+
+  name      String
+  months    Int
+  price     Decimal
+  isActive  Boolean @default(true)
+
+  vehicle  Vehicle  @relation(fields: [vehicleId], references: [id], onDelete: Cascade)
+  bookings Booking[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model TaxConfiguration {
+  id       String  @id @default(cuid())
+  name     String
+  rate     Decimal
+  isActive Boolean @default(true)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model DeliveryCharge {
+  id         String  @id @default(cuid())
+  locationId String
+
+  charge    Decimal
+  isActive  Boolean @default(true)
+
+  location Location @relation(fields: [locationId], references: [id], onDelete: Cascade)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model PickupOption {
+  id          String  @id @default(cuid())
+  name        String
+  description String?
+  isActive    Boolean @default(true)
+
+  bookings Booking[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+
+model Inventory {
+  id         String @id @default(cuid())
+  vehicleId  String
+  locationId String
+
+  quantity   Int     @default(1)
+  isActive   Boolean @default(true)
+
+  vehicle  Vehicle  @relation(fields: [vehicleId], references: [id], onDelete: Cascade)
+  location Location @relation(fields: [locationId], references: [id], onDelete: Cascade)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@unique([vehicleId, locationId])
+}
+
+
+model Booking {
+  id String @id @default(cuid())
+
+  userId    String
+  vehicleId String
+
+  rentalPackageId String?
+  monthlyPlanId   String?
+  pickupOptionId  String?
+
+  locationId String
+
+  startDate DateTime
+  endDate   DateTime
+
+  status BookingStatus @default(PENDING)
+
+  rentalAmount   Decimal
+  deliveryCharge Decimal @default(0)
+  taxAmount      Decimal @default(0)
+  discountAmount Decimal @default(0)
+  totalAmount    Decimal
+
+  user          User           @relation(fields: [userId], references: [id])
+  vehicle       Vehicle        @relation(fields: [vehicleId], references: [id])
+  rentalPackage RentalPackage? @relation(fields: [rentalPackageId], references: [id])
+  monthlyPlan   MonthlyPlan?   @relation(fields: [monthlyPlanId], references: [id])
+  pickupOption  PickupOption?  @relation(fields: [pickupOptionId], references: [id])
+  location      Location       @relation(fields: [locationId], references: [id])
+
+  couponUsage CouponUsage?
+  payment     Payment?
+  review      Review?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+
+model Coupon {
+  id              String       @id @default(cuid())
+  code            String       @unique
+
+  discountType    DiscountType
+  discountValue   Decimal
+
+  minBookingValue Decimal?
+  maxDiscount     Decimal?
+
+  validFrom       DateTime
+  validUntil      DateTime
+
+  usageLimit      Int?
+  isActive        Boolean      @default(true)
+
+  usages CouponUsage[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model CouponUsage {
+  id String @id @default(cuid())
+
+  couponId String
+  userId   String
+  bookingId String @unique
+
+  discountAmount Decimal
+
+  coupon  Coupon  @relation(fields: [couponId], references: [id])
+  user    User    @relation(fields: [userId], references: [id])
+  booking Booking @relation(fields: [bookingId], references: [id])
+
+  usedAt DateTime @default(now())
+}
+
+
+model Payment {
+  id String @id @default(cuid())
+
+  bookingId String @unique
+
+  amount Decimal
+  status PaymentStatus @default(PENDING)
+
+  transactionId String? @unique
+  gateway       String?
+
+  booking Booking @relation(fields: [bookingId], references: [id])
+  refunds Refund[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model Refund {
+  id String @id @default(cuid())
+
+  paymentId String
+  amount    Decimal
+  status    RefundStatus @default(PENDING)
+
+  refundId String? @unique
+  reason   String?
+
+  payment Payment @relation(fields: [paymentId], references: [id])
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model Review {
+  id String @id @default(cuid())
+
+  userId    String
+  vehicleId String
+  bookingId String @unique
+
+  rating  Int
+  comment String?
+
+  user    User    @relation(fields: [userId], references: [id])
+  vehicle Vehicle @relation(fields: [vehicleId], references: [id])
+  booking Booking @relation(fields: [bookingId], references: [id])
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model Notification {
+  id String @id @default(cuid())
+
+  userId String
+
+  type    NotificationType
+  title   String
+  message String
+  isRead  Boolean @default(false)
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  createdAt DateTime @default(now())
+}
+
+
+model Enquiry {
+  id String @id @default(cuid())
+
+  userId    String
+  vehicleId String?
+
+  subject String
+  message String
+  status  EnquiryStatus @default(OPEN)
+
+  user    User     @relation(fields: [userId], references: [id])
+  vehicle Vehicle? @relation(fields: [vehicleId], references: [id])
+
+  followUps EnquiryFollowUp[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model EnquiryFollowUp {
+  id String @id @default(cuid())
+
+  enquiryId String
+  userId    String?
+
+  note          String
+  followUpAt    DateTime?
+  isCompleted   Boolean @default(false)
+
+  enquiry Enquiry @relation(fields: [enquiryId], references: [id], onDelete: Cascade)
+  user    User?   @relation(fields: [userId], references: [id])
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model AuditLog {
+  id String @id @default(cuid())
+
+  userId   String?
+  action   AuditAction
+  entity   String
+  entityId String?
+  details  String?
+
+  user User? @relation(fields: [userId], references: [id], onDelete: SetNull)
+
+  createdAt DateTime @default(now())
+}
