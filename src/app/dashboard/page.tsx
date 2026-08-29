@@ -6,6 +6,7 @@ import LogoutButton from "@/components/auth/LogoutButton";
 export default async function DashboardPage() {
   const session = await getServerSession(authOptions);
 
+  // User is not logged in
   if (!session?.user) {
     redirect("/login");
   }
@@ -14,6 +15,7 @@ export default async function DashboardPage() {
     <main className="min-h-screen bg-background px-6 py-12">
       <div className="mx-auto max-w-5xl">
 
+        {/* Header */}
         <div className="flex items-center justify-between">
           <div>
             <p className="text-sm text-muted-foreground">
@@ -28,6 +30,7 @@ export default async function DashboardPage() {
           <LogoutButton />
         </div>
 
+        {/* Account Information */}
         <div className="mt-8 rounded-2xl border bg-card p-6">
           <h2 className="text-lg font-semibold">
             Account Information
@@ -44,6 +47,17 @@ export default async function DashboardPage() {
               {session.user.email || "Not available"}
             </p>
           </div>
+        </div>
+
+        {/* My Bookings */}
+        <div className="mt-6 rounded-2xl border bg-card p-6">
+          <h2 className="text-lg font-semibold">
+            My Bookings
+          </h2>
+
+          <p className="mt-2 text-sm text-muted-foreground">
+            Your bookings will appear here.
+          </p>
         </div>
 
       </div>

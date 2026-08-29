@@ -7,6 +7,44 @@ import { useState } from "react";
 import GoogleButton from "@/components/auth/GoogleButton";
 
 export default function LoginPage() {
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
+  const [error, setError] = useState("");
+  const [loading, setLoading] = useState(false);
+
+  const handleLogin = async (e: React.FormEvent<HTMLFormElement>) => {
+    e.preventDefault();
+
+    setError("");
+
+    if (!email || !password) {
+      setError("Please enter your email and password");
+      return;
+    }
+
+    setLoading(true);
+
+    try {
+      const result = await signIn("credentials", {
+        email,
+        password,
+        redirect: false,
+      });
+
+      if (result?.error) {
+        setError("Invalid email or password");
+        setLoading(false);
+        return;
+      }
+
+      window.location.href = "/";
+    } catch (error) {
+      console.error("Login error:", error);
+      setError("Something went wrong. Please try again.");
+      setLoading(false);
+    }
+  };
+
   return (
     <main className="min-h-screen bg-background flex items-center justify-center px-6 py-12">
       <div className="w-full max-w-md">
@@ -36,18 +74,29 @@ export default function LoginPage() {
             </p>
           </div>
 
-          {/* Form */}
-          <form className="mt-8 space-y-5">
+          {/* Login Form */}
+          <form
+            onSubmit={handleLogin}
+            className="mt-8 space-y-5"
+          >
 
             {/* Email */}
             <div>
-              <label className="text-sm font-medium">
+              <label
+                htmlFor="email"
+                className="text-sm font-medium"
+              >
                 Email Address
               </label>
 
               <input
+                id="email"
+                name="email"
                 type="email"
                 placeholder="Enter your email"
+                autoComplete="email"
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
                 className="mt-2 h-11 w-full rounded-lg border bg-background px-3 text-sm outline-none focus:ring-2 focus:ring-ring"
               />
             </div>
@@ -55,7 +104,10 @@ export default function LoginPage() {
             {/* Password */}
             <div>
               <div className="flex items-center justify-between">
-                <label className="text-sm font-medium">
+                <label
+                  htmlFor="password"
+                  className="text-sm font-medium"
+                >
                   Password
                 </label>
 
@@ -68,20 +120,35 @@ export default function LoginPage() {
               </div>
 
               <input
+                id="password"
+                name="password"
                 type="password"
                 placeholder="Enter your password"
+                autoComplete="current-password"
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
                 className="mt-2 h-11 w-full rounded-lg border bg-background px-3 text-sm outline-none focus:ring-2 focus:ring-ring"
               />
             </div>
 
+            {/* Error Message */}
+            {error && (
+              <p
+                className="rounded-lg border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-600"
+                role="alert"
+              >
+                {error}
+              </p>
+            )}
+
             {/* Login Button */}
             <button
               type="submit"
-              className="h-11 w-full rounded-lg bg-black text-sm font-medium text-white transition hover:bg-zinc-800"
+              disabled={loading}
+              className="h-11 w-full rounded-lg bg-black text-sm font-medium text-white transition hover:bg-zinc-800 disabled:cursor-not-allowed disabled:opacity-50"
             >
-              Login
+              {loading ? "Logging in..." : "Login"}
             </button>
-
           </form>
 
           {/* Divider */}
@@ -96,7 +163,7 @@ export default function LoginPage() {
           </div>
 
           {/* Google Login */}
-          <GoogleButton/>
+          <GoogleButton />
 
           {/* Signup */}
           <p className="mt-6 text-center text-sm text-muted-foreground">
@@ -108,7 +175,6 @@ export default function LoginPage() {
               Create Account
             </Link>
           </p>
-
         </div>
 
         {/* Back to Home */}
