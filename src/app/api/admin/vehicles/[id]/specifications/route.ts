@@ -31,7 +31,7 @@ async function checkAdmin(): Promise<NextResponse | null> {
 }
 
 /**
- * GET /api/admin/vehicles/[id]/features
+ * GET /api/admin/vehicles/[id]/specifications
  */
 export async function GET(
   _request: Request,
@@ -47,8 +47,12 @@ export async function GET(
     const { id } = await params;
 
     const vehicle = await prisma.vehicle.findUnique({
-      where: { id },
-      select: { id: true },
+      where: {
+        id,
+      },
+      select: {
+        id: true,
+      },
     });
 
     if (!vehicle) {
@@ -58,30 +62,31 @@ export async function GET(
       );
     }
 
-    const features = await prisma.vehicleFeature.findMany({
-      where: {
-        vehicleId: id,
-      },
-      orderBy: {
-        createdAt: "asc",
-      },
-    });
+    const specifications =
+      await prisma.vehicleSpecification.findMany({
+        where: {
+          vehicleId: id,
+        },
+        orderBy: {
+          createdAt: "asc",
+        },
+      });
 
     return NextResponse.json({
-      features,
+      specifications,
     });
   } catch (error) {
-    console.error("GET features error:", error);
+    console.error("GET specifications error:", error);
 
     return NextResponse.json(
-      { error: "Failed to fetch features" },
+      { error: "Failed to fetch specifications" },
       { status: 500 }
     );
   }
 }
 
 /**
- * POST /api/admin/vehicles/[id]/features
+ * POST /api/admin/vehicles/[id]/specifications
  */
 export async function POST(
   request: Request,
@@ -103,16 +108,32 @@ export async function POST(
         ? body.name.trim()
         : "";
 
+    const value =
+      typeof body.value === "string"
+        ? body.value.trim()
+        : "";
+
     if (!name) {
       return NextResponse.json(
-        { error: "Feature name is required" },
+        { error: "Specification name is required" },
+        { status: 400 }
+      );
+    }
+
+    if (!value) {
+      return NextResponse.json(
+        { error: "Specification value is required" },
         { status: 400 }
       );
     }
 
     const vehicle = await prisma.vehicle.findUnique({
-      where: { id },
-      select: { id: true },
+      where: {
+        id,
+      },
+      select: {
+        id: true,
+      },
     });
 
     if (!vehicle) {
@@ -122,8 +143,8 @@ export async function POST(
       );
     }
 
-    const existingFeature =
-      await prisma.vehicleFeature.findFirst({
+    const existingSpecification =
+      await prisma.vehicleSpecification.findFirst({
         where: {
           vehicleId: id,
           name: {
@@ -133,41 +154,44 @@ export async function POST(
         },
       });
 
-    if (existingFeature) {
+    if (existingSpecification) {
       return NextResponse.json(
-        { error: "This feature already exists" },
+        {
+          error:
+            "A specification with this name already exists",
+        },
         { status: 409 }
       );
     }
 
-    const feature = await prisma.vehicleFeature.create({
-      data: {
-        vehicleId: id,
-        name,
-      },
-    });
+    const specification =
+      await prisma.vehicleSpecification.create({
+        data: {
+          vehicleId: id,
+          name,
+          value,
+        },
+      });
 
     return NextResponse.json(
       {
-        message: "Feature added successfully",
-        feature,
+        message: "Specification added successfully",
+        specification,
       },
       { status: 201 }
     );
   } catch (error) {
-    console.error("POST feature error:", error);
+    console.error("POST specification error:", error);
 
     return NextResponse.json(
-      { error: "Failed to add feature" },
+      { error: "Failed to add specification" },
       { status: 500 }
     );
   }
 }
 
 /**
- * DELETE /api/admin/vehicles/[id]/features
- *
- * Deletes a feature by featureId
+ * DELETE /api/admin/vehicles/[id]/specifications
  */
 export async function DELETE(
   request: Request,
@@ -184,47 +208,50 @@ export async function DELETE(
 
     const body = await request.json();
 
-    const featureId =
-      typeof body.featureId === "string"
-        ? body.featureId
+    const specificationId =
+      typeof body.specificationId === "string"
+        ? body.specificationId
         : "";
 
-    if (!featureId) {
+    if (!specificationId) {
       return NextResponse.json(
-        { error: "Feature ID is required" },
+        { error: "Specification ID is required" },
         { status: 400 }
       );
     }
 
-    const feature =
-      await prisma.vehicleFeature.findFirst({
+    const specification =
+      await prisma.vehicleSpecification.findFirst({
         where: {
-          id: featureId,
+          id: specificationId,
           vehicleId: id,
         },
       });
 
-    if (!feature) {
+    if (!specification) {
       return NextResponse.json(
-        { error: "Feature not found" },
+        { error: "Specification not found" },
         { status: 404 }
       );
     }
 
-    await prisma.vehicleFeature.delete({
+    await prisma.vehicleSpecification.delete({
       where: {
-        id: featureId,
+        id: specificationId,
       },
     });
 
     return NextResponse.json({
-      message: "Feature deleted successfully",
+      message: "Specification deleted successfully",
     });
   } catch (error) {
-    console.error("DELETE feature error:", error);
+    console.error(
+      "DELETE specification error:",
+      error
+    );
 
     return NextResponse.json(
-      { error: "Failed to delete feature" },
+      { error: "Failed to delete specification" },
       { status: 500 }
     );
   }

@@ -5,7 +5,8 @@ import { prisma } from "@/lib/prisma";
 import { redirect, notFound } from "next/navigation";
 import LogoutButton from "@/components/auth/LogoutButton";
 import DeleteVehicleButton from "@/components/admin/DeleteVehicleButton";
-
+import VehicleFeatures from "@/components/admin/VehicleFeatures";
+import VehicleSpecifications from "@/components/admin/VehicleSpecifications";
 
 type VehicleDetailsPageProps = {
   params: Promise<{
@@ -209,61 +210,10 @@ export default async function VehicleDetailsPage({
             </div>
           </section>
            
-          {/* Features */}
-          <section className="border-b p-5 sm:p-6">
-            <h3 className="text-lg font-semibold">
-              Features
-            </h3>
-
-            {vehicle.features.length === 0 ? (
-              <p className="mt-4 text-sm text-muted-foreground">
-                No features added yet.
-              </p>
-            ) : (
-              <div className="mt-5 grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3">
-                {vehicle.features.map((feature) => (
-                  <div
-                    key={feature.id}
-                    className="rounded-xl border p-4"
-                  >
-                    <p className="text-sm font-medium">
-                      {feature.name}
-                    </p>
-                  </div>
-                ))}
-              </div>
-            )}
-          </section> 
-
-          {/* Specifications */}
-          <section className="border-b p-5 sm:p-6">
-            <h3 className="text-lg font-semibold">
-              Specifications
-            </h3>
-
-            {vehicle.specifications.length === 0 ? (
-              <p className="mt-4 text-sm text-muted-foreground">
-                No specifications added yet.
-              </p>
-            ) : (
-              <div className="mt-5 overflow-hidden rounded-xl border">
-                {vehicle.specifications.map((specification) => (
-                  <div
-                    key={specification.id}
-                    className="grid grid-cols-1 gap-1 border-b p-4 last:border-b-0 sm:grid-cols-2 sm:gap-4"
-                  >
-                    <p className="text-sm text-muted-foreground">
-                      {specification.name}
-                    </p>
-
-                    <p className="break-words text-sm font-medium sm:text-right">
-                      {specification.value}
-                    </p>
-                  </div>
-                ))}
-              </div>
-            )}
-          </section>
+        <VehicleFeatures vehicleId={vehicle.id} />
+          
+        <VehicleSpecifications vehicleId={vehicle.id} />
+        
           {/* Rental Terms */}
           <section className="p-5 sm:p-6">
             <h3 className="text-lg font-semibold">
