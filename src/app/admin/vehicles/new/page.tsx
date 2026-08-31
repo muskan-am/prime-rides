@@ -1,19 +1,66 @@
+"use client";
+
 import Link from "next/link";
-import { getServerSession } from "next-auth";
-import { authOptions } from "@/auth";
-import { redirect } from "next/navigation";
+import { useState } from "react";
+import { useRouter } from "next/navigation";
 
-export default async function NewVehiclePage() {
-  const session = await getServerSession(authOptions);
+export default function NewVehiclePage() {
+  const router = useRouter();
 
-  // Login check
-  if (!session?.user) {
-    redirect("/login");
-  }
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState("");
 
-  // Admin check
-  if (session.user.role !== "ADMIN") {
-    redirect("/");
+  async function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
+    e.preventDefault();
+
+    setError("");
+    setLoading(true);
+
+    const formData = new FormData(e.currentTarget);
+
+    const data = {
+      brand: formData.get("brand"),
+      model: formData.get("model"),
+      variant: formData.get("variant"),
+      registrationNumber: formData.get("registrationNumber"),
+      fuelType: formData.get("fuelType"),
+      transmission: formData.get("transmission"),
+      seatingCapacity: formData.get("seatingCapacity"),
+      basePrice: formData.get("basePrice"),
+      deposit: formData.get("deposit"),
+      speedLimit: formData.get("speedLimit"),
+      rentalTerms: formData.get("rentalTerms"),
+      availabilityStatus: formData.get("availabilityStatus"),
+      maintenanceStatus: formData.get("maintenanceStatus"),
+      searchPriority: formData.get("searchPriority"),
+      primaryImage: formData.get("primaryImage"),
+    };
+
+    try {
+      const response = await fetch("/api/admin/vehicles", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify(data),
+      });
+
+      const result = await response.json();
+
+      if (!response.ok) {
+        setError(result.error || "Failed to create vehicle");
+        setLoading(false);
+        return;
+      }
+
+      router.push("/admin/vehicles");
+      router.refresh();
+    } catch (error) {
+      console.error("Create vehicle error:", error);
+
+      setError("Something went wrong. Please try again.");
+      setLoading(false);
+    }
   }
 
   return (
@@ -43,7 +90,17 @@ export default async function NewVehiclePage() {
         {/* Form Card */}
         <div className="mt-8 rounded-2xl border bg-card p-8 shadow-sm">
 
-          <form className="space-y-8">
+          <form
+            onSubmit={handleSubmit}
+            className="space-y-8"
+          >
+
+            {/* Error */}
+            {error && (
+              <div className="rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-600">
+                {error}
+              </div>
+            )}
 
             {/* Basic Information */}
             <section>
@@ -160,11 +217,26 @@ export default async function NewVehiclePage() {
                     <option value="" disabled>
                       Select fuel type
                     </option>
-                    <option value="PETROL">Petrol</option>
-                    <option value="DIESEL">Diesel</option>
-                    <option value="CNG">CNG</option>
-                    <option value="ELECTRIC">Electric</option>
-                    <option value="HYBRID">Hybrid</option>
+
+                    <option value="PETROL">
+                      Petrol
+                    </option>
+
+                    <option value="DIESEL">
+                      Diesel
+                    </option>
+
+                    <option value="CNG">
+                      CNG
+                    </option>
+
+                    <option value="ELECTRIC">
+                      Electric
+                    </option>
+
+                    <option value="HYBRID">
+                      Hybrid
+                    </option>
                   </select>
                 </div>
 
@@ -186,11 +258,26 @@ export default async function NewVehiclePage() {
                     <option value="" disabled>
                       Select transmission
                     </option>
-                    <option value="MANUAL">Manual</option>
-                    <option value="AUTOMATIC">Automatic</option>
-                    <option value="AMT">AMT</option>
-                    <option value="CVT">CVT</option>
-                    <option value="DCT">DCT</option>
+
+                    <option value="MANUAL">
+                      Manual
+                    </option>
+
+                    <option value="AUTOMATIC">
+                      Automatic
+                    </option>
+
+                    <option value="AMT">
+                      AMT
+                    </option>
+
+                    <option value="CVT">
+                      CVT
+                    </option>
+
+                    <option value="DCT">
+                      DCT
+                    </option>
                   </select>
                 </div>
 
@@ -314,6 +401,7 @@ export default async function NewVehiclePage() {
                     <option value="AVAILABLE">
                       Available
                     </option>
+
                     <option value="UNAVAILABLE">
                       Unavailable
                     </option>
@@ -338,6 +426,7 @@ export default async function NewVehiclePage() {
                     <option value="GOOD">
                       Good
                     </option>
+
                     <option value="MAINTENANCE">
                       Maintenance
                     </option>
@@ -426,9 +515,10 @@ export default async function NewVehiclePage() {
 
               <button
                 type="submit"
-                className="rounded-lg bg-black px-5 py-2.5 text-sm font-medium text-white hover:bg-zinc-800"
+                disabled={loading}
+                className="rounded-lg bg-black px-5 py-2.5 text-sm font-medium text-white hover:bg-zinc-800 disabled:cursor-not-allowed disabled:opacity-50"
               >
-                Create Vehicle
+                {loading ? "Creating..." : "Create Vehicle"}
               </button>
 
             </div>
