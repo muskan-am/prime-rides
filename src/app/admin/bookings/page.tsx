@@ -4,6 +4,7 @@ import { redirect } from "next/navigation";
 import { authOptions } from "@/auth";
 import { prisma } from "@/lib/prisma";
 import LogoutButton from "@/components/auth/LogoutButton";
+import BookingStatusSelect from "@/components/admin/BookingStatusSelect";
 
 function formatDate(date: Date) {
   return new Intl.DateTimeFormat("en-IN", {
@@ -251,6 +252,10 @@ export default async function AdminBookingsPage() {
                       >
                         {booking.status}
                       </span>
+                      <BookingStatusSelect
+                        bookingId={booking.id}
+                        currentStatus={booking.status}
+                       />
 
                     </div>
 
