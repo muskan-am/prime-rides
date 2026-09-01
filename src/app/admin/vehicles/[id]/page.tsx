@@ -7,6 +7,9 @@ import LogoutButton from "@/components/auth/LogoutButton";
 import DeleteVehicleButton from "@/components/admin/DeleteVehicleButton";
 import VehicleFeatures from "@/components/admin/VehicleFeatures";
 import VehicleSpecifications from "@/components/admin/VehicleSpecifications";
+import VehicleImages from "@/components/admin/VehicleImages";
+import RentalPackages from "@/components/admin/RentalPackages";
+import MonthlyPlans from "@/components/admin/MonthlyPlans";
 
 type VehicleDetailsPageProps = {
   params: Promise<{
@@ -209,11 +212,16 @@ export default async function VehicleDetailsPage({
               />
             </div>
           </section>
-           
+
+        <VehicleImages vehicleId={vehicle.id} />
+
         <VehicleFeatures vehicleId={vehicle.id} />
           
         <VehicleSpecifications vehicleId={vehicle.id} />
-        
+
+        <RentalPackages vehicleId={vehicle.id} />
+
+        <MonthlyPlans vehicleId={vehicle.id} />
           {/* Rental Terms */}
           <section className="p-5 sm:p-6">
             <h3 className="text-lg font-semibold">
