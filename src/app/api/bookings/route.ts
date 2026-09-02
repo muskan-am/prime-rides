@@ -1,7 +1,6 @@
 import { NextResponse } from "next/server";
 import { getServerSession } from "next-auth";
 import { Prisma } from "@prisma/client";
-
 import { authOptions } from "@/auth";
 import { prisma } from "@/lib/prisma";
 
@@ -15,48 +14,28 @@ type BookingRequest = {
   endDate?: string;
 };
 
-/* =========================================================
-   GET /api/bookings
-   Admin: Get all bookings
-========================================================= */
+/* =========================================
+   GET - Admin: Get All Bookings
+========================================= */
 
 export async function GET() {
   try {
-    /* -------------------------------- */
-    /* Authentication */
-    /* -------------------------------- */
+    const session =
+      await getServerSession(authOptions);
 
-    const session = await getServerSession(
-      authOptions
-    );
-
-    if (!session?.user?.id) {
+    if (
+      !session?.user ||
+      session.user.role !== "ADMIN"
+    ) {
       return NextResponse.json(
         {
-          error:
-            "You must be logged in to view bookings",
+          error: "Unauthorized",
         },
-        { status: 401 }
-      );
-    }
-
-    /* -------------------------------- */
-    /* Admin Authorization */
-    /* -------------------------------- */
-
-    if (session.user.role !== "ADMIN") {
-      return NextResponse.json(
         {
-          error:
-            "You are not authorized to view all bookings",
-        },
-        { status: 403 }
+          status: 401,
+        }
       );
     }
-
-    /* -------------------------------- */
-    /* Fetch All Bookings */
-    /* -------------------------------- */
 
     const bookings =
       await prisma.booking.findMany({
@@ -65,112 +44,46 @@ export async function GET() {
         },
 
         include: {
-          /* Customer */
-
-          user: {
-            select: {
-              id: true,
-              name: true,
-              email: true,
-              mobile: true,
-            },
-          },
-
-          /* Vehicle */
-
-          vehicle: {
-            select: {
-              id: true,
-              brand: true,
-              model: true,
-              variant: true,
-              primaryImage: true,
-            },
-          },
-
-          /* Rental Package */
-
-          rentalPackage: {
-            select: {
-              id: true,
-              name: true,
-              description: true,
-              duration: true,
-              price: true,
-            },
-          },
-
-          /* Monthly Plan */
-
-          monthlyPlan: {
-            select: {
-              id: true,
-              name: true,
-              months: true,
-              price: true,
-            },
-          },
-
-          /* Pickup Option */
-
-          pickupOption: {
-            select: {
-              id: true,
-              name: true,
-              description: true,
-            },
-          },
-
-          /* Pickup Location */
-
-          location: {
-            select: {
-              id: true,
-              name: true,
-              address: true,
-            },
-          },
+          user: true,
+          vehicle: true,
+          rentalPackage: true,
+          monthlyPlan: true,
+          pickupOption: true,
+          location: true,
         },
       });
 
-    /* -------------------------------- */
-    /* Response */
-    /* -------------------------------- */
-
-    return NextResponse.json(
-      {
-        bookings,
-      },
-      { status: 200 }
-    );
+    return NextResponse.json({
+      bookings,
+    });
   } catch (error) {
     console.error(
-      "Get admin bookings error:",
+      "Get Bookings Error:",
       error
     );
 
     return NextResponse.json(
       {
-        error:
-          "Failed to fetch bookings",
+        error: "Failed to fetch bookings.",
       },
-      { status: 500 }
+      {
+        status: 500,
+      }
     );
   }
 }
 
-/* =========================================================
-   POST /api/bookings
-   Customer: Create Booking
-========================================================= */
+/* =========================================
+   POST - Create Booking
+========================================= */
 
 export async function POST(
   request: Request
 ) {
   try {
-    /* -------------------------------- */
-    /* Authentication */
-    /* -------------------------------- */
+    /* -----------------------------------------
+       Authentication
+    ----------------------------------------- */
 
     const session =
       await getServerSession(authOptions);
@@ -179,18 +92,17 @@ export async function POST(
       return NextResponse.json(
         {
           error:
-            "You must be logged in to create a booking",
+            "Please login to create a booking.",
         },
-        { status: 401 }
+        {
+          status: 401,
+        }
       );
     }
 
-    const userId =
-      session.user.id;
-
-    /* -------------------------------- */
-    /* Request Body */
-    /* -------------------------------- */
+    /* -----------------------------------------
+       Read Request Body
+    ----------------------------------------- */
 
     const body =
       (await request.json()) as BookingRequest;
@@ -210,24 +122,36 @@ export async function POST(
     const locationId =
       body.locationId?.trim();
 
+    const startDateValue =
+      body.startDate?.trim();
+
+    const endDateValue =
+      body.endDate?.trim();
+
+    /* -----------------------------------------
+       Basic Validation
+    ----------------------------------------- */
+
     if (
       !vehicleId ||
       !locationId ||
-      !body.startDate ||
-      !body.endDate
+      !startDateValue ||
+      !endDateValue
     ) {
       return NextResponse.json(
         {
           error:
-            "Vehicle, location, start date and end date are required",
+            "Vehicle, location, start date and end date are required.",
         },
-        { status: 400 }
+        {
+          status: 400,
+        }
       );
     }
 
-    /* -------------------------------- */
-    /* Package Validation */
-    /* -------------------------------- */
+    /* -----------------------------------------
+       Package + Monthly Validation
+    ----------------------------------------- */
 
     if (
       rentalPackageId &&
@@ -236,75 +160,97 @@ export async function POST(
       return NextResponse.json(
         {
           error:
-            "Select either a rental package or a monthly plan, not both",
+            "Rental package and monthly plan cannot be selected together.",
         },
-        { status: 400 }
-      );
-    }
-
-    if (
-      !rentalPackageId &&
-      !monthlyPlanId
-    ) {
-      return NextResponse.json(
         {
-          error:
-            "A rental package or monthly plan is required",
-        },
-        { status: 400 }
+          status: 400,
+        }
       );
     }
 
-    /* -------------------------------- */
-    /* Date Validation */
-    /* -------------------------------- */
+    /* -----------------------------------------
+       Parse Dates
+    ----------------------------------------- */
 
     const startDate =
-      new Date(body.startDate);
+      new Date(startDateValue);
 
     const endDate =
-      new Date(body.endDate);
+      new Date(endDateValue);
 
     if (
-      Number.isNaN(
-        startDate.getTime()
-      ) ||
-      Number.isNaN(
-        endDate.getTime()
-      )
+      Number.isNaN(startDate.getTime()) ||
+      Number.isNaN(endDate.getTime())
     ) {
       return NextResponse.json(
         {
           error:
-            "Invalid booking dates",
+            "Please provide valid booking dates.",
         },
-        { status: 400 }
+        {
+          status: 400,
+        }
       );
     }
 
-    if (startDate >= endDate) {
+    /* -----------------------------------------
+       Date Validation
+    ----------------------------------------- */
+
+    if (endDate <= startDate) {
       return NextResponse.json(
         {
           error:
-            "End date must be after start date",
+            "End date must be after start date.",
         },
-        { status: 400 }
+        {
+          status: 400,
+        }
       );
     }
 
-    if (startDate < new Date()) {
+    const now = new Date();
+
+    if (startDate < now) {
       return NextResponse.json(
         {
           error:
-            "Booking start date cannot be in the past",
+            "Start date cannot be in the past.",
         },
-        { status: 400 }
+        {
+          status: 400,
+        }
       );
     }
 
-    /* -------------------------------- */
-    /* Vehicle */
-    /* -------------------------------- */
+    /* -----------------------------------------
+       Calculate Rental Duration
+    ----------------------------------------- */
+
+    const millisecondsPerDay =
+      1000 * 60 * 60 * 24;
+
+    const rentalDays = Math.ceil(
+      (endDate.getTime() -
+        startDate.getTime()) /
+        millisecondsPerDay
+    );
+
+    if (rentalDays <= 0) {
+      return NextResponse.json(
+        {
+          error:
+            "Booking duration must be at least 1 day.",
+        },
+        {
+          status: 400,
+        }
+      );
+    }
+
+    /* -----------------------------------------
+       Get Vehicle
+    ----------------------------------------- */
 
     const vehicle =
       await prisma.vehicle.findUnique({
@@ -316,12 +262,17 @@ export async function POST(
     if (!vehicle) {
       return NextResponse.json(
         {
-          error:
-            "Vehicle not found",
+          error: "Vehicle not found.",
         },
-        { status: 404 }
+        {
+          status: 404,
+        }
       );
     }
+
+    /* -----------------------------------------
+       Vehicle Availability
+    ----------------------------------------- */
 
     if (
       vehicle.availabilityStatus !==
@@ -330,28 +281,32 @@ export async function POST(
       return NextResponse.json(
         {
           error:
-            "This vehicle is currently unavailable",
+            "This vehicle is currently unavailable.",
         },
-        { status: 409 }
+        {
+          status: 400,
+        }
       );
     }
 
     if (
-      vehicle.maintenanceStatus ===
-      "MAINTENANCE"
+      vehicle.maintenanceStatus !==
+      "GOOD"
     ) {
       return NextResponse.json(
         {
           error:
-            "This vehicle is currently under maintenance",
+            "This vehicle is currently under maintenance.",
         },
-        { status: 409 }
+        {
+          status: 400,
+        }
       );
     }
 
-    /* -------------------------------- */
-    /* Location */
-    /* -------------------------------- */
+    /* -----------------------------------------
+       Validate Location
+    ----------------------------------------- */
 
     const location =
       await prisma.location.findFirst({
@@ -365,41 +320,67 @@ export async function POST(
       return NextResponse.json(
         {
           error:
-            "Selected location is not available",
+            "Selected pickup location is unavailable.",
         },
-        { status: 404 }
+        {
+          status: 400,
+        }
       );
     }
 
-    /* -------------------------------- */
-    /* Pickup Option */
-    /* -------------------------------- */
+    /* -----------------------------------------
+       Get Delivery Charge
+    ----------------------------------------- */
+
+    const deliveryChargeConfig =
+      await prisma.deliveryCharge.findFirst({
+        where: {
+          locationId,
+          isActive: true,
+        },
+        orderBy: {
+          createdAt: "desc",
+        },
+      });
+
+    const deliveryCharge =
+      deliveryChargeConfig
+        ? new Prisma.Decimal(
+            deliveryChargeConfig.charge
+          )
+        : new Prisma.Decimal(0);
+
+    /* -----------------------------------------
+       Validate Pickup Option
+    ----------------------------------------- */
+
+    let pickupOption = null;
 
     if (pickupOptionId) {
-      const pickupOption =
-        await prisma.pickupOption.findFirst(
-          {
-            where: {
-              id: pickupOptionId,
-              isActive: true,
-            },
-          }
-        );
+      pickupOption =
+        await prisma.pickupOption.findFirst({
+          where: {
+            id: pickupOptionId,
+            isActive: true,
+          },
+        });
 
       if (!pickupOption) {
         return NextResponse.json(
           {
             error:
-              "Selected pickup option is not available",
+              "Selected pickup option is unavailable.",
           },
-          { status: 404 }
+          {
+            status: 400,
+          }
         );
       }
     }
 
-    /* -------------------------------- */
-    /* Existing Booking Check */
-    /* -------------------------------- */
+    /* -----------------------------------------
+       Check Vehicle Booking Overlap
+    ----------------------------------------- */
 
     const overlappingBooking =
       await prisma.booking.findFirst({
@@ -427,96 +408,95 @@ export async function POST(
       return NextResponse.json(
         {
           error:
-            "This vehicle is already booked for the selected dates",
+            "This vehicle is already booked for the selected dates.",
         },
-        { status: 409 }
+        {
+          status: 409,
+        }
       );
     }
 
-    /* -------------------------------- */
-    /* Rental Amount */
-    /* -------------------------------- */
+    /* -----------------------------------------
+       Rental Amount
+    ----------------------------------------- */
 
     let rentalAmount =
       new Prisma.Decimal(0);
 
+    let rentalPackage = null;
+    let monthlyPlan = null;
+
+    /* =========================================
+       RENTAL PACKAGE
+    ========================================= */
+
     if (rentalPackageId) {
-      const rentalPackage =
-        await prisma.rentalPackage.findFirst(
-          {
-            where: {
-              id: rentalPackageId,
-              vehicleId,
-              isActive: true,
-            },
-          }
-        );
+      rentalPackage =
+        await prisma.rentalPackage.findFirst({
+          where: {
+            id: rentalPackageId,
+            vehicleId,
+            isActive: true,
+          },
+        });
 
       if (!rentalPackage) {
         return NextResponse.json(
           {
             error:
-              "Selected rental package is not available",
+              "Selected rental package is unavailable.",
           },
-          { status: 404 }
+          {
+            status: 400,
+          }
         );
       }
 
-      const millisecondsPerDay =
-        1000 * 60 * 60 * 24;
-
-      const durationInDays =
-        Math.ceil(
-          (endDate.getTime() -
-            startDate.getTime()) /
-            millisecondsPerDay
-        );
-
       if (
-        durationInDays !==
+        rentalDays !==
         rentalPackage.duration
       ) {
         return NextResponse.json(
           {
-            error:
-              `Selected package requires ${rentalPackage.duration} day(s)`,
+            error: `Selected package is for ${rentalPackage.duration} day(s). Please select the correct dates.`,
           },
-          { status: 400 }
+          {
+            status: 400,
+          }
         );
       }
 
       rentalAmount =
-        rentalPackage.price;
+        new Prisma.Decimal(
+          rentalPackage.price
+        );
     }
 
-    /* -------------------------------- */
-    /* Monthly Plan */
-    /* -------------------------------- */
+    /* =========================================
+       MONTHLY PLAN
+    ========================================= */
 
-    if (monthlyPlanId) {
-      const monthlyPlan =
-        await prisma.monthlyPlan.findFirst(
-          {
-            where: {
-              id: monthlyPlanId,
-              vehicleId,
-              isActive: true,
-            },
-          }
-        );
+    else if (monthlyPlanId) {
+      monthlyPlan =
+        await prisma.monthlyPlan.findFirst({
+          where: {
+            id: monthlyPlanId,
+            vehicleId,
+            isActive: true,
+          },
+        });
 
       if (!monthlyPlan) {
         return NextResponse.json(
           {
             error:
-              "Selected monthly plan is not available",
+              "Selected monthly plan is unavailable.",
           },
-          { status: 404 }
+          {
+            status: 400,
+          }
         );
       }
-
-      rentalAmount =
-        monthlyPlan.price;
 
       const expectedEndDate =
         new Date(startDate);
@@ -532,26 +512,36 @@ export async function POST(
       ) {
         return NextResponse.json(
           {
-            error:
-              `Selected plan requires ${monthlyPlan.months} month(s)`,
+            error: `Selected monthly plan is for ${monthlyPlan.months} month(s). Please select the correct dates.`,
           },
-          { status: 400 }
+          {
+            status: 400,
+          }
         );
       }
+
+      rentalAmount =
+        new Prisma.Decimal(
+          monthlyPlan.price
+        );
     }
 
-    /* -------------------------------- */
-    /* Delivery Charge */
-    /* -------------------------------- */
+    /* =========================================
+       NORMAL DAYS
+    ========================================= */
 
-    const deliveryCharge =
-      new Prisma.Decimal(0);
+    else {
+      rentalAmount =
+        new Prisma.Decimal(
+          vehicle.basePrice
+        ).mul(rentalDays);
+    }
 
-    /* -------------------------------- */
-    /* Tax */
-    /* -------------------------------- */
+    /* -----------------------------------------
+       Tax
+    ----------------------------------------- */
 
-    const activeTax =
+    const taxConfiguration =
       await prisma.taxConfiguration.findFirst(
         {
           where: {
@@ -567,22 +557,23 @@ export async function POST(
     let taxAmount =
       new Prisma.Decimal(0);
 
-    if (activeTax) {
-      taxAmount = rentalAmount
-        .mul(activeTax.rate)
-        .div(100);
+    if (taxConfiguration) {
+      taxAmount =
+        rentalAmount
+          .mul(taxConfiguration.rate)
+          .div(100);
     }
 
-    /* -------------------------------- */
-    /* Discount */
-    /* -------------------------------- */
+    /* -----------------------------------------
+       Discount
+    ----------------------------------------- */
 
     const discountAmount =
       new Prisma.Decimal(0);
 
-    /* -------------------------------- */
-    /* Total */
-    /* -------------------------------- */
+    /* -----------------------------------------
+       Total Amount
+    ----------------------------------------- */
 
     const totalAmount =
       rentalAmount
@@ -590,14 +581,16 @@ export async function POST(
         .add(taxAmount)
         .sub(discountAmount);
 
-    /* -------------------------------- */
-    /* Create Booking */
-    /* -------------------------------- */
+    /* -----------------------------------------
+       Create Booking
+    ----------------------------------------- */
 
     const booking =
       await prisma.booking.create({
         data: {
-          userId,
+          userId:
+            session.user.id,
+
           vehicleId,
 
           rentalPackageId:
@@ -612,27 +605,24 @@ export async function POST(
           locationId,
 
           startDate,
+
           endDate,
 
           status: "PENDING",
 
           rentalAmount,
+
           deliveryCharge,
+
           taxAmount,
+
           discountAmount,
+
           totalAmount,
         },
 
         include: {
-          vehicle: {
-            select: {
-              id: true,
-              brand: true,
-              model: true,
-              primaryImage: true,
-            },
-          },
-
+          vehicle: true,
           rentalPackage: true,
           monthlyPlan: true,
           location: true,
@@ -640,26 +630,35 @@ export async function POST(
         },
       });
 
+    /* -----------------------------------------
+       Success
+    ----------------------------------------- */
+
     return NextResponse.json(
       {
         message:
-          "Booking created successfully",
+          "Booking created successfully.",
+
         booking,
       },
-      { status: 201 }
+      {
+        status: 201,
+      }
     );
   } catch (error) {
     console.error(
-      "Create booking error:",
+      "Create Booking Error:",
       error
     );
 
     return NextResponse.json(
       {
         error:
-          "Failed to create booking",
+          "Something went wrong while creating the booking.",
       },
-      { status: 500 }
+      {
+        status: 500,
+      }
     );
   }
 }

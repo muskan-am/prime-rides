@@ -43,6 +43,74 @@ type BookingFormProps = {
   pickupOptions: PickupOption[];
 };
 
+/* =========================================
+   Calculate End Date
+========================================= */
+
+const calculateEndDate = (
+  startDateTime: string,
+  duration: number,
+  isMonthly: boolean
+) => {
+  if (!startDateTime || !duration) {
+    return "";
+  }
+
+  const [datePart, timePart = "00:00"] =
+    startDateTime.split("T");
+
+  const [year, month, day] = datePart
+    .split("-")
+    .map(Number);
+
+  const [hours, minutes] = timePart
+    .split(":")
+    .map(Number);
+
+  const date = new Date(
+    year,
+    month - 1,
+    day,
+    hours,
+    minutes
+  );
+
+  if (isMonthly) {
+    date.setMonth(
+      date.getMonth() + duration
+    );
+  } else {
+    date.setDate(
+      date.getDate() + duration
+    );
+  }
+
+  const formattedYear =
+    date.getFullYear();
+
+  const formattedMonth = String(
+    date.getMonth() + 1
+  ).padStart(2, "0");
+
+  const formattedDay = String(
+    date.getDate()
+  ).padStart(2, "0");
+
+  const formattedHours = String(
+    date.getHours()
+  ).padStart(2, "0");
+
+  const formattedMinutes = String(
+    date.getMinutes()
+  ).padStart(2, "0");
+
+  return `${formattedYear}-${formattedMonth}-${formattedDay}T${formattedHours}:${formattedMinutes}`;
+};
+
+/* =========================================
+   Main Component
+========================================= */
+
 export default function BookingForm({
   vehicleId,
   rentalPackages,
@@ -57,7 +125,7 @@ export default function BookingForm({
   ========================================= */
 
   const [bookingType, setBookingType] = useState<
-    "PACKAGE" | "MONTHLY"
+    "PACKAGE" | "NORMAL" | "MONTHLY"
   >("PACKAGE");
 
   /* =========================================
@@ -74,25 +142,16 @@ export default function BookingForm({
      Pickup Location
   ========================================= */
 
-  /*
-   * Start with the first available location.
-   */
-  const [locationId, setLocationId] = useState<string>(
-    locations[0]?.id ?? ""
-  );
+  const [locationId, setLocationId] =
+    useState<string>(
+      locations[0]?.id ?? ""
+    );
 
   /*
-   * Keep location valid if locations are loaded/updated
-   * after the component has mounted.
-   *
-   * IMPORTANT:
-   * This does NOT depend on pickupOptionId,
-   * so changing Pickup Option will NOT reset location.
+   * Keep location valid if locations
+   * are loaded or updated.
    */
   useEffect(() => {
-    // console.log("BookingForm Mounted/Updated - Locations received:", locations);
-    // console.log("Current locationId state:", locationId);
-
     if (locations.length === 0) {
       setLocationId("");
       return;
@@ -102,7 +161,8 @@ export default function BookingForm({
       const currentLocationStillExists =
         locations.some(
           (location) =>
-            location.id && location.id === currentLocationId
+            location.id &&
+            location.id === currentLocationId
         );
 
       if (currentLocationStillExists) {
@@ -115,19 +175,15 @@ export default function BookingForm({
 
   /*
    * Fallback location.
-   *
-   * This guarantees that if state temporarily becomes empty
-   * while locations are available, the first location is still
-   * used.
    */
   const effectiveLocationId =
     locations.some(
-      (location) => location.id && location.id === locationId
+      (location) =>
+        location.id &&
+        location.id === locationId
     )
       ? locationId
       : locations[0]?.id ?? "";
-
-  console.log("BookingForm Render - Effective locationId:", effectiveLocationId);
 
   /* =========================================
      Pickup Option
@@ -183,25 +239,81 @@ export default function BookingForm({
   const selectedPrice =
     bookingType === "PACKAGE"
       ? selectedPackageData?.price
-      : selectedPlanData?.price;
+      : bookingType === "MONTHLY"
+        ? selectedPlanData?.price
+        : undefined;
 
   /* =========================================
      Booking Type Change
   ========================================= */
 
   const handleBookingTypeChange = (
-    type: "PACKAGE" | "MONTHLY"
+    type: "PACKAGE" | "NORMAL" | "MONTHLY"
   ) => {
     if (loading) return;
 
     setBookingType(type);
     setError("");
 
+    /*
+     * Clear previous calculated end date.
+     */
+    setEndDate("");
+
     if (type === "PACKAGE") {
       setSelectedPlan("");
-    } else {
-      setSelectedPackage("");
+
+      /*
+       * If package is already selected,
+       * calculate its end date.
+       */
+      if (
+        selectedPackageData &&
+        startDate
+      ) {
+        setEndDate(
+          calculateEndDate(
+            startDate,
+            selectedPackageData.duration,
+            false
+          )
+        );
+      }
+
+      return;
     }
+
+    if (type === "MONTHLY") {
+      setSelectedPackage("");
+
+      /*
+       * If monthly plan is already selected,
+       * calculate its end date.
+       */
+      if (
+        selectedPlanData &&
+        startDate
+      ) {
+        setEndDate(
+          calculateEndDate(
+            startDate,
+            selectedPlanData.months,
+            true
+          )
+        );
+      }
+
+      return;
+    }
+
+    /*
+     * NORMAL
+     *
+     * Customer will select both
+     * Start Date and End Date manually.
+     */
+    setSelectedPackage("");
+    setSelectedPlan("");
   };
 
   /* =========================================
@@ -214,7 +326,33 @@ export default function BookingForm({
     if (loading) return;
 
     setSelectedPackage(packageId);
+    setSelectedPlan("");
     setError("");
+
+    const packageData =
+      rentalPackages.find(
+        (item) =>
+          item.id === packageId
+      );
+
+    /*
+     * Automatically calculate End Date
+     * when package is selected.
+     */
+    if (
+      packageData &&
+      startDate
+    ) {
+      setEndDate(
+        calculateEndDate(
+          startDate,
+          packageData.duration,
+          false
+        )
+      );
+    } else {
+      setEndDate("");
+    }
   };
 
   /* =========================================
@@ -227,7 +365,33 @@ export default function BookingForm({
     if (loading) return;
 
     setSelectedPlan(planId);
+    setSelectedPackage("");
     setError("");
+
+    const planData =
+      monthlyPlans.find(
+        (item) =>
+          item.id === planId
+      );
+
+    /*
+     * Automatically calculate End Date
+     * when monthly plan is selected.
+     */
+    if (
+      planData &&
+      startDate
+    ) {
+      setEndDate(
+        calculateEndDate(
+          startDate,
+          planData.months,
+          true
+        )
+      );
+    } else {
+      setEndDate("");
+    }
   };
 
   /* =========================================
@@ -239,12 +403,8 @@ export default function BookingForm({
   ) => {
     if (loading) return;
 
-    const value = event.target.value;
-
-    // console.log(
-    //   "Pickup Location Selected:",
-    //   value
-    // );
+    const value =
+      event.target.value;
 
     setLocationId(value);
     setError("");
@@ -259,18 +419,14 @@ export default function BookingForm({
   ) => {
     if (loading) return;
 
-    const value = event.target.value;
-
-    // console.log(
-    //   "Pickup Option Selected:",
-    //   value
-    // );
+    const value =
+      event.target.value;
 
     /*
-     * IMPORTANT:
-     * We only change pickupOptionId here.
+     * Only change pickup option.
      *
-     * locationId is NOT touched.
+     * IMPORTANT:
+     * locationId is NOT changed here.
      */
     setPickupOptionId(value);
     setError("");
@@ -285,21 +441,71 @@ export default function BookingForm({
   ) => {
     if (loading) return;
 
-    const value = event.target.value;
+    const value =
+      event.target.value;
 
     setStartDate(value);
     setError("");
 
     /*
-     * If selected end date is before the new start date,
-     * clear it so the user can select a valid date.
+     * PACKAGE
+     *
+     * End Date is automatically calculated
+     * from package duration.
      */
     if (
-      endDate &&
-      new Date(endDate).getTime() <=
-        new Date(value).getTime()
+      bookingType === "PACKAGE" &&
+      selectedPackageData
     ) {
-      setEndDate("");
+      setEndDate(
+        calculateEndDate(
+          value,
+          selectedPackageData.duration,
+          false
+        )
+      );
+
+      return;
+    }
+
+    /*
+     * MONTHLY
+     *
+     * End Date is automatically calculated
+     * from monthly plan duration.
+     */
+    if (
+      bookingType === "MONTHLY" &&
+      selectedPlanData
+    ) {
+      setEndDate(
+        calculateEndDate(
+          value,
+          selectedPlanData.months,
+          true
+        )
+      );
+
+      return;
+    }
+
+    /*
+     * NORMAL
+     *
+     * End Date is selected manually.
+     *
+     * If existing end date is now before
+     * or equal to the new start date,
+     * clear it.
+     */
+    if (bookingType === "NORMAL") {
+      if (
+        endDate &&
+        new Date(endDate).getTime() <=
+          new Date(value).getTime()
+      ) {
+        setEndDate("");
+      }
     }
   };
 
@@ -312,7 +518,18 @@ export default function BookingForm({
   ) => {
     if (loading) return;
 
-    setEndDate(event.target.value);
+    /*
+     * End Date should only be manually
+     * changed for NORMAL booking type.
+     */
+    if (bookingType !== "NORMAL") {
+      return;
+    }
+
+    setEndDate(
+      event.target.value
+    );
+
     setError("");
   };
 
@@ -344,7 +561,7 @@ export default function BookingForm({
 
     if (!startDate || !endDate) {
       setError(
-        "Please select start and end dates."
+        "Please select valid booking dates."
       );
       return;
     }
@@ -421,21 +638,31 @@ export default function BookingForm({
       const requestBody = {
         vehicleId,
 
+        /*
+         * Package booking
+         */
         rentalPackageId:
           bookingType === "PACKAGE"
             ? selectedPackage
             : undefined,
 
+        /*
+         * Monthly booking
+         */
         monthlyPlanId:
           bookingType === "MONTHLY"
             ? selectedPlan
             : undefined,
 
         /*
-         * IMPORTANT:
-         * Always send the effective location.
+         * Normal booking:
+         *
+         * Both rentalPackageId and
+         * monthlyPlanId remain undefined.
          */
-        locationId: effectiveLocationId,
+
+        locationId:
+          effectiveLocationId,
 
         pickupOptionId:
           pickupOptionId || undefined,
@@ -482,8 +709,7 @@ export default function BookingForm({
       }
 
       /*
-       * Go to customer dashboard after
-       * successful booking.
+       * Redirect to customer dashboard.
        */
       router.push(
         `/dashboard?booking=${data.booking.id}`
@@ -524,7 +750,7 @@ export default function BookingForm({
           Choose Rental Type
         </h2>
 
-        <div className="mt-3 grid grid-cols-1 gap-3 sm:grid-cols-2">
+        <div className="mt-3 grid grid-cols-1 gap-3 sm:grid-cols-3">
           {/* Rental Package */}
 
           <button
@@ -552,7 +778,38 @@ export default function BookingForm({
                   : "text-muted-foreground"
               }`}
             >
-              Daily rental package
+              Fixed duration package
+            </p>
+          </button>
+
+          {/* Normal Days */}
+
+          <button
+            type="button"
+            disabled={loading}
+            onClick={() =>
+              handleBookingTypeChange(
+                "NORMAL"
+              )
+            }
+            className={`rounded-xl border p-4 text-left transition ${
+              bookingType === "NORMAL"
+                ? "border-black bg-black text-white"
+                : "bg-background hover:bg-muted"
+            } disabled:cursor-not-allowed disabled:opacity-60`}
+          >
+            <p className="font-semibold">
+              Normal Days
+            </p>
+
+            <p
+              className={`mt-1 text-sm ${
+                bookingType === "NORMAL"
+                  ? "text-white/70"
+                  : "text-muted-foreground"
+              }`}
+            >
+              Choose your own dates
             </p>
           </button>
 
@@ -812,10 +1069,28 @@ export default function BookingForm({
               onChange={
                 handleEndDateChange
               }
+              readOnly={
+                bookingType !== "NORMAL"
+              }
               disabled={loading}
               required
-              className="mt-2 h-11 w-full rounded-lg border bg-background px-3 text-sm outline-none focus:ring-2 focus:ring-ring disabled:cursor-not-allowed disabled:opacity-60"
+              placeholder={
+                bookingType === "NORMAL"
+                  ? "Select end date"
+                  : "Automatically calculated"
+              }
+              className={`mt-2 h-11 w-full rounded-lg border px-3 text-sm outline-none focus:ring-2 focus:ring-ring disabled:cursor-not-allowed disabled:opacity-60 ${
+                bookingType === "NORMAL"
+                  ? "bg-background"
+                  : "bg-muted"
+              }`}
             />
+
+            <p className="mt-1 text-xs text-muted-foreground">
+              {bookingType === "NORMAL"
+                ? "Select your preferred start and end dates."
+                : "End date is automatically calculated based on your selected package or plan."}
+            </p>
           </div>
         </div>
       </div>
