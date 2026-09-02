@@ -5,6 +5,7 @@ import Link from "next/link";
 
 import { prisma } from "@/lib/prisma";
 import LogoutButton from "@/components/auth/LogoutButton";
+import PickupOptionActions from "@/components/admin/PickupOptionActions";
 
 export default async function AdminPickupOptionsPage() {
   const session = await getServerSession(authOptions);
@@ -80,7 +81,6 @@ export default async function AdminPickupOptionsPage() {
         {/* Statistics */}
         <div className="mt-8 grid gap-4 sm:grid-cols-3">
 
-          {/* Total */}
           <div className="rounded-2xl border bg-card p-5">
             <p className="text-sm text-muted-foreground">
               Total Options
@@ -91,7 +91,6 @@ export default async function AdminPickupOptionsPage() {
             </p>
           </div>
 
-          {/* Active */}
           <div className="rounded-2xl border bg-card p-5">
             <p className="text-sm text-muted-foreground">
               Active Options
@@ -102,7 +101,6 @@ export default async function AdminPickupOptionsPage() {
             </p>
           </div>
 
-          {/* Inactive */}
           <div className="rounded-2xl border bg-card p-5">
             <p className="text-sm text-muted-foreground">
               Inactive Options
@@ -118,7 +116,6 @@ export default async function AdminPickupOptionsPage() {
         {/* Pickup Options List */}
         <div className="mt-8 rounded-2xl border bg-card">
 
-          {/* List Header */}
           <div className="border-b p-6">
             <h2 className="text-lg font-semibold">
               All Pickup Options
@@ -183,7 +180,8 @@ export default async function AdminPickupOptionsPage() {
                       </div>
 
                       <p className="mt-2 text-sm text-muted-foreground">
-                        {option.description || "No description available"}
+                        {option.description ||
+                          "No description available"}
                       </p>
 
                     </div>
@@ -200,16 +198,14 @@ export default async function AdminPickupOptionsPage() {
                     </div>
 
                     {/* Actions */}
-                    <div className="flex shrink-0 gap-2">
-
-                      <Link
-                        href={`/admin/pickup-options/${option.id}/edit`}
-                        className="rounded-lg border px-4 py-2 text-sm font-medium transition hover:bg-muted"
-                      >
-                        Edit
-                      </Link>
-
-                    </div>
+                    <PickupOptionActions
+                      id={option.id}
+                      name={option.name}
+                      isActive={option.isActive}
+                      hasBookings={
+                        option._count.bookings > 0
+                      }
+                    />
 
                   </div>
                 </div>
