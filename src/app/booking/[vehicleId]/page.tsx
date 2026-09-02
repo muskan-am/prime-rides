@@ -70,27 +70,42 @@ export default async function BookingPage({
   ========================================= */
 
   const locations = await prisma.location.findMany({
-    where: {
-      isActive: true,
-    },
+  where: {
+    isActive: true,
+  },
 
-    orderBy: {
-      name: "asc",
-    },
+  orderBy: {
+    name: "asc",
+  },
 
-    select: {
-      id: true,
-      name: true,
-      address: true,
+  select: {
+    id: true,
+    name: true,
+    address: true,
+
+    deliveryCharges: {
+      where: {
+        isActive: true,
+      },
+
+      orderBy: {
+        createdAt: "desc",
+      },
+
+      take: 1,
+
+      select: {
+        charge: true,
+      },
     },
-  });
+  },
+});
 
   /* =========================================
      Get Pickup Options
   ========================================= */
 
-  const pickupOptions =
-    await prisma.pickupOption.findMany({
+  const pickupOptions = await prisma.pickupOption.findMany({
       where: {
         isActive: true,
       },
