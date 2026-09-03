@@ -45,6 +45,7 @@ export default async function BookingPage({
         where: {
           isActive: true,
         },
+
         orderBy: {
           duration: "asc",
         },
@@ -54,6 +55,7 @@ export default async function BookingPage({
         where: {
           isActive: true,
         },
+
         orderBy: {
           months: "asc",
         },
@@ -70,42 +72,43 @@ export default async function BookingPage({
   ========================================= */
 
   const locations = await prisma.location.findMany({
-  where: {
-    isActive: true,
-  },
+    where: {
+      isActive: true,
+    },
 
-  orderBy: {
-    name: "asc",
-  },
+    orderBy: {
+      name: "asc",
+    },
 
-  select: {
-    id: true,
-    name: true,
-    address: true,
+    select: {
+      id: true,
+      name: true,
+      address: true,
 
-    deliveryCharges: {
-      where: {
-        isActive: true,
-      },
+      deliveryCharges: {
+        where: {
+          isActive: true,
+        },
 
-      orderBy: {
-        createdAt: "desc",
-      },
+        orderBy: {
+          createdAt: "desc",
+        },
 
-      take: 1,
+        take: 1,
 
-      select: {
-        charge: true,
+        select: {
+          charge: true,
+        },
       },
     },
-  },
-});
+  });
 
   /* =========================================
      Get Pickup Options
   ========================================= */
 
-  const pickupOptions = await prisma.pickupOption.findMany({
+  const pickupOptions =
+    await prisma.pickupOption.findMany({
       where: {
         isActive: true,
       },
@@ -122,31 +125,16 @@ export default async function BookingPage({
     });
 
   /* =========================================
-     SERVER DEBUG
-     
-     Check terminal when booking page loads.
-  ========================================= */
-
-  // console.log(
-  //   "BOOKING PAGE - LOCATIONS:",
-  //   locations
-  // );
-
-  // console.log(
-  //   "BOOKING PAGE - PICKUP OPTIONS:",
-  //   pickupOptions
-  // );
-
-  /* =========================================
      Booking Page
   ========================================= */
 
   return (
     <main className="min-h-screen bg-background px-4 py-8 sm:px-6 lg:px-8">
       <div className="mx-auto max-w-5xl">
-        {/* ================================= */}
-        {/* Header */}
-        {/* ================================= */}
+
+        {/* =================================
+            Header
+        ================================= */}
 
         <div className="mb-8">
           <p className="text-sm text-muted-foreground">
@@ -158,12 +146,13 @@ export default async function BookingPage({
           </h1>
         </div>
 
-        {/* ================================= */}
-        {/* Vehicle Card */}
-        {/* ================================= */}
+        {/* =================================
+            Vehicle Card
+        ================================= */}
 
         <div className="mb-6 overflow-hidden rounded-2xl border bg-card">
           <div className="grid grid-cols-1 md:grid-cols-[220px_1fr]">
+
             {/* Vehicle Image */}
 
             <div className="flex min-h-[180px] items-center justify-center bg-muted">
@@ -198,6 +187,7 @@ export default async function BookingPage({
               )}
 
               <div className="mt-4 grid grid-cols-2 gap-4 sm:grid-cols-4">
+
                 {/* Fuel */}
 
                 <div>
@@ -246,20 +236,26 @@ export default async function BookingPage({
                     {Number(
                       vehicle.basePrice
                     ).toLocaleString("en-IN")}
+                    <span className="ml-1 text-xs text-muted-foreground">
+                      / day
+                    </span>
                   </p>
                 </div>
+
               </div>
             </div>
           </div>
         </div>
 
-        {/* ================================= */}
-        {/* Booking Form */}
-        {/* ================================= */}
+        {/* =================================
+            Booking Form
+        ================================= */}
 
         <div className="rounded-2xl border bg-card p-5 sm:p-6 lg:p-8">
           <BookingForm
             vehicleId={vehicle.id}
+
+            basePrice={vehicle.basePrice.toString()}
 
             /* Rental Packages */
 
@@ -286,7 +282,18 @@ export default async function BookingPage({
 
             /* Pickup Locations */
 
-            locations={locations}
+            locations={locations.map(
+              (location) => ({
+                id: location.id,
+                name: location.name,
+                address: location.address,
+
+                deliveryCharge:
+                  location
+                    .deliveryCharges[0]
+                    ?.charge?.toString() ?? "0",
+              })
+            )}
 
             /* Pickup Options */
 

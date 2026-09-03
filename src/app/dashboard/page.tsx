@@ -37,6 +37,7 @@ export default async function DashboardPage() {
         where: {
           userId: user.id,
         },
+
         include: {
           vehicle: {
             select: {
@@ -92,6 +93,7 @@ export default async function DashboardPage() {
   return (
     <main className="min-h-screen bg-background px-6 py-12">
       <div className="mx-auto max-w-5xl">
+
         {/* =====================================
             Header
         ===================================== */}
@@ -221,6 +223,7 @@ export default async function DashboardPage() {
 
                   <div className="p-5">
                     <div className="grid grid-cols-1 gap-6 md:grid-cols-[180px_1fr]">
+
                       {/* Vehicle Image */}
 
                       <div className="flex min-h-[140px] items-center justify-center overflow-hidden rounded-xl bg-muted">
@@ -285,15 +288,18 @@ export default async function DashboardPage() {
                                 ? booking
                                     .monthlyPlan
                                     .name
-                                : "—"}
+                                : "Normal Days"}
                           </p>
                         </div>
                       </div>
                     </div>
 
-                    {/* Booking Details */}
+                    {/* =================================
+                        Booking Details
+                    ================================= */}
 
                     <div className="mt-6 grid grid-cols-1 gap-4 border-t pt-5 sm:grid-cols-2 lg:grid-cols-4">
+
                       {/* Start Date */}
 
                       <div>
@@ -366,9 +372,14 @@ export default async function DashboardPage() {
                       </div>
                     </div>
 
-                    {/* Amount */}
+                    {/* =================================
+                        Amount
+                    ================================= */}
 
                     <div className="mt-6 border-t pt-5">
+
+                      {/* Rental Amount */}
+
                       <div className="flex items-center justify-between">
                         <span className="text-sm text-muted-foreground">
                           Rental Amount
@@ -383,6 +394,8 @@ export default async function DashboardPage() {
                           )}
                         </span>
                       </div>
+
+                      {/* Delivery Charge */}
 
                       <div className="mt-2 flex items-center justify-between">
                         <span className="text-sm text-muted-foreground">
@@ -399,6 +412,8 @@ export default async function DashboardPage() {
                         </span>
                       </div>
 
+                      {/* Tax */}
+
                       <div className="mt-2 flex items-center justify-between">
                         <span className="text-sm text-muted-foreground">
                           Tax
@@ -414,6 +429,8 @@ export default async function DashboardPage() {
                         </span>
                       </div>
 
+                      {/* Discount */}
+
                       <div className="mt-2 flex items-center justify-between">
                         <span className="text-sm text-muted-foreground">
                           Discount
@@ -428,6 +445,8 @@ export default async function DashboardPage() {
                           )}
                         </span>
                       </div>
+
+                      {/* Total */}
 
                       <div className="mt-4 flex items-center justify-between border-t pt-4">
                         <span className="font-semibold">
