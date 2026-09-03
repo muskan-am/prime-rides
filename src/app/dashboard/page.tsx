@@ -183,300 +183,320 @@ export default async function DashboardPage() {
             =================================== */
 
             <div className="mt-6 space-y-5">
-              {bookings.map((booking) => (
-                <div
-                  key={booking.id}
-                  className="overflow-hidden rounded-2xl border"
-                >
-                  {/* Booking Header */}
+              {bookings.map((booking) => {
+                /* =================================
+                   Calculate Applied Tax Percentage
+                ================================= */
 
-                  <div className="flex flex-col gap-3 border-b bg-muted/30 p-5 sm:flex-row sm:items-center sm:justify-between">
-                    <div>
-                      <p className="text-xs uppercase tracking-wide text-muted-foreground">
-                        Booking ID
-                      </p>
+                const rentalAmount =
+                  Number(booking.rentalAmount);
 
-                      <p className="mt-1 break-all text-sm font-medium">
-                        {booking.id}
-                      </p>
-                    </div>
+                const taxAmount =
+                  Number(booking.taxAmount);
 
-                    <span
-                      className={`w-fit rounded-full px-3 py-1 text-xs font-semibold ${
-                        booking.status ===
-                        "CONFIRMED"
-                          ? "bg-green-100 text-green-700"
-                          : booking.status ===
-                              "CANCELLED"
-                            ? "bg-red-100 text-red-700"
-                            : booking.status ===
-                                "COMPLETED"
-                              ? "bg-blue-100 text-blue-700"
-                              : "bg-yellow-100 text-yellow-700"
-                      }`}
-                    >
-                      {booking.status}
-                    </span>
-                  </div>
+                const taxRate =
+                  rentalAmount > 0
+                    ? (taxAmount /
+                        rentalAmount) *
+                      100
+                    : 0;
 
-                  {/* Booking Body */}
+                const formattedTaxRate =
+                  Number.isInteger(taxRate)
+                    ? taxRate.toString()
+                    : taxRate.toFixed(2);
 
-                  <div className="p-5">
-                    <div className="grid grid-cols-1 gap-6 md:grid-cols-[180px_1fr]">
+                return (
+                  <div
+                    key={booking.id}
+                    className="overflow-hidden rounded-2xl border"
+                  >
+                    {/* Booking Header */}
 
-                      {/* Vehicle Image */}
-
-                      <div className="flex min-h-[140px] items-center justify-center overflow-hidden rounded-xl bg-muted">
-                        {booking.vehicle
-                          .primaryImage ? (
-                          <img
-                            src={
-                              booking.vehicle
-                                .primaryImage
-                            }
-                            alt={`${booking.vehicle.brand} ${booking.vehicle.model}`}
-                            className="h-full min-h-[140px] w-full object-cover"
-                          />
-                        ) : (
-                          <span className="text-sm text-muted-foreground">
-                            No Image
-                          </span>
-                        )}
-                      </div>
-
-                      {/* Vehicle Information */}
-
+                    <div className="flex flex-col gap-3 border-b bg-muted/30 p-5 sm:flex-row sm:items-center sm:justify-between">
                       <div>
-                        <p className="text-xs text-muted-foreground">
-                          Vehicle
+                        <p className="text-xs uppercase tracking-wide text-muted-foreground">
+                          Booking ID
                         </p>
 
-                        <h3 className="mt-1 text-xl font-bold">
-                          {
-                            booking.vehicle
-                              .brand
-                          }{" "}
-                          {
-                            booking.vehicle
-                              .model
-                          }
-                        </h3>
+                        <p className="mt-1 break-all text-sm font-medium">
+                          {booking.id}
+                        </p>
+                      </div>
 
-                        {booking.vehicle
-                          .variant && (
-                          <p className="mt-1 text-sm text-muted-foreground">
+                      <span
+                        className={`w-fit rounded-full px-3 py-1 text-xs font-semibold ${
+                          booking.status ===
+                          "CONFIRMED"
+                            ? "bg-green-100 text-green-700"
+                            : booking.status ===
+                                "CANCELLED"
+                              ? "bg-red-100 text-red-700"
+                              : booking.status ===
+                                  "COMPLETED"
+                                ? "bg-blue-100 text-blue-700"
+                                : "bg-yellow-100 text-yellow-700"
+                        }`}
+                      >
+                        {booking.status}
+                      </span>
+                    </div>
+
+                    {/* Booking Body */}
+
+                    <div className="p-5">
+                      <div className="grid grid-cols-1 gap-6 md:grid-cols-[180px_1fr]">
+
+                        {/* Vehicle Image */}
+
+                        <div className="flex min-h-[140px] items-center justify-center overflow-hidden rounded-xl bg-muted">
+                          {booking.vehicle
+                            .primaryImage ? (
+                            <img
+                              src={
+                                booking.vehicle
+                                  .primaryImage
+                              }
+                              alt={`${booking.vehicle.brand} ${booking.vehicle.model}`}
+                              className="h-full min-h-[140px] w-full object-cover"
+                            />
+                          ) : (
+                            <span className="text-sm text-muted-foreground">
+                              No Image
+                            </span>
+                          )}
+                        </div>
+
+                        {/* Vehicle Information */}
+
+                        <div>
+                          <p className="text-xs text-muted-foreground">
+                            Vehicle
+                          </p>
+
+                          <h3 className="mt-1 text-xl font-bold">
                             {
                               booking.vehicle
-                                .variant
+                                .brand
+                            }{" "}
+                            {
+                              booking.vehicle
+                                .model
                             }
-                          </p>
-                        )}
+                          </h3>
 
-                        {/* Rental Type */}
+                          {booking.vehicle
+                            .variant && (
+                            <p className="mt-1 text-sm text-muted-foreground">
+                              {
+                                booking.vehicle
+                                  .variant
+                              }
+                            </p>
+                          )}
 
-                        <div className="mt-5">
+                          {/* Rental Type */}
+
+                          <div className="mt-5">
+                            <p className="text-xs text-muted-foreground">
+                              Rental Type
+                            </p>
+
+                            <p className="mt-1 text-sm font-medium">
+                              {booking.rentalPackage
+                                ? booking
+                                    .rentalPackage
+                                    .name
+                                : booking.monthlyPlan
+                                  ? booking
+                                      .monthlyPlan
+                                      .name
+                                  : "Normal Days"}
+                            </p>
+                          </div>
+                        </div>
+                      </div>
+
+                      {/* =================================
+                          Booking Details
+                      ================================= */}
+
+                      <div className="mt-6 grid grid-cols-1 gap-4 border-t pt-5 sm:grid-cols-2 lg:grid-cols-4">
+
+                        {/* Start Date */}
+
+                        <div>
                           <p className="text-xs text-muted-foreground">
-                            Rental Type
+                            Start Date
                           </p>
 
                           <p className="mt-1 text-sm font-medium">
-                            {booking.rentalPackage
-                              ? booking
-                                  .rentalPackage
-                                  .name
-                              : booking.monthlyPlan
-                                ? booking
-                                    .monthlyPlan
-                                    .name
-                                : "Normal Days"}
+                            {new Date(
+                              booking.startDate
+                            ).toLocaleString(
+                              "en-IN"
+                            )}
+                          </p>
+                        </div>
+
+                        {/* End Date */}
+
+                        <div>
+                          <p className="text-xs text-muted-foreground">
+                            End Date
+                          </p>
+
+                          <p className="mt-1 text-sm font-medium">
+                            {new Date(
+                              booking.endDate
+                            ).toLocaleString(
+                              "en-IN"
+                            )}
+                          </p>
+                        </div>
+
+                        {/* Pickup Location */}
+
+                        <div>
+                          <p className="text-xs text-muted-foreground">
+                            Pickup Location
+                          </p>
+
+                          <p className="mt-1 text-sm font-medium">
+                            {
+                              booking.location
+                                .name
+                            }
+                          </p>
+
+                          {booking.location
+                            .address && (
+                            <p className="mt-1 text-xs text-muted-foreground">
+                              {
+                                booking.location
+                                  .address
+                              }
+                            </p>
+                          )}
+                        </div>
+
+                        {/* Pickup Option */}
+
+                        <div>
+                          <p className="text-xs text-muted-foreground">
+                            Pickup Option
+                          </p>
+
+                          <p className="mt-1 text-sm font-medium">
+                            {booking.pickupOption
+                              ?.name ||
+                              "—"}
                           </p>
                         </div>
                       </div>
-                    </div>
 
-                    {/* =================================
-                        Booking Details
-                    ================================= */}
+                      {/* =================================
+                          Amount
+                      ================================= */}
 
-                    <div className="mt-6 grid grid-cols-1 gap-4 border-t pt-5 sm:grid-cols-2 lg:grid-cols-4">
+                      <div className="mt-6 border-t pt-5">
 
-                      {/* Start Date */}
+                        {/* Rental Amount */}
 
-                      <div>
-                        <p className="text-xs text-muted-foreground">
-                          Start Date
-                        </p>
+                        <div className="flex items-center justify-between">
+                          <span className="text-sm text-muted-foreground">
+                            Rental Amount
+                          </span>
 
-                        <p className="mt-1 text-sm font-medium">
-                          {new Date(
-                            booking.startDate
-                          ).toLocaleString(
-                            "en-IN"
-                          )}
-                        </p>
+                          <span className="text-sm font-medium">
+                            ₹
+                            {rentalAmount.toLocaleString(
+                              "en-IN"
+                            )}
+                          </span>
+                        </div>
+
+                        {/* Delivery Charge */}
+
+                        <div className="mt-2 flex items-center justify-between">
+                          <span className="text-sm text-muted-foreground">
+                            Delivery Charge
+                          </span>
+
+                          <span className="text-sm">
+                            ₹
+                            {Number(
+                              booking.deliveryCharge
+                            ).toLocaleString(
+                              "en-IN"
+                            )}
+                          </span>
+                        </div>
+
+                        {/* Tax */}
+
+                        <div className="mt-2 flex items-center justify-between">
+                          <span className="text-sm text-muted-foreground">
+                            Tax ({formattedTaxRate}%)
+                          </span>
+
+                          <span className="text-sm">
+                            ₹
+                            {taxAmount.toLocaleString(
+                              "en-IN"
+                            )}
+                          </span>
+                        </div>
+
+                        {/* Discount */}
+
+                        <div className="mt-2 flex items-center justify-between">
+                          <span className="text-sm text-muted-foreground">
+                            Discount
+                          </span>
+
+                          <span className="text-sm">
+                            -₹
+                            {Number(
+                              booking.discountAmount
+                            ).toLocaleString(
+                              "en-IN"
+                            )}
+                          </span>
+                        </div>
+
+                        {/* Total */}
+
+                        <div className="mt-4 flex items-center justify-between border-t pt-4">
+                          <span className="font-semibold">
+                            Total
+                          </span>
+
+                          <span className="text-xl font-bold">
+                            ₹
+                            {Number(
+                              booking.totalAmount
+                            ).toLocaleString(
+                              "en-IN"
+                            )}
+                          </span>
+                        </div>
                       </div>
 
-                      {/* End Date */}
+                      {/* Created At */}
 
-                      <div>
-                        <p className="text-xs text-muted-foreground">
-                          End Date
-                        </p>
-
-                        <p className="mt-1 text-sm font-medium">
-                          {new Date(
-                            booking.endDate
-                          ).toLocaleString(
-                            "en-IN"
-                          )}
-                        </p>
-                      </div>
-
-                      {/* Pickup Location */}
-
-                      <div>
-                        <p className="text-xs text-muted-foreground">
-                          Pickup Location
-                        </p>
-
-                        <p className="mt-1 text-sm font-medium">
-                          {
-                            booking.location
-                              .name
-                          }
-                        </p>
-
-                        {booking.location
-                          .address && (
-                          <p className="mt-1 text-xs text-muted-foreground">
-                            {
-                              booking.location
-                                .address
-                            }
-                          </p>
+                      <div className="mt-4 text-xs text-muted-foreground">
+                        Booked on{" "}
+                        {new Date(
+                          booking.createdAt
+                        ).toLocaleString(
+                          "en-IN"
                         )}
                       </div>
-
-                      {/* Pickup Option */}
-
-                      <div>
-                        <p className="text-xs text-muted-foreground">
-                          Pickup Option
-                        </p>
-
-                        <p className="mt-1 text-sm font-medium">
-                          {booking.pickupOption
-                            ?.name ||
-                            "—"}
-                        </p>
-                      </div>
-                    </div>
-
-                    {/* =================================
-                        Amount
-                    ================================= */}
-
-                    <div className="mt-6 border-t pt-5">
-
-                      {/* Rental Amount */}
-
-                      <div className="flex items-center justify-between">
-                        <span className="text-sm text-muted-foreground">
-                          Rental Amount
-                        </span>
-
-                        <span className="text-sm font-medium">
-                          ₹
-                          {Number(
-                            booking.rentalAmount
-                          ).toLocaleString(
-                            "en-IN"
-                          )}
-                        </span>
-                      </div>
-
-                      {/* Delivery Charge */}
-
-                      <div className="mt-2 flex items-center justify-between">
-                        <span className="text-sm text-muted-foreground">
-                          Delivery Charge
-                        </span>
-
-                        <span className="text-sm">
-                          ₹
-                          {Number(
-                            booking.deliveryCharge
-                          ).toLocaleString(
-                            "en-IN"
-                          )}
-                        </span>
-                      </div>
-
-                      {/* Tax */}
-
-                      <div className="mt-2 flex items-center justify-between">
-                        <span className="text-sm text-muted-foreground">
-                          Tax
-                        </span>
-
-                        <span className="text-sm">
-                          ₹
-                          {Number(
-                            booking.taxAmount
-                          ).toLocaleString(
-                            "en-IN"
-                          )}
-                        </span>
-                      </div>
-
-                      {/* Discount */}
-
-                      <div className="mt-2 flex items-center justify-between">
-                        <span className="text-sm text-muted-foreground">
-                          Discount
-                        </span>
-
-                        <span className="text-sm">
-                          -₹
-                          {Number(
-                            booking.discountAmount
-                          ).toLocaleString(
-                            "en-IN"
-                          )}
-                        </span>
-                      </div>
-
-                      {/* Total */}
-
-                      <div className="mt-4 flex items-center justify-between border-t pt-4">
-                        <span className="font-semibold">
-                          Total
-                        </span>
-
-                        <span className="text-xl font-bold">
-                          ₹
-                          {Number(
-                            booking.totalAmount
-                          ).toLocaleString(
-                            "en-IN"
-                          )}
-                        </span>
-                      </div>
-                    </div>
-
-                    {/* Created At */}
-
-                    <div className="mt-4 text-xs text-muted-foreground">
-                      Booked on{" "}
-                      {new Date(
-                        booking.createdAt
-                      ).toLocaleString(
-                        "en-IN"
-                      )}
                     </div>
                   </div>
-                </div>
-              ))}
+                );
+              })}
             </div>
           )}
         </div>

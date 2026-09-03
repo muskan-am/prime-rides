@@ -124,6 +124,16 @@ export default async function BookingPage({
       },
     });
 
+    const taxConfiguration =
+  await prisma.taxConfiguration.findFirst({
+    where: {
+      isActive: true,
+    },
+    orderBy: {
+      createdAt: "desc",
+    },
+  });
+
   /* =========================================
      Booking Page
   ========================================= */
@@ -256,7 +266,9 @@ export default async function BookingPage({
             vehicleId={vehicle.id}
 
             basePrice={vehicle.basePrice.toString()}
-
+             taxRate={
+             taxConfiguration?.rate?.toString() ?? "0"
+            }
             /* Rental Packages */
 
             rentalPackages={vehicle.rentalPackages.map(

@@ -40,6 +40,7 @@ type PickupOption = {
 type BookingFormProps = {
   vehicleId: string;
   basePrice: string | number;
+  taxRate: string | number;
   rentalPackages: RentalPackage[];
   monthlyPlans: MonthlyPlan[];
   locations: Location[];
@@ -117,6 +118,7 @@ const calculateEndDate = (
 export default function BookingForm({
   vehicleId,
   basePrice,
+  taxRate,
   rentalPackages,
   monthlyPlans,
   locations,
@@ -294,13 +296,21 @@ export default function BookingForm({
 
   const discountAmount = 0;
 
+   /* =========================================
+   Tax
+========================================= */
+
+  const taxAmount =
+  rentalAmount *
+  (Number(taxRate) / 100);
   /* =========================================
      Total Amount
   ========================================= */
 
   const totalAmount =
     rentalAmount +
-    deliveryCharge -
+    deliveryCharge +
+    taxAmount -
     discountAmount;
 
   /* =========================================
@@ -1243,6 +1253,24 @@ export default function BookingForm({
             )}
           </span>
         </div>
+
+        {/* Tax */}
+
+      <div className="mt-2 flex items-center justify-between gap-4">
+        <span className="text-sm text-muted-foreground">
+          Tax ({Number(taxRate)}%)
+        </span>
+
+        <span>
+          ₹
+          {taxAmount.toLocaleString(
+            "en-IN",
+            {
+              maximumFractionDigits: 2,
+            }
+          )}
+        </span>
+      </div>
 
         {/* Discount */}
 
