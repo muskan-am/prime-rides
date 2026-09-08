@@ -1,19 +1,15 @@
 import Link from "next/link";
+import Image from "next/image";
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/auth";
 import { prisma } from "@/lib/prisma";
 import { redirect } from "next/navigation";
-import LogoutButton from "@/components/auth/LogoutButton";
 
 export default async function VehiclesPage() {
   const session = await getServerSession(authOptions);
 
-  if (!session?.user) {
+  if (!session?.user || session.user.role !== "ADMIN") {
     redirect("/login");
-  }
-
-  if (session.user.role !== "ADMIN") {
-    redirect("/");
   }
 
   const vehicles = await prisma.vehicle.findMany({
@@ -23,335 +19,160 @@ export default async function VehiclesPage() {
   });
 
   return (
-    <main className="min-h-screen w-full overflow-x-hidden bg-background px-4 py-8 sm:px-6 lg:px-8">
-      <div className="mx-auto w-full max-w-7xl min-w-0">
-
-        {/* Header */}
-        <div className="flex min-w-0 flex-col gap-5 sm:flex-row sm:items-center sm:justify-between">
-          <div className="min-w-0">
-            <p className="text-sm text-muted-foreground">
-              Prime Rides Admin
-            </p>
-
-            <h1 className="mt-1 text-3xl font-bold tracking-tight sm:text-4xl">
-              Vehicles
-            </h1>
-          </div>
-
-          <div className="flex w-full flex-wrap gap-2 sm:w-auto">
-            <Link
-              href="/admin"
-              className="flex-1 rounded-lg border px-4 py-2.5 text-center text-sm font-medium transition hover:bg-muted sm:flex-none"
-            >
-              Admin Dashboard
-            </Link>
-
-            <LogoutButton />
-          </div>
+    <div className="space-y-6">
+      {/* Top Header */}
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+        <div>
+          <h1 className="text-2xl sm:text-3xl font-extrabold text-slate-900 tracking-tight">
+            Fleet Vehicle Management
+          </h1>
+          <p className="text-slate-500 text-sm mt-1">
+            Manage specs, availability, rental rates, and maintenance of your vehicles.
+          </p>
         </div>
 
-        {/* Management Header */}
-        <div className="mt-8 flex min-w-0 flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
-          <div className="min-w-0">
-            <h2 className="text-xl font-semibold">
-              Vehicle Management
-            </h2>
+        <Link
+          href="/admin/vehicles/new"
+          className="inline-flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl bg-blue-600 hover:bg-blue-700 text-white text-sm font-semibold shadow-md shadow-blue-600/20 transition-all"
+        >
+          <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
+          </svg>
+          Add New Vehicle
+        </Link>
+      </div>
 
-            <p className="mt-1 text-sm text-muted-foreground">
-              Manage all rental vehicles.
-            </p>
+      {/* Empty State */}
+      {vehicles.length === 0 ? (
+        <div className="rounded-2xl border border-slate-200 bg-white p-12 text-center shadow-sm">
+          <div className="mx-auto w-16 h-16 rounded-full bg-slate-100 flex items-center justify-center text-2xl mb-4">
+            🚘
           </div>
-
+          <h3 className="text-xl font-bold text-slate-900">No Vehicles Listed</h3>
+          <p className="mt-2 text-sm text-slate-500">
+            Start building your rental fleet by adding your first vehicle.
+          </p>
           <Link
             href="/admin/vehicles/new"
-            className="inline-flex w-full shrink-0 items-center justify-center rounded-lg bg-black px-5 py-2.5 text-sm font-medium text-white transition hover:bg-zinc-800 sm:w-auto"
+            className="mt-6 inline-flex items-center gap-2 px-5 py-2.5 rounded-xl bg-blue-600 text-white text-sm font-semibold hover:bg-blue-700 transition-colors shadow-md shadow-blue-600/20"
           >
             + Add Vehicle
           </Link>
         </div>
-
-        {/* Empty State */}
-        {vehicles.length === 0 ? (
-          <div className="mt-8 rounded-2xl border bg-card p-8 text-center sm:p-12">
-            <h3 className="text-xl font-semibold">
-              No vehicles found
-            </h3>
-
-            <p className="mt-2 text-sm text-muted-foreground">
-              Add your first rental vehicle to get started.
-            </p>
-
-            <Link
-              href="/admin/vehicles/new"
-              className="mt-6 inline-flex rounded-lg bg-black px-5 py-2.5 text-sm font-medium text-white hover:bg-zinc-800"
-            >
-              + Add Vehicle
-            </Link>
-          </div>
-        ) : (
-          <>
-            {/* ============================= */}
-            {/* DESKTOP TABLE */}
-            {/* ============================= */}
-
-            <div className="mt-8 hidden w-full min-w-0 overflow-hidden rounded-2xl border bg-card md:block">
-              <div className="w-full overflow-x-auto">
-                <table className="w-full min-w-[1000px] text-left text-sm">
-                  <thead className="border-b bg-muted/40">
-                    <tr>
-                      <th className="px-5 py-4 font-semibold">
-                        Vehicle
-                      </th>
-
-                      <th className="px-5 py-4 font-semibold">
-                        Registration
-                      </th>
-
-                      <th className="px-5 py-4 font-semibold">
-                        Fuel
-                      </th>
-
-                      <th className="px-5 py-4 font-semibold">
-                        Transmission
-                      </th>
-
-                      <th className="px-5 py-4 font-semibold">
-                        Seats
-                      </th>
-
-                      <th className="px-5 py-4 font-semibold">
-                        Price
-                      </th>
-
-                      <th className="px-5 py-4 font-semibold">
-                        Availability
-                      </th>
-
-                      <th className="px-5 py-4 font-semibold">
-                        Maintenance
-                      </th>
-
-                      <th className="px-5 py-4 font-semibold">
-                        Action
-                      </th>
-                    </tr>
-                  </thead>
-
-                  <tbody className="divide-y">
-                    {vehicles.map((vehicle) => (
-                      <tr
-                        key={vehicle.id}
-                        className="transition hover:bg-muted/20"
-                      >
-                        <td className="px-5 py-5">
-                          <div className="flex items-center gap-3">
-                            {vehicle.primaryImage ? (
-                              <img
-                                src={vehicle.primaryImage}
-                                alt={`${vehicle.brand} ${vehicle.model}`}
-                                className="h-14 w-20 shrink-0 rounded-lg border object-cover"
-                              />
-                            ) : (
-                              <div className="flex h-14 w-20 shrink-0 items-center justify-center rounded-lg border bg-muted text-xs text-muted-foreground">
-                                No Image
-                              </div>
-                            )}
-
-                            <div className="min-w-0">
-                              <p className="font-semibold">
-                                {vehicle.brand} {vehicle.model}
-                              </p>
-
-                              {vehicle.variant && (
-                                <p className="mt-1 text-xs text-muted-foreground">
-                                  {vehicle.variant}
-                                </p>
-                              )}
-                            </div>
+      ) : (
+        <div className="rounded-2xl border border-slate-200 bg-white overflow-hidden shadow-sm">
+          {/* Table Container */}
+          <div className="overflow-x-auto">
+            <table className="w-full text-left text-sm text-slate-700">
+              <thead className="text-xs uppercase bg-slate-50 text-slate-500 border-b border-slate-200 font-semibold">
+                <tr>
+                  <th className="px-6 py-4">Vehicle</th>
+                  <th className="px-6 py-4">Registration</th>
+                  <th className="px-6 py-4">Specs</th>
+                  <th className="px-6 py-4">Daily Rate</th>
+                  <th className="px-6 py-4">Status</th>
+                  <th className="px-6 py-4">Maintenance</th>
+                  <th className="px-6 py-4 text-right">Actions</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-slate-100">
+                {vehicles.map((vehicle) => (
+                  <tr key={vehicle.id} className="hover:bg-slate-50/80 transition-colors">
+                    <td className="px-6 py-4">
+                      <div className="flex items-center gap-3">
+                        {vehicle.primaryImage ? (
+                          <div className="relative h-12 w-20 shrink-0 rounded-lg overflow-hidden border border-slate-200 bg-slate-100">
+                            <Image
+                              src={vehicle.primaryImage}
+                              alt={`${vehicle.brand} ${vehicle.model}`}
+                              fill
+                              sizes="80px"
+                              className="object-cover"
+                            />
                           </div>
-                        </td>
-
-                        <td className="whitespace-nowrap px-5 py-5">
-                          {vehicle.registrationNumber || "—"}
-                        </td>
-
-                        <td className="px-5 py-5">
-                          {vehicle.fuelType || "—"}
-                        </td>
-
-                        <td className="px-5 py-5">
-                          {vehicle.transmission || "—"}
-                        </td>
-
-                        <td className="px-5 py-5">
-                          {vehicle.seatingCapacity || "—"}
-                        </td>
-
-                        <td className="whitespace-nowrap px-5 py-5">
-                          ₹{vehicle.basePrice.toString()}
-                        </td>
-
-                        <td className="px-5 py-5">
-                          <StatusBadge
-                            type="availability"
-                            value={vehicle.availabilityStatus}
-                          />
-                        </td>
-
-                        <td className="px-5 py-5">
-                          <StatusBadge
-                            type="maintenance"
-                            value={vehicle.maintenanceStatus}
-                          />
-                        </td>
-
-                        <td className="px-5 py-5">
-                          <Link
-                            href={`/admin/vehicles/${vehicle.id}`}
-                            className="inline-flex rounded-lg border px-3 py-2 text-xs font-medium transition hover:bg-muted"
-                          >
-                            View
-                          </Link>
-                        </td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
-              </div>
-            </div>
-
-            {/* ============================= */}
-            {/* MOBILE CARDS */}
-            {/* ============================= */}
-
-            <div className="mt-6 grid w-full min-w-0 grid-cols-1 gap-4 md:hidden">
-              {vehicles.map((vehicle) => (
-                <div
-                  key={vehicle.id}
-                  className="w-full min-w-0 max-w-full overflow-hidden rounded-2xl border bg-card"
-                >
-                  {/* Vehicle Header */}
-                  <div className="flex min-w-0 gap-3 p-4 sm:gap-4">
-                    {vehicle.primaryImage ? (
-                      <img
-                        src={vehicle.primaryImage}
-                        alt={`${vehicle.brand} ${vehicle.model}`}
-                        className="h-20 w-24 shrink-0 rounded-xl border object-cover sm:h-24 sm:w-28"
-                      />
-                    ) : (
-                      <div className="flex h-20 w-24 shrink-0 items-center justify-center rounded-xl border bg-muted text-xs text-muted-foreground sm:h-24 sm:w-28">
-                        No Image
+                        ) : (
+                          <div className="flex h-12 w-20 shrink-0 items-center justify-center rounded-lg border border-slate-200 bg-slate-100 text-xs text-slate-400">
+                            No Image
+                          </div>
+                        )}
+                        <div>
+                          <p className="font-bold text-slate-900">
+                            {vehicle.brand} {vehicle.model}
+                          </p>
+                          {vehicle.variant && (
+                            <p className="text-xs text-slate-500">{vehicle.variant}</p>
+                          )}
+                        </div>
                       </div>
-                    )}
+                    </td>
 
-                    <div className="min-w-0 flex-1">
-                      <h3 className="truncate text-base font-semibold sm:text-lg">
-                        {vehicle.brand} {vehicle.model}
-                      </h3>
+                    <td className="px-6 py-4 font-mono text-xs text-slate-600">
+                      {vehicle.registrationNumber || "—"}
+                    </td>
 
-                      {vehicle.variant && (
-                        <p className="mt-1 truncate text-sm text-muted-foreground">
-                          {vehicle.variant}
-                        </p>
-                      )}
+                    <td className="px-6 py-4">
+                      <div className="flex items-center gap-2 text-xs text-slate-600">
+                        <span className="px-2 py-0.5 rounded bg-slate-100 border border-slate-200">
+                          {vehicle.fuelType || "Petrol"}
+                        </span>
+                        <span className="px-2 py-0.5 rounded bg-slate-100 border border-slate-200">
+                          {vehicle.transmission || "Automatic"}
+                        </span>
+                        <span className="px-2 py-0.5 rounded bg-slate-100 border border-slate-200">
+                          {vehicle.seatingCapacity || 5} Seats
+                        </span>
+                      </div>
+                    </td>
 
-                      <p className="mt-2 break-all text-sm font-medium">
-                        {vehicle.registrationNumber ||
-                          "No registration"}
-                      </p>
-                    </div>
-                  </div>
+                    <td className="px-6 py-4 font-bold text-slate-900">
+                      ₹{vehicle.basePrice.toString()} <span className="text-xs font-normal text-slate-500">/day</span>
+                    </td>
 
-                  {/* Details */}
-                  <div className="grid min-w-0 grid-cols-2 border-t">
-                    <DetailItem
-                      label="Fuel"
-                      value={vehicle.fuelType || "—"}
-                    />
+                    <td className="px-6 py-4">
+                      <StatusBadge
+                        type="availability"
+                        value={vehicle.availabilityStatus}
+                      />
+                    </td>
 
-                    <DetailItem
-                      label="Transmission"
-                      value={vehicle.transmission || "—"}
-                    />
+                    <td className="px-6 py-4">
+                      <StatusBadge
+                        type="maintenance"
+                        value={vehicle.maintenanceStatus}
+                      />
+                    </td>
 
-                    <DetailItem
-                      label="Seats"
-                      value={
-                        vehicle.seatingCapacity
-                          ? String(vehicle.seatingCapacity)
-                          : "—"
-                      }
-                    />
+                    <td className="px-6 py-4 text-right">
+                      <div className="flex items-center justify-end gap-2">
+                        <Link
+                          href={`/admin/vehicles/${vehicle.id}`}
+                          className="px-3 py-1.5 rounded-lg bg-slate-100 hover:bg-slate-200 text-xs font-medium text-slate-700 transition-colors"
+                        >
+                          View Details
+                        </Link>
+                        <Link
+                          href={`/admin/vehicles/${vehicle.id}/edit`}
+                          className="px-3 py-1.5 rounded-lg bg-blue-50 hover:bg-blue-100 text-blue-600 text-xs font-semibold border border-blue-200 transition-colors"
+                        >
+                          Edit
+                        </Link>
+                      </div>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
 
-                    <DetailItem
-                      label="Price"
-                      value={`₹${vehicle.basePrice.toString()}`}
-                    />
-                  </div>
-
-                  {/* Status */}
-                  <div className="flex min-w-0 flex-wrap gap-2 border-t p-4">
-                    <StatusBadge
-                      type="availability"
-                      value={vehicle.availabilityStatus}
-                    />
-
-                    <StatusBadge
-                      type="maintenance"
-                      value={vehicle.maintenanceStatus}
-                    />
-                  </div>
-
-                  {/* Action */}
-                  <div className="border-t p-4">
-                    <Link
-                      href={`/admin/vehicles/${vehicle.id}`}
-                      className="flex w-full items-center justify-center rounded-lg border px-4 py-2.5 text-sm font-medium transition hover:bg-muted"
-                    >
-                      View Vehicle
-                    </Link>
-                  </div>
-                </div>
-              ))}
-            </div>
-
-            <p className="mt-4 text-sm text-muted-foreground">
-              Total vehicles: {vehicles.length}
-            </p>
-          </>
-        )}
-      </div>
-    </main>
-  );
-}
-
-/* ============================= */
-/* DETAIL ITEM */
-/* ============================= */
-
-function DetailItem({
-  label,
-  value,
-}: {
-  label: string;
-  value: string;
-}) {
-  return (
-    <div className="min-w-0 overflow-hidden border-b p-3 sm:p-4">
-      <p className="truncate text-xs text-muted-foreground">
-        {label}
-      </p>
-
-      <p className="mt-1 min-w-0 break-words text-sm font-medium">
-        {value}
-      </p>
+          <div className="p-4 border-t border-slate-100 bg-slate-50/60 text-xs text-slate-500 flex items-center justify-between">
+            <span>Total Listed Vehicles: <strong className="text-slate-900">{vehicles.length}</strong></span>
+            <span>All vehicles are verified and tracked.</span>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
-
-/* ============================= */
-/* STATUS BADGE */
-/* ============================= */
 
 function StatusBadge({
   type,
@@ -367,12 +188,13 @@ function StatusBadge({
 
   return (
     <span
-      className={`inline-flex max-w-full rounded-full px-3 py-1 text-xs font-medium ${
+      className={`inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-xs font-semibold border ${
         isGood
-          ? "bg-green-100 text-green-700"
-          : "bg-red-100 text-red-700"
+          ? "bg-emerald-50 text-emerald-700 border-emerald-200"
+          : "bg-rose-50 text-rose-700 border-rose-200"
       }`}
     >
+      <span className={`w-1.5 h-1.5 rounded-full ${isGood ? "bg-emerald-500" : "bg-rose-500"}`} />
       {value}
     </span>
   );

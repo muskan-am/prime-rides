@@ -1,19 +1,13 @@
 import { getServerSession } from "next-auth";
 import { redirect } from "next/navigation";
-
 import { authOptions } from "@/auth";
 import { prisma } from "@/lib/prisma";
-import LogoutButton from "@/components/auth/LogoutButton";
 
 export default async function AdminReportsPage() {
   const session = await getServerSession(authOptions);
 
-  if (!session?.user) {
+  if (!session?.user || session.user.role !== "ADMIN") {
     redirect("/login");
-  }
-
-  if (session.user.role !== "ADMIN") {
-    redirect("/");
   }
 
   const [
@@ -28,309 +22,169 @@ export default async function AdminReportsPage() {
     recentBookings,
   ] = await Promise.all([
     prisma.booking.count(),
-
-    prisma.booking.count({
-      where: {
-        status: "PENDING",
-      },
-    }),
-
-    prisma.booking.count({
-      where: {
-        status: "CONFIRMED",
-      },
-    }),
-
-    prisma.booking.count({
-      where: {
-        status: "COMPLETED",
-      },
-    }),
-
-    prisma.booking.count({
-      where: {
-        status: "CANCELLED",
-      },
-    }),
-
-    prisma.user.count({
-      where: {
-        role: "CUSTOMER",
-      },
-    }),
-
+    prisma.booking.count({ where: { status: "PENDING" } }),
+    prisma.booking.count({ where: { status: "CONFIRMED" } }),
+    prisma.booking.count({ where: { status: "COMPLETED" } }),
+    prisma.booking.count({ where: { status: "CANCELLED" } }),
+    prisma.user.count({ where: { role: "CUSTOMER" } }),
     prisma.vehicle.count(),
-
     prisma.booking.aggregate({
-      _sum: {
-        totalAmount: true,
-      },
-      where: {
-        status: {
-          in: ["CONFIRMED", "COMPLETED"],
-        },
-      },
+      _sum: { totalAmount: true },
+      where: { status: { in: ["CONFIRMED", "COMPLETED"] } },
     }),
-
     prisma.booking.findMany({
-      orderBy: {
-        createdAt: "desc",
-      },
+      orderBy: { createdAt: "desc" },
       take: 5,
       include: {
-        user: {
-          select: {
-            name: true,
-            email: true,
-          },
-        },
-        vehicle: {
-          select: {
-            brand: true,
-            model: true,
-          },
-        },
+        user: { select: { name: true, email: true } },
+        vehicle: { select: { brand: true, model: true } },
       },
     }),
   ]);
 
-  const totalRevenue = Number(
-    revenueResult._sum.totalAmount ?? 0
-  );
+  const totalRevenue = Number(revenueResult._sum.totalAmount ?? 0);
 
   return (
-    <main className="min-h-screen bg-background px-6 py-12">
-      <div className="mx-auto max-w-6xl">
+    <div className="space-y-8">
+      {/* Top Banner */}
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+        <div>
+          <h1 className="text-2xl sm:text-3xl font-extrabold text-white tracking-tight">
+            Platform Analytics & Business Reports
+          </h1>
+          <p className="text-slate-400 text-sm mt-1">
+            Real-time financial performance, booking conversions, and fleet breakdown metrics.
+          </p>
+        </div>
+      </div>
 
-        {/* Header */}
-        <div className="flex items-center justify-between">
+      {/* Revenue Highlight Card */}
+      <div className="relative overflow-hidden rounded-2xl bg-gradient-to-r from-blue-900/60 via-slate-900 to-indigo-950 border border-slate-800 p-6 lg:p-8">
+        <div className="absolute top-0 right-0 -translate-y-12 translate-x-12 w-64 h-64 bg-emerald-500/10 rounded-full blur-3xl pointer-events-none" />
+        
+        <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-4 relative z-10">
           <div>
-            <p className="text-sm text-muted-foreground">
-              Prime Rides Admin
+            <span className="text-xs font-semibold text-emerald-400 uppercase tracking-wider">Gross Platform Revenue</span>
+            <p className="text-3xl lg:text-4xl font-black text-white mt-1">
+              ₹{totalRevenue.toLocaleString("en-IN")}
             </p>
-
-            <h1 className="mt-2 text-3xl font-bold">
-              Reports
-            </h1>
-
-            <p className="mt-2 text-sm text-muted-foreground">
-              Platform performance and booking reports.
-            </p>
+            <p className="text-xs text-slate-400 mt-1">Confirmed + Completed Bookings</p>
           </div>
 
-          <LogoutButton />
+          <div>
+            <span className="text-xs font-semibold text-blue-400 uppercase tracking-wider">Total Reservations</span>
+            <p className="text-3xl lg:text-4xl font-black text-white mt-1">{totalBookings}</p>
+            <p className="text-xs text-slate-400 mt-1">Lifetime booking volume</p>
+          </div>
+
+          <div>
+            <span className="text-xs font-semibold text-indigo-400 uppercase tracking-wider">Active Customers</span>
+            <p className="text-3xl lg:text-4xl font-black text-white mt-1">{totalCustomers}</p>
+            <p className="text-xs text-slate-400 mt-1">Registered customer users</p>
+          </div>
+
+          <div>
+            <span className="text-xs font-semibold text-amber-400 uppercase tracking-wider">Fleet Size</span>
+            <p className="text-3xl lg:text-4xl font-black text-white mt-1">{totalVehicles}</p>
+            <p className="text-xs text-slate-400 mt-1">Vehicles in system</p>
+          </div>
+        </div>
+      </div>
+
+      {/* Booking Status Breakdown */}
+      <div>
+        <h2 className="text-lg font-bold text-white mb-4">Reservation Status Distribution</h2>
+        <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+          <div className="p-5 rounded-2xl bg-slate-900/80 border border-slate-800">
+            <span className="text-xs font-semibold text-amber-400 uppercase tracking-wider">Pending Review</span>
+            <p className="text-3xl font-extrabold text-white mt-2">{pendingBookings}</p>
+            <div className="w-full bg-slate-800 h-1.5 rounded-full mt-3 overflow-hidden">
+              <div
+                className="bg-amber-400 h-full rounded-full"
+                style={{ width: `${totalBookings ? (pendingBookings / totalBookings) * 100 : 0}%` }}
+              />
+            </div>
+          </div>
+
+          <div className="p-5 rounded-2xl bg-slate-900/80 border border-slate-800">
+            <span className="text-xs font-semibold text-emerald-400 uppercase tracking-wider">Confirmed Active</span>
+            <p className="text-3xl font-extrabold text-white mt-2">{confirmedBookings}</p>
+            <div className="w-full bg-slate-800 h-1.5 rounded-full mt-3 overflow-hidden">
+              <div
+                className="bg-emerald-400 h-full rounded-full"
+                style={{ width: `${totalBookings ? (confirmedBookings / totalBookings) * 100 : 0}%` }}
+              />
+            </div>
+          </div>
+
+          <div className="p-5 rounded-2xl bg-slate-900/80 border border-slate-800">
+            <span className="text-xs font-semibold text-blue-400 uppercase tracking-wider">Completed</span>
+            <p className="text-3xl font-extrabold text-white mt-2">{completedBookings}</p>
+            <div className="w-full bg-slate-800 h-1.5 rounded-full mt-3 overflow-hidden">
+              <div
+                className="bg-blue-400 h-full rounded-full"
+                style={{ width: `${totalBookings ? (completedBookings / totalBookings) * 100 : 0}%` }}
+              />
+            </div>
+          </div>
+
+          <div className="p-5 rounded-2xl bg-slate-900/80 border border-slate-800">
+            <span className="text-xs font-semibold text-rose-400 uppercase tracking-wider">Cancelled</span>
+            <p className="text-3xl font-extrabold text-white mt-2">{cancelledBookings}</p>
+            <div className="w-full bg-slate-800 h-1.5 rounded-full mt-3 overflow-hidden">
+              <div
+                className="bg-rose-400 h-full rounded-full"
+                style={{ width: `${totalBookings ? (cancelledBookings / totalBookings) * 100 : 0}%` }}
+              />
+            </div>
+          </div>
+        </div>
+      </div>
+
+      {/* Recent Bookings Audit Table */}
+      <div className="rounded-2xl border border-slate-800 bg-slate-900/80 overflow-hidden shadow-xl">
+        <div className="p-5 border-b border-slate-800 flex items-center justify-between">
+          <h2 className="font-bold text-white text-lg">Recent Financial Transactions</h2>
+          <span className="text-xs text-slate-400">Showing last 5 bookings</span>
         </div>
 
-        {/* Overview */}
-        <section className="mt-8">
-          <h2 className="text-xl font-semibold">
-            Overview
-          </h2>
-
-          <div className="mt-4 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-
-            <div className="rounded-2xl border bg-card p-5">
-              <p className="text-sm text-muted-foreground">
-                Total Bookings
-              </p>
-
-              <p className="mt-2 text-3xl font-bold">
-                {totalBookings}
-              </p>
-            </div>
-
-            <div className="rounded-2xl border bg-card p-5">
-              <p className="text-sm text-muted-foreground">
-                Total Customers
-              </p>
-
-              <p className="mt-2 text-3xl font-bold">
-                {totalCustomers}
-              </p>
-            </div>
-
-            <div className="rounded-2xl border bg-card p-5">
-              <p className="text-sm text-muted-foreground">
-                Total Vehicles
-              </p>
-
-              <p className="mt-2 text-3xl font-bold">
-                {totalVehicles}
-              </p>
-            </div>
-
-            <div className="rounded-2xl border bg-card p-5">
-              <p className="text-sm text-muted-foreground">
-                Total Revenue
-              </p>
-
-              <p className="mt-2 text-3xl font-bold">
-                ₹{totalRevenue.toLocaleString("en-IN")}
-              </p>
-            </div>
-
+        {recentBookings.length === 0 ? (
+          <div className="p-10 text-center text-slate-400 text-sm">
+            No recent transaction history recorded.
           </div>
-        </section>
-
-        {/* Booking Status */}
-        <section className="mt-8">
-          <h2 className="text-xl font-semibold">
-            Booking Status
-          </h2>
-
-          <div className="mt-4 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-
-            <div className="rounded-2xl border bg-card p-5">
-              <p className="text-sm text-muted-foreground">
-                Pending
-              </p>
-
-              <p className="mt-2 text-2xl font-bold">
-                {pendingBookings}
-              </p>
-            </div>
-
-            <div className="rounded-2xl border bg-card p-5">
-              <p className="text-sm text-muted-foreground">
-                Confirmed
-              </p>
-
-              <p className="mt-2 text-2xl font-bold">
-                {confirmedBookings}
-              </p>
-            </div>
-
-            <div className="rounded-2xl border bg-card p-5">
-              <p className="text-sm text-muted-foreground">
-                Completed
-              </p>
-
-              <p className="mt-2 text-2xl font-bold">
-                {completedBookings}
-              </p>
-            </div>
-
-            <div className="rounded-2xl border bg-card p-5">
-              <p className="text-sm text-muted-foreground">
-                Cancelled
-              </p>
-
-              <p className="mt-2 text-2xl font-bold">
-                {cancelledBookings}
-              </p>
-            </div>
-
-          </div>
-        </section>
-
-        {/* Recent Bookings */}
-        <section className="mt-8 rounded-2xl border bg-card">
-
-          <div className="border-b p-6">
-            <h2 className="text-xl font-semibold">
-              Recent Bookings
-            </h2>
-
-            <p className="mt-1 text-sm text-muted-foreground">
-              Latest vehicle bookings on the platform.
-            </p>
-          </div>
-
-          {recentBookings.length === 0 ? (
-            <div className="p-10 text-center">
-              <p className="font-medium">
-                No bookings found
-              </p>
-
-              <p className="mt-1 text-sm text-muted-foreground">
-                Booking activity will appear here.
-              </p>
-            </div>
-          ) : (
-            <div className="divide-y">
-
-              {recentBookings.map((booking) => (
-                <div
-                  key={booking.id}
-                  className="flex flex-col gap-4 p-6 lg:flex-row lg:items-center lg:justify-between"
-                >
-
+        ) : (
+          <div className="divide-y divide-slate-800">
+            {recentBookings.map((b) => (
+              <div key={b.id} className="p-5 hover:bg-slate-800/40 transition-colors">
+                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
                   <div>
-                    <p className="font-semibold">
-                      {booking.vehicle.brand}{" "}
-                      {booking.vehicle.model}
+                    <h3 className="font-bold text-white text-base">
+                      {b.vehicle.brand} {b.vehicle.model}
+                    </h3>
+                    <p className="text-xs text-slate-400">
+                      Customer: <span className="text-slate-200">{b.user.name || b.user.email}</span>
                     </p>
-
-                    <p className="mt-1 text-sm text-muted-foreground">
-                      Customer:{" "}
-                      {booking.user.name ||
-                        booking.user.email}
-                    </p>
-
-                    <p className="mt-1 text-xs text-muted-foreground">
-                      Booking ID: {booking.id}
-                    </p>
+                    <p className="text-[11px] font-mono text-slate-500">ID: {b.id}</p>
                   </div>
 
-                  <div className="grid grid-cols-2 gap-6 sm:grid-cols-4">
-
+                  <div className="flex items-center gap-6 text-xs text-slate-300">
                     <div>
-                      <p className="text-xs text-muted-foreground">
-                        Status
-                      </p>
-
-                      <p className="mt-1 text-sm font-medium">
-                        {booking.status}
-                      </p>
+                      <span className="text-slate-400 block text-[10px]">Status</span>
+                      <strong className="text-white">{b.status}</strong>
                     </div>
-
                     <div>
-                      <p className="text-xs text-muted-foreground">
-                        Start Date
-                      </p>
-
-                      <p className="mt-1 text-sm">
-                        {booking.startDate.toLocaleDateString(
-                          "en-IN"
-                        )}
-                      </p>
+                      <span className="text-slate-400 block text-[10px]">Total Amount</span>
+                      <strong className="text-emerald-400 text-sm font-bold">
+                        ₹{Number(b.totalAmount).toLocaleString("en-IN")}
+                      </strong>
                     </div>
-
-                    <div>
-                      <p className="text-xs text-muted-foreground">
-                        End Date
-                      </p>
-
-                      <p className="mt-1 text-sm">
-                        {booking.endDate.toLocaleDateString(
-                          "en-IN"
-                        )}
-                      </p>
-                    </div>
-
-                    <div>
-                      <p className="text-xs text-muted-foreground">
-                        Total
-                      </p>
-
-                      <p className="mt-1 text-sm font-semibold">
-                        ₹
-                        {Number(
-                          booking.totalAmount
-                        ).toLocaleString("en-IN")}
-                      </p>
-                    </div>
-
                   </div>
                 </div>
-              ))}
-
-            </div>
-          )}
-
-        </section>
-
+              </div>
+            ))}
+          </div>
+        )}
       </div>
-    </main>
+    </div>
   );
 }

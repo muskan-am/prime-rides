@@ -1,22 +1,21 @@
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/auth";
 import { redirect } from "next/navigation";
+import Link from "next/link";
+import { Car, Calendar, ShieldCheck, Clock, MapPin, CheckCircle2, AlertCircle, XCircle } from "lucide-react";
 
+import Navbar from "@/components/customer/Navbar";
+import Footer from "@/components/customer/Footer";
 import LogoutButton from "@/components/auth/LogoutButton";
 import { prisma } from "@/lib/prisma";
 
 export default async function DashboardPage() {
   const session = await getServerSession(authOptions);
 
-  // User is not logged in
   if (!session?.user) {
     redirect("/login");
   }
 
-  /*
-   * Find the current user from the database.
-   * We use the email from the authenticated session.
-   */
   const user = session.user.email
     ? await prisma.user.findUnique({
         where: {
@@ -28,16 +27,11 @@ export default async function DashboardPage() {
       })
     : null;
 
-  /*
-   * If the authenticated user does not exist
-   * in the database, show an empty booking list.
-   */
   const bookings = user
     ? await prisma.booking.findMany({
         where: {
           userId: user.id,
         },
-
         include: {
           vehicle: {
             select: {
@@ -48,7 +42,6 @@ export default async function DashboardPage() {
               primaryImage: true,
             },
           },
-
           rentalPackage: {
             select: {
               id: true,
@@ -57,7 +50,6 @@ export default async function DashboardPage() {
               price: true,
             },
           },
-
           monthlyPlan: {
             select: {
               id: true,
@@ -66,7 +58,6 @@ export default async function DashboardPage() {
               price: true,
             },
           },
-
           pickupOption: {
             select: {
               id: true,
@@ -74,7 +65,6 @@ export default async function DashboardPage() {
               description: true,
             },
           },
-
           location: {
             select: {
               id: true,
@@ -83,424 +73,213 @@ export default async function DashboardPage() {
             },
           },
         },
-
         orderBy: {
           createdAt: "desc",
         },
       })
     : [];
 
+  const activeCount = bookings.filter(b => b.status === "CONFIRMED" || b.status === "PENDING").length;
+  const completedCount = bookings.filter(b => b.status === "COMPLETED").length;
+
   return (
-    <main className="min-h-screen bg-background px-6 py-12">
-      <div className="mx-auto max-w-5xl">
+    <div className="min-h-screen bg-slate-50">
+      <Navbar />
 
-        {/* =====================================
-            Header
-        ===================================== */}
-
-        <div className="flex items-center justify-between">
-          <div>
-            <p className="text-sm text-muted-foreground">
-              Customer Dashboard
-            </p>
-
-            <h1 className="mt-2 text-3xl font-bold">
-              Welcome, {session.user.name || "Customer"}
-            </h1>
-          </div>
-
-          <LogoutButton />
-        </div>
-
-        {/* =====================================
-            Account Information
-        ===================================== */}
-
-        <div className="mt-8 rounded-2xl border bg-card p-6">
-          <h2 className="text-lg font-semibold">
-            Account Information
-          </h2>
-
-          <div className="mt-4 space-y-2 text-sm">
-            <p>
-              <span className="font-medium">
-                Name:
-              </span>{" "}
-              {session.user.name ||
-                "Not available"}
-            </p>
-
-            <p>
-              <span className="font-medium">
-                Email:
-              </span>{" "}
-              {session.user.email ||
-                "Not available"}
-            </p>
-          </div>
-        </div>
-
-        {/* =====================================
-            My Bookings
-        ===================================== */}
-
-        <div className="mt-6 rounded-2xl border bg-card p-6">
-          <div className="flex items-center justify-between">
+      <main className="pb-24">
+        {/* Banner Header */}
+        <section className="bg-slate-950 px-4 py-12 text-white sm:px-6 lg:px-8 border-b border-slate-800">
+          <div className="mx-auto max-w-7xl flex flex-col sm:flex-row sm:items-center justify-between gap-6">
             <div>
-              <h2 className="text-lg font-semibold">
-                My Bookings
-              </h2>
-
-              <p className="mt-1 text-sm text-muted-foreground">
-                Your vehicle bookings
-              </p>
+              <p className="text-xs font-bold uppercase tracking-widest text-blue-400">Customer Portal</p>
+              <h1 className="text-3xl font-black text-white mt-1">
+                Welcome, {session.user.name || "Valued Customer"}
+              </h1>
+              <p className="text-xs text-slate-400 mt-1">{session.user.email}</p>
             </div>
 
-            <span className="rounded-full bg-muted px-3 py-1 text-sm font-medium">
-              {bookings.length}{" "}
-              {bookings.length === 1
-                ? "Booking"
-                : "Bookings"}
-            </span>
+            <div className="flex items-center gap-3">
+              <Link
+                href="/cars"
+                className="inline-flex h-10 items-center gap-2 rounded-xl bg-blue-600 px-4 text-xs font-bold text-white shadow-md hover:bg-blue-500"
+              >
+                <Car className="h-4 w-4" />
+                <span>Book New Car</span>
+              </Link>
+              <LogoutButton />
+            </div>
+          </div>
+        </section>
+
+        <div className="mx-auto max-w-7xl px-4 pt-10 sm:px-6 lg:px-8 space-y-10">
+
+          {/* Metric Stats Overview */}
+          <div className="grid gap-6 sm:grid-cols-3">
+            <div className="rounded-3xl border border-slate-200 bg-white p-6 shadow-sm flex items-center gap-4">
+              <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-blue-50 text-blue-600">
+                <Calendar className="h-6 w-6" />
+              </div>
+              <div>
+                <p className="text-xs font-bold text-slate-500 uppercase tracking-wider">Total Bookings</p>
+                <p className="text-2xl font-black text-slate-900 mt-0.5">{bookings.length}</p>
+              </div>
+            </div>
+
+            <div className="rounded-3xl border border-slate-200 bg-white p-6 shadow-sm flex items-center gap-4">
+              <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-amber-50 text-amber-600">
+                <Clock className="h-6 w-6" />
+              </div>
+              <div>
+                <p className="text-xs font-bold text-slate-500 uppercase tracking-wider">Active / Pending</p>
+                <p className="text-2xl font-black text-slate-900 mt-0.5">{activeCount}</p>
+              </div>
+            </div>
+
+            <div className="rounded-3xl border border-slate-200 bg-white p-6 shadow-sm flex items-center gap-4">
+              <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-emerald-50 text-emerald-600">
+                <CheckCircle2 className="h-6 w-6" />
+              </div>
+              <div>
+                <p className="text-xs font-bold text-slate-500 uppercase tracking-wider">Completed Rentals</p>
+                <p className="text-2xl font-black text-slate-900 mt-0.5">{completedCount}</p>
+              </div>
+            </div>
           </div>
 
-          {/* Empty State */}
-
-          {bookings.length === 0 ? (
-            <div className="mt-6 rounded-xl border border-dashed p-8 text-center">
-              <p className="font-medium">
-                No bookings yet
-              </p>
-
-              <p className="mt-2 text-sm text-muted-foreground">
-                Your bookings will appear here
-                after you book a vehicle.
-              </p>
+          {/* Bookings Section */}
+          <div className="rounded-3xl border border-slate-200/80 bg-white p-8 shadow-sm space-y-6">
+            <div className="flex items-center justify-between border-b border-slate-100 pb-5">
+              <div>
+                <h2 className="text-xl font-black text-slate-900">Your Vehicle Rentals</h2>
+                <p className="text-xs text-slate-500 mt-1">Track booking history, pickup dates, and pricing details</p>
+              </div>
+              <span className="rounded-full bg-slate-100 px-3.5 py-1 text-xs font-bold text-slate-700">
+                {bookings.length} {bookings.length === 1 ? "Booking" : "Bookings"}
+              </span>
             </div>
-          ) : (
-            /* ===================================
-               Booking List
-            =================================== */
 
-            <div className="mt-6 space-y-5">
-              {bookings.map((booking) => {
-                /* =================================
-                   Calculate Applied Tax Percentage
-                ================================= */
+            {bookings.length === 0 ? (
+              <div className="rounded-2xl border border-dashed border-slate-200 p-12 text-center my-6">
+                <Car className="mx-auto h-12 w-12 text-slate-400 mb-3" />
+                <p className="text-base font-bold text-slate-800">No active car bookings found.</p>
+                <p className="text-xs text-slate-500 mt-1">Your upcoming self-drive rentals will be listed here after booking.</p>
+                <Link
+                  href="/cars"
+                  className="mt-5 inline-flex items-center gap-2 rounded-xl bg-slate-950 px-5 py-2.5 text-xs font-bold text-white shadow-md hover:bg-blue-600"
+                >
+                  Explore Cars Catalog →
+                </Link>
+              </div>
+            ) : (
+              <div className="space-y-6">
+                {bookings.map((booking) => {
+                  const rentalAmount = Number(booking.rentalAmount);
+                  const taxAmount = Number(booking.taxAmount);
+                  const taxRate = rentalAmount > 0 ? (taxAmount / rentalAmount) * 100 : 0;
+                  const formattedTaxRate = Number.isInteger(taxRate) ? taxRate.toString() : taxRate.toFixed(2);
 
-                const rentalAmount =
-                  Number(booking.rentalAmount);
-
-                const taxAmount =
-                  Number(booking.taxAmount);
-
-                const taxRate =
-                  rentalAmount > 0
-                    ? (taxAmount /
-                        rentalAmount) *
-                      100
-                    : 0;
-
-                const formattedTaxRate =
-                  Number.isInteger(taxRate)
-                    ? taxRate.toString()
-                    : taxRate.toFixed(2);
-
-                return (
-                  <div
-                    key={booking.id}
-                    className="overflow-hidden rounded-2xl border"
-                  >
-                    {/* Booking Header */}
-
-                    <div className="flex flex-col gap-3 border-b bg-muted/30 p-5 sm:flex-row sm:items-center sm:justify-between">
-                      <div>
-                        <p className="text-xs uppercase tracking-wide text-muted-foreground">
-                          Booking ID
-                        </p>
-
-                        <p className="mt-1 break-all text-sm font-medium">
-                          {booking.id}
-                        </p>
-                      </div>
-
-                      <span
-                        className={`w-fit rounded-full px-3 py-1 text-xs font-semibold ${
-                          booking.status ===
-                          "CONFIRMED"
-                            ? "bg-green-100 text-green-700"
-                            : booking.status ===
-                                "CANCELLED"
-                              ? "bg-red-100 text-red-700"
-                              : booking.status ===
-                                  "COMPLETED"
-                                ? "bg-blue-100 text-blue-700"
-                                : "bg-yellow-100 text-yellow-700"
-                        }`}
-                      >
-                        {booking.status}
-                      </span>
-                    </div>
-
-                    {/* Booking Body */}
-
-                    <div className="p-5">
-                      <div className="grid grid-cols-1 gap-6 md:grid-cols-[180px_1fr]">
-
-                        {/* Vehicle Image */}
-
-                        <div className="flex min-h-[140px] items-center justify-center overflow-hidden rounded-xl bg-muted">
-                          {booking.vehicle
-                            .primaryImage ? (
-                            <img
-                              src={
-                                booking.vehicle
-                                  .primaryImage
-                              }
-                              alt={`${booking.vehicle.brand} ${booking.vehicle.model}`}
-                              className="h-full min-h-[140px] w-full object-cover"
-                            />
-                          ) : (
-                            <span className="text-sm text-muted-foreground">
-                              No Image
-                            </span>
-                          )}
+                  return (
+                    <div
+                      key={booking.id}
+                      className="overflow-hidden rounded-2xl border border-slate-200/80 bg-white shadow-sm transition-all hover:border-blue-300"
+                    >
+                      {/* Booking Bar Header */}
+                      <div className="flex flex-col gap-3 border-b border-slate-100 bg-slate-950 p-5 text-white sm:flex-row sm:items-center sm:justify-between">
+                        <div>
+                          <p className="text-xs uppercase tracking-widest text-slate-400 font-bold">Booking ID</p>
+                          <p className="mt-0.5 font-mono text-sm font-bold text-white">{booking.id}</p>
                         </div>
 
-                        {/* Vehicle Information */}
+                        <span
+                          className={`w-fit rounded-full px-3.5 py-1 text-xs font-black tracking-wide uppercase ${
+                            booking.status === "CONFIRMED"
+                              ? "bg-emerald-500/20 text-emerald-400 border border-emerald-500/30"
+                              : booking.status === "CANCELLED"
+                              ? "bg-red-500/20 text-red-400 border border-red-500/30"
+                              : booking.status === "COMPLETED"
+                              ? "bg-blue-500/20 text-blue-400 border border-blue-500/30"
+                              : "bg-amber-500/20 text-amber-400 border border-amber-500/30"
+                          }`}
+                        >
+                          {booking.status}
+                        </span>
+                      </div>
 
-                        <div>
-                          <p className="text-xs text-muted-foreground">
-                            Vehicle
-                          </p>
+                      {/* Content */}
+                      <div className="p-6">
+                        <div className="grid gap-6 md:grid-cols-[180px_1fr] items-center">
+                          <div className="h-32 overflow-hidden rounded-2xl bg-slate-900">
+                            {booking.vehicle.primaryImage ? (
+                              <img
+                                src={booking.vehicle.primaryImage}
+                                alt={`${booking.vehicle.brand} ${booking.vehicle.model}`}
+                                className="h-full w-full object-cover"
+                              />
+                            ) : (
+                              <div className="flex h-full items-center justify-center text-xs text-slate-400">No Image</div>
+                            )}
+                          </div>
 
-                          <h3 className="mt-1 text-xl font-bold">
-                            {
-                              booking.vehicle
-                                .brand
-                            }{" "}
-                            {
-                              booking.vehicle
-                                .model
-                            }
-                          </h3>
-
-                          {booking.vehicle
-                            .variant && (
-                            <p className="mt-1 text-sm text-muted-foreground">
-                              {
-                                booking.vehicle
-                                  .variant
-                              }
-                            </p>
-                          )}
-
-                          {/* Rental Type */}
-
-                          <div className="mt-5">
-                            <p className="text-xs text-muted-foreground">
-                              Rental Type
-                            </p>
-
-                            <p className="mt-1 text-sm font-medium">
-                              {booking.rentalPackage
-                                ? booking
-                                    .rentalPackage
-                                    .name
-                                : booking.monthlyPlan
-                                  ? booking
-                                      .monthlyPlan
-                                      .name
-                                  : "Normal Days"}
+                          <div className="space-y-2">
+                            <p className="text-xs font-bold text-blue-600 uppercase tracking-widest">{booking.vehicle.brand}</p>
+                            <h3 className="text-xl font-bold text-slate-900">{booking.vehicle.model} {booking.vehicle.variant}</h3>
+                            <p className="text-xs font-semibold text-slate-500">
+                              Mode: {booking.rentalPackage ? booking.rentalPackage.name : booking.monthlyPlan ? booking.monthlyPlan.name : "Self-Drive Days"}
                             </p>
                           </div>
                         </div>
-                      </div>
 
-                      {/* =================================
-                          Booking Details
-                      ================================= */}
+                        {/* Dates & Location Matrix */}
+                        <div className="mt-6 grid grid-cols-2 gap-4 border-t border-slate-100 pt-5 sm:grid-cols-4 text-xs">
+                          <div>
+                            <p className="text-slate-500 font-semibold">Start Date</p>
+                            <p className="mt-1 font-bold text-slate-900">{new Date(booking.startDate).toLocaleString("en-IN")}</p>
+                          </div>
 
-                      <div className="mt-6 grid grid-cols-1 gap-4 border-t pt-5 sm:grid-cols-2 lg:grid-cols-4">
+                          <div>
+                            <p className="text-slate-500 font-semibold">End Date</p>
+                            <p className="mt-1 font-bold text-slate-900">{new Date(booking.endDate).toLocaleString("en-IN")}</p>
+                          </div>
 
-                        {/* Start Date */}
+                          <div>
+                            <p className="text-slate-500 font-semibold">Pickup Location</p>
+                            <p className="mt-1 font-bold text-slate-900">{booking.location.name}</p>
+                          </div>
 
-                        <div>
-                          <p className="text-xs text-muted-foreground">
-                            Start Date
-                          </p>
-
-                          <p className="mt-1 text-sm font-medium">
-                            {new Date(
-                              booking.startDate
-                            ).toLocaleString(
-                              "en-IN"
-                            )}
-                          </p>
+                          <div>
+                            <p className="text-slate-500 font-semibold">Pickup Option</p>
+                            <p className="mt-1 font-bold text-slate-900">{booking.pickupOption?.name || "Standard Hub Pickup"}</p>
+                          </div>
                         </div>
 
-                        {/* End Date */}
+                        {/* Financial summary */}
+                        <div className="mt-6 rounded-2xl bg-slate-50 p-4 border border-slate-100 flex flex-wrap items-center justify-between gap-4 text-xs">
+                          <div>
+                            <span className="text-slate-500">Rental Amount: </span>
+                            <span className="font-bold text-slate-800">₹{rentalAmount.toLocaleString("en-IN")}</span>
+                            <span className="text-slate-400 mx-2">|</span>
+                            <span className="text-slate-500">Tax ({formattedTaxRate}%): </span>
+                            <span className="font-bold text-slate-800">₹{taxAmount.toLocaleString("en-IN")}</span>
+                          </div>
 
-                        <div>
-                          <p className="text-xs text-muted-foreground">
-                            End Date
-                          </p>
-
-                          <p className="mt-1 text-sm font-medium">
-                            {new Date(
-                              booking.endDate
-                            ).toLocaleString(
-                              "en-IN"
-                            )}
-                          </p>
+                          <div>
+                            <span className="text-slate-500">Total Paid: </span>
+                            <span className="text-base font-black text-slate-900">₹{Number(booking.totalAmount).toLocaleString("en-IN")}</span>
+                          </div>
                         </div>
 
-                        {/* Pickup Location */}
-
-                        <div>
-                          <p className="text-xs text-muted-foreground">
-                            Pickup Location
-                          </p>
-
-                          <p className="mt-1 text-sm font-medium">
-                            {
-                              booking.location
-                                .name
-                            }
-                          </p>
-
-                          {booking.location
-                            .address && (
-                            <p className="mt-1 text-xs text-muted-foreground">
-                              {
-                                booking.location
-                                  .address
-                              }
-                            </p>
-                          )}
-                        </div>
-
-                        {/* Pickup Option */}
-
-                        <div>
-                          <p className="text-xs text-muted-foreground">
-                            Pickup Option
-                          </p>
-
-                          <p className="mt-1 text-sm font-medium">
-                            {booking.pickupOption
-                              ?.name ||
-                              "—"}
-                          </p>
-                        </div>
-                      </div>
-
-                      {/* =================================
-                          Amount
-                      ================================= */}
-
-                      <div className="mt-6 border-t pt-5">
-
-                        {/* Rental Amount */}
-
-                        <div className="flex items-center justify-between">
-                          <span className="text-sm text-muted-foreground">
-                            Rental Amount
-                          </span>
-
-                          <span className="text-sm font-medium">
-                            ₹
-                            {rentalAmount.toLocaleString(
-                              "en-IN"
-                            )}
-                          </span>
-                        </div>
-
-                        {/* Delivery Charge */}
-
-                        <div className="mt-2 flex items-center justify-between">
-                          <span className="text-sm text-muted-foreground">
-                            Delivery Charge
-                          </span>
-
-                          <span className="text-sm">
-                            ₹
-                            {Number(
-                              booking.deliveryCharge
-                            ).toLocaleString(
-                              "en-IN"
-                            )}
-                          </span>
-                        </div>
-
-                        {/* Tax */}
-
-                        <div className="mt-2 flex items-center justify-between">
-                          <span className="text-sm text-muted-foreground">
-                            Tax ({formattedTaxRate}%)
-                          </span>
-
-                          <span className="text-sm">
-                            ₹
-                            {taxAmount.toLocaleString(
-                              "en-IN"
-                            )}
-                          </span>
-                        </div>
-
-                        {/* Discount */}
-
-                        <div className="mt-2 flex items-center justify-between">
-                          <span className="text-sm text-muted-foreground">
-                            Discount
-                          </span>
-
-                          <span className="text-sm">
-                            -₹
-                            {Number(
-                              booking.discountAmount
-                            ).toLocaleString(
-                              "en-IN"
-                            )}
-                          </span>
-                        </div>
-
-                        {/* Total */}
-
-                        <div className="mt-4 flex items-center justify-between border-t pt-4">
-                          <span className="font-semibold">
-                            Total
-                          </span>
-
-                          <span className="text-xl font-bold">
-                            ₹
-                            {Number(
-                              booking.totalAmount
-                            ).toLocaleString(
-                              "en-IN"
-                            )}
-                          </span>
-                        </div>
-                      </div>
-
-                      {/* Created At */}
-
-                      <div className="mt-4 text-xs text-muted-foreground">
-                        Booked on{" "}
-                        {new Date(
-                          booking.createdAt
-                        ).toLocaleString(
-                          "en-IN"
-                        )}
                       </div>
                     </div>
-                  </div>
-                );
-              })}
-            </div>
-          )}
+                  );
+                })}
+              </div>
+            )}
+          </div>
+
         </div>
-      </div>
-    </main>
+      </main>
+
+      <Footer />
+    </div>
   );
 }

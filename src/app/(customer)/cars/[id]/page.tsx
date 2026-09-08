@@ -1,6 +1,9 @@
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/auth";
 import Link from "next/link";
+import { Fuel, Gauge, Users, MapPin, ShieldCheck, Check, Star, ArrowRight, ArrowLeft, FileText, Lock } from "lucide-react";
+import Navbar from "@/components/customer/Navbar";
+import Footer from "@/components/customer/Footer";
 
 type Car = {
   id: string;
@@ -26,7 +29,7 @@ const cars: Car[] = [
   {
     id: "hyundai-creta",
     name: "Hyundai Creta",
-    variant: "SX",
+    variant: "SX Automatic",
     fuel: "Petrol",
     transmission: "Automatic",
     seats: 5,
@@ -36,42 +39,35 @@ const cars: Car[] = [
     reviews: 124,
     luggage: "2 Bags",
     ac: true,
-
-    image:
-      "https://images.unsplash.com/photo-1606664515524-ed2f786a0bd6?auto=format&fit=crop&w=1200&q=80",
-
+    image: "https://images.unsplash.com/photo-1606664515524-ed2f786a0bd6?auto=format&fit=crop&w=1200&q=80",
     features: [
       "Automatic Transmission",
       "Air Conditioning",
       "Bluetooth Connectivity",
-      "Android Auto",
-      "Apple CarPlay",
+      "Android Auto & Apple CarPlay",
       "GPS Navigation",
       "Rear Parking Camera",
-      "USB Charging",
+      "Fast USB Charging Ports",
+      "Cruise Control",
     ],
-
     rentalRules: [
-      "Valid driving license is required.",
+      "Valid original driving license (min 1 year old) is required.",
       "Minimum rental age is 21 years.",
-      "Fuel charges are not included.",
-      "Vehicle must be returned on time.",
-      "Late return charges may apply.",
+      "Fuel is not included (return with same fuel level).",
+      "Speed limit of 120 km/h strictly enforced.",
+      "Vehicle must be returned at agreed location and time.",
     ],
-
     documents: [
-      "Valid Driving License",
-      "Government ID Proof",
-      "Address Proof",
+      "Original Driving License",
+      "Aadhaar Card / Passport (ID Proof)",
+      "DigiLocker Verification Supported",
     ],
-
     deposit: 5000,
   },
-
   {
     id: "kia-seltos",
     name: "Kia Seltos",
-    variant: "HTX",
+    variant: "HTX Turbo",
     fuel: "Petrol",
     transmission: "Automatic",
     seats: 5,
@@ -81,42 +77,33 @@ const cars: Car[] = [
     reviews: 98,
     luggage: "2 Bags",
     ac: true,
-
-    image:
-      "https://images.unsplash.com/photo-1542362567-b07e54358753?auto=format&fit=crop&w=1200&q=80",
-
+    image: "https://images.unsplash.com/photo-1626668893632-6f3a4466d22f?auto=format&fit=crop&w=1200&q=80",
     features: [
       "Automatic Transmission",
-      "Air Conditioning",
-      "Bluetooth Connectivity",
-      "Android Auto",
-      "Apple CarPlay",
+      "Sunroof",
+      "Bluetooth & Touchscreen Infotainment",
+      "Android Auto & Apple CarPlay",
       "GPS Navigation",
-      "Rear Parking Camera",
-      "USB Charging",
+      "Reverse Parking Sensors",
+      "Wireless Charger",
     ],
-
     rentalRules: [
-      "Valid driving license is required.",
+      "Valid original driving license is required.",
       "Minimum rental age is 21 years.",
-      "Fuel charges are not included.",
+      "Fuel is not included.",
       "Vehicle must be returned on time.",
-      "Late return charges may apply.",
     ],
-
     documents: [
       "Valid Driving License",
       "Government ID Proof",
       "Address Proof",
     ],
-
     deposit: 5000,
   },
-
   {
     id: "mahindra-thar",
-    name: "Mahindra Thar",
-    variant: "LX",
+    name: "Mahindra Thar 4x4",
+    variant: "LX Hard Top",
     fuel: "Diesel",
     transmission: "Manual",
     seats: 4,
@@ -126,35 +113,26 @@ const cars: Car[] = [
     reviews: 156,
     luggage: "2 Bags",
     ac: true,
-
-    image:
-      "https://images.unsplash.com/photo-1519641471654-76ce0107ad1b?auto=format&fit=crop&w=1200&q=80",
-
+    image: "https://images.unsplash.com/photo-1549317661-bd32c8ce0db2?auto=format&fit=crop&w=1200&q=80",
     features: [
-      "Manual Transmission",
+      "4x4 All-Terrain Drivetrain",
+      "Manual 6-Speed Transmission",
       "Air Conditioning",
-      "Bluetooth Connectivity",
-      "Android Auto",
-      "Apple CarPlay",
-      "GPS Navigation",
-      "Rear Parking Camera",
-      "USB Charging",
+      "Bluetooth Audio System",
+      "Touchscreen Display",
+      "Off-road Roll Cage Safety",
     ],
-
     rentalRules: [
-      "Valid driving license is required.",
+      "Valid original driving license is required.",
       "Minimum rental age is 21 years.",
-      "Fuel charges are not included.",
-      "Vehicle must be returned on time.",
-      "Late return charges may apply.",
+      "Fuel is not included.",
+      "Strict no-race and off-road safety policy.",
     ],
-
     documents: [
       "Valid Driving License",
       "Government ID Proof",
       "Address Proof",
     ],
-
     deposit: 5000,
   },
 ];
@@ -167,434 +145,194 @@ export default async function CarDetailPage({
   const { id } = await params;
   const session = await getServerSession(authOptions);
 
-  const car = cars.find((item) => item.id === id);
-
-  if (!car) {
-    
-    return (
-      <main className="flex min-h-screen items-center justify-center px-6">
-        <div className="text-center">
-          <h1 className="text-3xl font-bold">Car Not Found</h1>
-
-          <p className="mt-3 text-muted-foreground">
-            The car you are looking for does not exist.
-          </p>
-
-          <Link
-            href="/cars"
-            className="mt-6 inline-flex rounded-lg bg-black px-6 py-3 text-sm font-medium text-white"
-          >
-            Back to Cars
-          </Link>
-        </div>
-      </main>
-    );
-  }
+  const car = cars.find((item) => item.id === id) || cars[0];
 
   const bookingUrl = `/booking?car=${car.id}`;
-
-    const bookingHref = session?.user ? bookingUrl :
-    `/login?callbackUrl=${encodeURIComponent(bookingUrl)}`;
+  const bookingHref = session?.user
+    ? bookingUrl
+    : `/login?callbackUrl=${encodeURIComponent(bookingUrl)}`;
 
   return (
-    <main className="min-h-screen bg-background">
-      <div className="mx-auto max-w-7xl px-6 py-14">
+    <div className="min-h-screen bg-slate-50">
+      <Navbar />
 
-        {/* Breadcrumb */}
-        <div className="mb-8 text-sm text-muted-foreground">
-          <Link href="/cars" className="hover:text-foreground">
-            Cars
-          </Link>
-
-          <span className="mx-2">/</span>
-
-          <span>{car.name}</span>
-        </div>
-
-        {/* Header */}
-        <section>
-          <p className="text-sm uppercase tracking-[0.2em] text-muted-foreground">
-            Vehicle Details
-          </p>
-
-          <div className="mt-3 flex flex-col justify-between gap-4 md:flex-row md:items-end">
-            <div>
-              <h1 className="text-4xl font-bold tracking-tight sm:text-5xl">
-                {car.name}
-              </h1>
-
-              <p className="mt-3 text-muted-foreground">
-                {car.variant} · {car.fuel} · {car.transmission} ·{" "}
-                {car.seats} Seats
-              </p>
+      <main className="pb-24">
+        {/* Breadcrumb Header */}
+        <section className="bg-slate-950 px-4 py-8 text-slate-300 sm:px-6 lg:px-8 border-b border-slate-800">
+          <div className="mx-auto max-w-7xl flex items-center justify-between">
+            <div className="flex items-center gap-2 text-xs font-semibold text-slate-400">
+              <Link href="/cars" className="hover:text-white transition-colors flex items-center gap-1">
+                <ArrowLeft className="h-3.5 w-3.5" /> All Cars
+              </Link>
+              <span>/</span>
+              <span className="text-blue-400 font-bold">{car.name}</span>
             </div>
 
-            {/* Rating */}
-            <div className="flex items-center gap-2">
-              <span className="rounded-lg bg-black px-3 py-2 text-sm font-semibold text-white">
-                ★ {car.rating}
-              </span>
-
-              <span className="text-sm text-muted-foreground">
-                {car.reviews} reviews
-              </span>
+            <div className="flex items-center gap-1.5 text-xs font-extrabold text-amber-400 bg-amber-950/60 border border-amber-800/60 rounded-full px-3 py-1">
+              <Star className="h-3.5 w-3.5 fill-amber-400" />
+              <span>{car.rating} ({car.reviews} reviews)</span>
             </div>
           </div>
         </section>
 
-        {/* Main Car Section */}
-        <section className="mt-10 grid gap-10 lg:grid-cols-2">
+        <div className="mx-auto max-w-7xl px-4 pt-10 sm:px-6 lg:px-8">
 
-          {/* Car Image */}
-          <div className="overflow-hidden rounded-2xl border bg-muted">
-            <img
-              src={car.image}
-              alt={car.name}
-              className="h-[420px] w-full object-cover transition-transform duration-500 hover:scale-105"
-            />
-          </div>
+          {/* Hero Section */}
+          <div className="grid gap-10 lg:grid-cols-12 items-start">
 
-          {/* Booking Card */}
-          <div>
-            <div className="flex items-end gap-2">
-              <span className="text-4xl font-bold">
-                ₹{car.price.toLocaleString("en-IN")}
-              </span>
-
-              <span className="mb-1 text-muted-foreground">
-                / day
-              </span>
-            </div>
-
-            {/* Availability */}
-            <div className="mt-8 rounded-2xl border p-6">
-              <div className="flex items-center justify-between">
-                <h2 className="text-lg font-semibold">
-                  Availability
-                </h2>
-
-                <span className="flex items-center gap-2 text-sm font-medium text-green-600">
-                  <span className="h-2.5 w-2.5 rounded-full bg-green-500" />
-                  Available
-                </span>
-              </div>
-
-              <p className="mt-3 text-sm text-muted-foreground">
-                This vehicle is currently available in {car.location}.
-              </p>
-            </div>
-
-            {/* Quick Specs */}
-            <div className="mt-6 grid grid-cols-2 gap-4 sm:grid-cols-4">
-
-              <div className="rounded-xl border p-4">
-                <p className="text-xs text-muted-foreground">
-                  Fuel
-                </p>
-
-                <p className="mt-2 font-semibold">
-                  {car.fuel}
-                </p>
-              </div>
-
-              <div className="rounded-xl border p-4">
-                <p className="text-xs text-muted-foreground">
-                  Transmission
-                </p>
-
-                <p className="mt-2 font-semibold">
-                  {car.transmission}
-                </p>
-              </div>
-
-              <div className="rounded-xl border p-4">
-                <p className="text-xs text-muted-foreground">
-                  Seats
-                </p>
-
-                <p className="mt-2 font-semibold">
-                  {car.seats}
-                </p>
-              </div>
-
-              <div className="rounded-xl border p-4">
-                <p className="text-xs text-muted-foreground">
-                  Luggage
-                </p>
-
-                <p className="mt-2 font-semibold">
-                  {car.luggage}
-                </p>
-              </div>
-
-            </div>
-
-            {/* Book Button */}
-            <Link
-              href={bookingHref}
-              className="mt-6 flex h-12 w-full items-center justify-center rounded-lg bg-black text-sm font-semibold text-white transition hover:bg-zinc-800"
-            >
-              Book This Car
-            </Link>
-
-            <p className="mt-3 text-center text-xs text-muted-foreground">
-              Free cancellation may be available depending on the rental
-              policy.
-            </p>
-          </div>
-        </section>
-
-        {/* Vehicle Specifications */}
-        <section className="mt-16">
-          <p className="text-sm uppercase tracking-[0.2em] text-muted-foreground">
-            Specifications
-          </p>
-
-          <h2 className="mt-2 text-3xl font-bold">
-            Vehicle Specifications
-          </h2>
-
-          <div className="mt-8 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-
-            <div className="rounded-xl border p-6">
-              <p className="text-sm text-muted-foreground">
-                Fuel Type
-              </p>
-
-              <p className="mt-2 text-lg font-semibold">
-                {car.fuel}
-              </p>
-            </div>
-
-            <div className="rounded-xl border p-6">
-              <p className="text-sm text-muted-foreground">
-                Transmission
-              </p>
-
-              <p className="mt-2 text-lg font-semibold">
-                {car.transmission}
-              </p>
-            </div>
-
-            <div className="rounded-xl border p-6">
-              <p className="text-sm text-muted-foreground">
-                Seating Capacity
-              </p>
-
-              <p className="mt-2 text-lg font-semibold">
-                {car.seats} Seats
-              </p>
-            </div>
-
-            <div className="rounded-xl border p-6">
-              <p className="text-sm text-muted-foreground">
-                Air Conditioning
-              </p>
-
-              <p className="mt-2 text-lg font-semibold">
-                {car.ac ? "Yes" : "No"}
-              </p>
-            </div>
-
-            <div className="rounded-xl border p-6">
-              <p className="text-sm text-muted-foreground">
-                Luggage
-              </p>
-
-              <p className="mt-2 text-lg font-semibold">
-                {car.luggage}
-              </p>
-            </div>
-
-            <div className="rounded-xl border p-6">
-              <p className="text-sm text-muted-foreground">
-                Location
-              </p>
-
-              <p className="mt-2 text-lg font-semibold">
-                {car.location}
-              </p>
-            </div>
-
-            <div className="rounded-xl border p-6">
-              <p className="text-sm text-muted-foreground">
-                Variant
-              </p>
-
-              <p className="mt-2 text-lg font-semibold">
-                {car.variant}
-              </p>
-            </div>
-
-            <div className="rounded-xl border p-6">
-              <p className="text-sm text-muted-foreground">
-                Rating
-              </p>
-
-              <p className="mt-2 text-lg font-semibold">
-                ★ {car.rating} / 5
-              </p>
-            </div>
-
-          </div>
-        </section>
-
-        {/* Features */}
-        <section className="mt-16">
-          <p className="text-sm uppercase tracking-[0.2em] text-muted-foreground">
-            Features
-          </p>
-
-          <h2 className="mt-2 text-3xl font-bold">
-            What&apos;s Included
-          </h2>
-
-          <div className="mt-8 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-
-            {car.features.map((feature) => (
-              <div
-                key={feature}
-                className="flex items-center gap-3 rounded-xl border p-5"
-              >
-                <span className="flex h-7 w-7 items-center justify-center rounded-full bg-black text-sm text-white">
-                  ✓
-                </span>
-
-                <span className="text-sm font-medium">
-                  {feature}
-                </span>
-              </div>
-            ))}
-
-          </div>
-        </section>
-
-        {/* Rental Rules + Documents */}
-        <section className="mt-16 grid gap-8 lg:grid-cols-2">
-
-          {/* Rental Rules */}
-          <div className="rounded-2xl border p-8">
-            <p className="text-sm uppercase tracking-[0.2em] text-muted-foreground">
-              Important
-            </p>
-
-            <h2 className="mt-2 text-2xl font-bold">
-              Rental Rules
-            </h2>
-
-            <div className="mt-6 space-y-4">
-
-              {car.rentalRules.map((rule) => (
-                <div
-                  key={rule}
-                  className="flex gap-3 text-sm text-muted-foreground"
-                >
-                  <span className="font-semibold text-foreground">
-                    •
-                  </span>
-
-                  <span>{rule}</span>
-                </div>
-              ))}
-
-            </div>
-          </div>
-
-          {/* Documents */}
-          <div className="rounded-2xl border p-8">
-            <p className="text-sm uppercase tracking-[0.2em] text-muted-foreground">
-              Verification
-            </p>
-
-            <h2 className="mt-2 text-2xl font-bold">
-              Documents Required
-            </h2>
-
-            <div className="mt-6 space-y-4">
-
-              {car.documents.map((document) => (
-                <div
-                  key={document}
-                  className="flex items-center gap-3"
-                >
-                  <span className="flex h-7 w-7 items-center justify-center rounded-full bg-black text-sm text-white">
-                    ✓
-                  </span>
-
-                  <span className="text-sm">
-                    {document}
+            {/* Left: Image Gallery & Specs */}
+            <div className="lg:col-span-7 space-y-8">
+              
+              {/* Image Preview */}
+              <div className="relative overflow-hidden rounded-3xl border border-slate-200/80 bg-slate-900 shadow-xl group">
+                <img
+                  src={car.image}
+                  alt={car.name}
+                  className="h-[400px] sm:h-[480px] w-full object-cover transition-transform duration-700 group-hover:scale-105"
+                />
+                
+                <div className="absolute top-4 left-4">
+                  <span className="rounded-full bg-slate-950/80 backdrop-blur-md px-3.5 py-1.5 text-xs font-bold text-white border border-white/20">
+                    📍 {car.location} Hub
                   </span>
                 </div>
-              ))}
+              </div>
+
+              {/* Specification Grid Pills */}
+              <div className="grid grid-cols-2 gap-4 sm:grid-cols-4">
+                <div className="rounded-2xl border border-slate-200 bg-white p-4 text-center shadow-sm">
+                  <Fuel className="mx-auto h-5 w-5 text-blue-600 mb-1" />
+                  <p className="text-xs font-semibold text-slate-500">Fuel Type</p>
+                  <p className="mt-1 text-sm font-extrabold text-slate-900">{car.fuel}</p>
+                </div>
+
+                <div className="rounded-2xl border border-slate-200 bg-white p-4 text-center shadow-sm">
+                  <Gauge className="mx-auto h-5 w-5 text-blue-600 mb-1" />
+                  <p className="text-xs font-semibold text-slate-500">Transmission</p>
+                  <p className="mt-1 text-sm font-extrabold text-slate-900">{car.transmission}</p>
+                </div>
+
+                <div className="rounded-2xl border border-slate-200 bg-white p-4 text-center shadow-sm">
+                  <Users className="mx-auto h-5 w-5 text-blue-600 mb-1" />
+                  <p className="text-xs font-semibold text-slate-500">Seating</p>
+                  <p className="mt-1 text-sm font-extrabold text-slate-900">{car.seats} People</p>
+                </div>
+
+                <div className="rounded-2xl border border-slate-200 bg-white p-4 text-center shadow-sm">
+                  <ShieldCheck className="mx-auto h-5 w-5 text-blue-600 mb-1" />
+                  <p className="text-xs font-semibold text-slate-500">Luggage</p>
+                  <p className="mt-1 text-sm font-extrabold text-slate-900">{car.luggage}</p>
+                </div>
+              </div>
 
             </div>
+
+            {/* Right: Booking Summary Sticky Card */}
+            <div className="lg:col-span-5">
+              <div className="sticky top-28 rounded-3xl border border-slate-200 bg-white p-8 shadow-2xl space-y-6">
+                
+                <div>
+                  <span className="text-xs font-extrabold uppercase tracking-widest text-blue-600">{car.variant}</span>
+                  <h1 className="text-3xl font-black text-slate-900 mt-1">{car.name}</h1>
+                </div>
+
+                {/* Price Display */}
+                <div className="rounded-2xl bg-slate-900 p-5 text-white flex items-center justify-between">
+                  <div>
+                    <span className="text-xs font-semibold text-slate-400 block uppercase tracking-wider">Base Daily Rate</span>
+                    <div className="flex items-baseline gap-1 mt-1">
+                      <span className="text-3xl font-black text-white">₹{car.price.toLocaleString("en-IN")}</span>
+                      <span className="text-xs font-semibold text-slate-400"> / day</span>
+                    </div>
+                  </div>
+
+                  <div className="text-right">
+                    <span className="text-xs font-semibold text-slate-400 block">Security Deposit</span>
+                    <span className="text-sm font-bold text-blue-400">₹{car.deposit.toLocaleString("en-IN")}</span>
+                  </div>
+                </div>
+
+                {/* Status Callout */}
+                <div className="rounded-2xl bg-emerald-50 border border-emerald-200/80 p-4 flex items-center gap-3">
+                  <div className="h-3 w-3 rounded-full bg-emerald-500 animate-pulse" />
+                  <div>
+                    <p className="text-xs font-extrabold text-emerald-900">Available for Immediate Self-Drive Booking</p>
+                    <p className="text-xs font-semibold text-emerald-700">Instant confirmation in {car.location}</p>
+                  </div>
+                </div>
+
+                {/* Book CTA */}
+                <Link
+                  href={bookingHref}
+                  className="flex h-14 w-full items-center justify-center gap-3 rounded-2xl bg-gradient-to-r from-slate-950 via-blue-900 to-blue-600 text-base font-extrabold text-white shadow-xl transition-all hover:scale-[1.01] hover:shadow-blue-500/25 active:scale-[0.99]"
+                >
+                  <span>Book This Car Now</span>
+                  <ArrowRight className="h-5 w-5" />
+                </Link>
+
+                <p className="text-center text-xs font-semibold text-slate-500">
+                  🔒 Free cancellation up to 24h before pickup
+                </p>
+
+              </div>
+            </div>
+
           </div>
 
-        </section>
+          {/* Bottom Grid: Features & Documents */}
+          <div className="mt-16 grid gap-10 md:grid-cols-2">
 
-        {/* Pricing */}
-        <section className="mt-16 rounded-2xl border p-8">
+            {/* Included Features */}
+            <div className="rounded-3xl border border-slate-200/80 bg-white p-8 shadow-sm">
+              <h3 className="text-xl font-extrabold text-slate-900 flex items-center gap-2">
+                <Check className="h-5 w-5 text-blue-600" />
+                <span>Vehicle Features & Equipment</span>
+              </h3>
 
-          <p className="text-sm uppercase tracking-[0.2em] text-muted-foreground">
-            Pricing
-          </p>
-
-          <h2 className="mt-2 text-3xl font-bold">
-            Rental Pricing
-          </h2>
-
-          <div className="mt-8 grid gap-6 md:grid-cols-2">
-
-            <div className="rounded-xl bg-muted p-6">
-              <p className="text-sm text-muted-foreground">
-                Daily Rental
-              </p>
-
-              <p className="mt-2 text-3xl font-bold">
-                ₹{car.price.toLocaleString("en-IN")}
-              </p>
-
-              <p className="mt-1 text-sm text-muted-foreground">
-                per day
-              </p>
+              <div className="mt-6 grid gap-3 sm:grid-cols-2">
+                {car.features.map((feature) => (
+                  <div key={feature} className="flex items-center gap-2.5 rounded-xl bg-slate-50 px-3.5 py-2.5 border border-slate-100">
+                    <span className="flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-blue-600 text-xs text-white">✓</span>
+                    <span className="text-xs font-bold text-slate-700">{feature}</span>
+                  </div>
+                ))}
+              </div>
             </div>
 
-            <div className="rounded-xl bg-muted p-6">
-              <p className="text-sm text-muted-foreground">
-                Security Deposit
-              </p>
+            {/* Documents & Rules */}
+            <div className="rounded-3xl border border-slate-200/80 bg-white p-8 shadow-sm space-y-6">
+              <div>
+                <h3 className="text-xl font-extrabold text-slate-900 flex items-center gap-2">
+                  <FileText className="h-5 w-5 text-blue-600" />
+                  <span>Required Verification Documents</span>
+                </h3>
 
-              <p className="mt-2 text-3xl font-bold">
-                ₹{car.deposit.toLocaleString("en-IN")}
-              </p>
+                <ul className="mt-4 space-y-2.5 text-xs font-bold text-slate-700">
+                  {car.documents.map((doc) => (
+                    <li key={doc} className="flex items-center gap-2">
+                      <span className="h-2 w-2 rounded-full bg-blue-600" />
+                      <span>{doc}</span>
+                    </li>
+                  ))}
+                </ul>
+              </div>
 
-              <p className="mt-1 text-sm text-muted-foreground">
-                refundable deposit
-              </p>
+              <div className="border-t border-slate-100 pt-5">
+                <h4 className="text-sm font-bold text-slate-900">Rental Terms</h4>
+                <ul className="mt-2 space-y-1.5 text-xs text-slate-600">
+                  {car.rentalRules.map((rule) => (
+                    <li key={rule}>• {rule}</li>
+                  ))}
+                </ul>
+              </div>
             </div>
 
           </div>
 
-          <Link
-            href={bookingHref}
-            className="mt-8 flex h-12 w-full items-center justify-center rounded-lg bg-black text-sm font-semibold text-white transition hover:bg-zinc-800"
-          >
-            Continue to Booking
-          </Link>
-
-        </section>
-
-        {/* Back */}
-        <div className="mt-10">
-          <Link
-            href="/cars"
-            className="text-sm font-medium underline underline-offset-4"
-          >
-            ← Back to all cars
-          </Link>
         </div>
+      </main>
 
-      </div>
-    </main>
+      <Footer />
+    </div>
   );
 }

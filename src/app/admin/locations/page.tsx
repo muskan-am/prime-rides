@@ -2,27 +2,18 @@ import { getServerSession } from "next-auth";
 import { authOptions } from "@/auth";
 import { redirect } from "next/navigation";
 import Link from "next/link";
-
 import { prisma } from "@/lib/prisma";
-import LogoutButton from "@/components/auth/LogoutButton";
 import LocationActions from "@/components/admin/LocationActions";
 
 export default async function AdminLocationsPage() {
   const session = await getServerSession(authOptions);
 
-  if (!session?.user) {
+  if (!session?.user || session.user.role !== "ADMIN") {
     redirect("/login");
   }
 
-  if (session.user.role !== "ADMIN") {
-    redirect("/");
-  }
-
   const locations = await prisma.location.findMany({
-    orderBy: {
-      createdAt: "desc",
-    },
-
+    orderBy: { createdAt: "desc" },
     include: {
       _count: {
         select: {
@@ -33,237 +24,112 @@ export default async function AdminLocationsPage() {
     },
   });
 
-  const activeLocations = locations.filter(
-    (location) => location.isActive
-  ).length;
-
-  const inactiveLocations = locations.filter(
-    (location) => !location.isActive
-  ).length;
+  const activeLocations = locations.filter((l) => l.isActive).length;
+  const inactiveLocations = locations.filter((l) => !l.isActive).length;
 
   return (
-    <main className="min-h-screen bg-background px-4 py-8 sm:px-6 lg:px-8">
-      <div className="mx-auto max-w-7xl">
-
-        {/* Header */}
-        <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
-          <div>
-            <Link
-              href="/admin"
-              className="text-sm text-muted-foreground transition hover:text-foreground"
-            >
-              ← Back to Admin Dashboard
-            </Link>
-
-            <p className="mt-4 text-sm text-muted-foreground">
-              Prime Rides Admin
-            </p>
-
-            <h1 className="mt-1 text-3xl font-bold">
-              Location Management
-            </h1>
-
-            <p className="mt-1 text-sm text-muted-foreground">
-              Manage pickup and rental locations.
-            </p>
-          </div>
-
-          <div className="flex items-center gap-3">
-            <Link
-              href="/admin/locations/new"
-              className="rounded-lg bg-primary px-4 py-2.5 text-sm font-medium text-primary-foreground transition hover:opacity-90"
-            >
-              + Add Location
-            </Link>
-
-            <LogoutButton />
-          </div>
+    <div className="space-y-6">
+      {/* Header */}
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+        <div>
+          <h1 className="text-2xl sm:text-3xl font-extrabold text-white tracking-tight">
+            Hub Location Management
+          </h1>
+          <p className="text-slate-400 text-sm mt-1">
+            Configure pickup hubs, depot addresses, active status, and inventory.
+          </p>
         </div>
 
-        {/* Statistics */}
-        <div className="mt-8 grid gap-4 sm:grid-cols-3">
+        <Link
+          href="/admin/locations/new"
+          className="inline-flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl bg-blue-600 hover:bg-blue-500 text-white text-sm font-semibold shadow-lg shadow-blue-600/25 transition-all"
+        >
+          + Add New Location
+        </Link>
+      </div>
 
-          {/* Total */}
-          <div className="rounded-2xl border bg-card p-5">
-            <p className="text-sm text-muted-foreground">
-              Total Locations
-            </p>
+      {/* Stats */}
+      <div className="grid gap-4 sm:grid-cols-3">
+        <div className="p-5 rounded-2xl bg-slate-900/80 border border-slate-800">
+          <p className="text-xs font-semibold text-slate-400 uppercase tracking-wider">Total Hubs</p>
+          <p className="text-3xl font-extrabold text-white mt-2">{locations.length}</p>
+        </div>
+        <div className="p-5 rounded-2xl bg-slate-900/80 border border-slate-800">
+          <p className="text-xs font-semibold text-emerald-400 uppercase tracking-wider">Active Hubs</p>
+          <p className="text-3xl font-extrabold text-emerald-300 mt-2">{activeLocations}</p>
+        </div>
+        <div className="p-5 rounded-2xl bg-slate-900/80 border border-slate-800">
+          <p className="text-xs font-semibold text-rose-400 uppercase tracking-wider">Inactive Hubs</p>
+          <p className="text-3xl font-extrabold text-rose-300 mt-2">{inactiveLocations}</p>
+        </div>
+      </div>
 
-            <p className="mt-2 text-3xl font-bold">
-              {locations.length}
-            </p>
-          </div>
-
-          {/* Active */}
-          <div className="rounded-2xl border bg-card p-5">
-            <p className="text-sm text-muted-foreground">
-              Active Locations
-            </p>
-
-            <p className="mt-2 text-3xl font-bold">
-              {activeLocations}
-            </p>
-          </div>
-
-          {/* Inactive */}
-          <div className="rounded-2xl border bg-card p-5">
-            <p className="text-sm text-muted-foreground">
-              Inactive Locations
-            </p>
-
-            <p className="mt-2 text-3xl font-bold">
-              {inactiveLocations}
-            </p>
-          </div>
-
+      {/* Locations List */}
+      <div className="rounded-2xl border border-slate-800 bg-slate-900/80 overflow-hidden shadow-xl">
+        <div className="p-5 border-b border-slate-800 flex items-center justify-between">
+          <h2 className="font-bold text-white text-lg">Configured Rental Hubs</h2>
+          <span className="text-xs text-slate-400">Total: {locations.length}</span>
         </div>
 
-        {/* Location List */}
-        <div className="mt-8 rounded-2xl border bg-card">
-
-          {/* List Header */}
-          <div className="border-b p-6">
-            <h2 className="text-lg font-semibold">
-              All Locations
-            </h2>
-
-            <p className="mt-1 text-sm text-muted-foreground">
-              Locations available for vehicle bookings.
-            </p>
+        {locations.length === 0 ? (
+          <div className="p-12 text-center text-slate-400 text-sm">
+            No locations created yet. Click above to add your first hub.
           </div>
-
-          {/* Empty State */}
-          {locations.length === 0 ? (
-            <div className="p-10 text-center">
-
-              <p className="font-medium">
-                No locations found
-              </p>
-
-              <p className="mt-1 text-sm text-muted-foreground">
-                Add your first rental location.
-              </p>
-
-              <Link
-                href="/admin/locations/new"
-                className="mt-5 inline-flex rounded-lg bg-primary px-4 py-2 text-sm font-medium text-primary-foreground"
-              >
-                Add Location
-              </Link>
-
-            </div>
-          ) : (
-            <div className="divide-y">
-
-              {locations.map((location) => (
-                <div
-                  key={location.id}
-                  className="p-6 transition hover:bg-muted/20"
-                >
-
-                  <div className="flex flex-col gap-6 lg:flex-row lg:items-center lg:justify-between">
-
-                    {/* Location Information */}
-                    <div className="min-w-0">
-
-                      <div className="flex flex-wrap items-center gap-3">
-
-                        <h3 className="text-lg font-semibold">
-                          {location.name}
-                        </h3>
-
-                        <span
-                          className={`rounded-full px-3 py-1 text-xs font-semibold ${
-                            location.isActive
-                              ? "bg-green-100 text-green-700"
-                              : "bg-red-100 text-red-700"
-                          }`}
-                        >
-                          {location.isActive
-                            ? "ACTIVE"
-                            : "INACTIVE"}
-                        </span>
-
-                      </div>
-
-                      <div className="mt-3 space-y-1">
-
-                        <p className="text-sm text-muted-foreground">
-                          <span className="font-medium text-foreground">
-                            Address:
-                          </span>{" "}
-                          {location.address || "Not available"}
-                        </p>
-
-                        <p className="text-sm text-muted-foreground">
-                          <span className="font-medium text-foreground">
-                            Phone:
-                          </span>{" "}
-                          {location.phone || "Not available"}
-                        </p>
-
-                      </div>
-
+        ) : (
+          <div className="divide-y divide-slate-800">
+            {locations.map((loc) => (
+              <div key={loc.id} className="p-6 hover:bg-slate-800/40 transition-colors">
+                <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-6">
+                  <div>
+                    <div className="flex items-center gap-3">
+                      <h3 className="text-lg font-bold text-white">{loc.name}</h3>
+                      <span
+                        className={`px-2.5 py-0.5 rounded-full text-xs font-bold border ${
+                          loc.isActive
+                            ? "bg-emerald-500/10 text-emerald-400 border-emerald-500/30"
+                            : "bg-rose-500/10 text-rose-400 border-rose-500/30"
+                        }`}
+                      >
+                        {loc.isActive ? "ACTIVE" : "INACTIVE"}
+                      </span>
                     </div>
 
-                    {/* Stats */}
-                    <div className="grid grid-cols-2 gap-5 sm:grid-cols-3">
-
-                      <div>
-                        <p className="text-xs text-muted-foreground">
-                          Bookings
-                        </p>
-
-                        <p className="mt-1 text-lg font-semibold">
-                          {location._count.bookings}
-                        </p>
-                      </div>
-
-                      <div>
-                        <p className="text-xs text-muted-foreground">
-                          Inventory
-                        </p>
-
-                        <p className="mt-1 text-lg font-semibold">
-                          {location._count.inventory}
-                        </p>
-                      </div>
-
-                      <div>
-                        <p className="text-xs text-muted-foreground">
-                          Coordinates
-                        </p>
-
-                        <p className="mt-1 text-sm font-medium">
-                          {location.latitude !== null &&
-                          location.longitude !== null
-                            ? "Available"
-                            : "Not set"}
-                        </p>
-                      </div>
-
+                    <div className="mt-2 text-xs text-slate-300 space-y-1">
+                      <p>📍 {loc.address || "Address not specified"}</p>
+                      {loc.phone && <p>📞 Phone: {loc.phone}</p>}
                     </div>
-
-                    {/* Actions */}
-                    <LocationActions
-                      id={location.id}
-                      name={location.name}
-                      isActive={location.isActive}
-                      hasBookings={location._count.bookings > 0}
-                      hasInventory={location._count.inventory > 0}
-                    />
-
                   </div>
 
+                  <div className="grid grid-cols-3 gap-4 text-xs text-slate-300">
+                    <div className="p-2.5 rounded-xl bg-slate-950 border border-slate-800 text-center">
+                      <span className="text-slate-400 block text-[10px]">Reservations</span>
+                      <strong className="text-white text-sm">{loc._count.bookings}</strong>
+                    </div>
+                    <div className="p-2.5 rounded-xl bg-slate-950 border border-slate-800 text-center">
+                      <span className="text-slate-400 block text-[10px]">Inventory</span>
+                      <strong className="text-white text-sm">{loc._count.inventory}</strong>
+                    </div>
+                    <div className="p-2.5 rounded-xl bg-slate-950 border border-slate-800 text-center">
+                      <span className="text-slate-400 block text-[10px]">GPS Sync</span>
+                      <strong className="text-emerald-400 text-sm">
+                        {loc.latitude ? "Set" : "None"}
+                      </strong>
+                    </div>
+                  </div>
+
+                  <LocationActions
+                    id={loc.id}
+                    name={loc.name}
+                    isActive={loc.isActive}
+                    hasBookings={loc._count.bookings > 0}
+                    hasInventory={loc._count.inventory > 0}
+                  />
                 </div>
-              ))}
-
-            </div>
-          )}
-
-        </div>
-
+              </div>
+            ))}
+          </div>
+        )}
       </div>
-    </main>
+    </div>
   );
 }

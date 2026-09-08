@@ -64,469 +64,329 @@ export default function NewVehiclePage() {
   }
 
   return (
-    <main className="min-h-screen bg-background px-6 py-10">
-      <div className="mx-auto max-w-4xl">
-
-        {/* Header */}
-        <div className="flex items-center justify-between">
-          <div>
-            <p className="text-sm text-muted-foreground">
-              Prime Rides Admin
-            </p>
-
-            <h1 className="mt-2 text-3xl font-bold">
-              Add Vehicle
-            </h1>
-          </div>
-
-          <Link
-            href="/admin/vehicles"
-            className="rounded-lg border px-4 py-2 text-sm font-medium hover:bg-muted"
-          >
-            ← Back to Vehicles
-          </Link>
+    <div className="space-y-6 max-w-4xl">
+      {/* Header */}
+      <div className="flex items-center justify-between">
+        <div>
+          <h1 className="text-2xl sm:text-3xl font-extrabold text-white tracking-tight">
+            Add New Vehicle
+          </h1>
+          <p className="text-slate-400 text-sm mt-1">
+            Register a new rental vehicle to your Prime Rides fleet.
+          </p>
         </div>
 
-        {/* Form Card */}
-        <div className="mt-8 rounded-2xl border bg-card p-8 shadow-sm">
+        <Link
+          href="/admin/vehicles"
+          className="px-4 py-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-200 text-sm font-medium transition-colors"
+        >
+          ← Back to Vehicles
+        </Link>
+      </div>
 
-          <form
-            onSubmit={handleSubmit}
-            className="space-y-8"
-          >
+      {/* Form Card */}
+      <div className="rounded-2xl border border-slate-800 bg-slate-900/80 p-6 sm:p-8 shadow-xl">
+        <form onSubmit={handleSubmit} className="space-y-8">
+          {/* Error */}
+          {error && (
+            <div className="rounded-xl border border-rose-500/30 bg-rose-500/10 px-4 py-3 text-sm text-rose-300">
+              {error}
+            </div>
+          )}
 
-            {/* Error */}
-            {error && (
-              <div className="rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-600">
-                {error}
-              </div>
-            )}
+          {/* Basic Information */}
+          <section className="space-y-4">
+            <h2 className="text-lg font-bold text-white border-b border-slate-800 pb-2">
+              Basic Information
+            </h2>
 
-            {/* Basic Information */}
-            <section>
-              <h2 className="text-xl font-semibold">
-                Basic Information
-              </h2>
-
-              <p className="mt-1 text-sm text-muted-foreground">
-                Enter the basic details of the rental vehicle.
-              </p>
-
-              <div className="mt-6 grid gap-5 md:grid-cols-2">
-
-                {/* Brand */}
-                <div>
-                  <label
-                    htmlFor="brand"
-                    className="text-sm font-medium"
-                  >
-                    Brand *
-                  </label>
-
-                  <input
-                    id="brand"
-                    name="brand"
-                    type="text"
-                    placeholder="e.g. Toyota"
-                    required
-                    className="mt-2 h-11 w-full rounded-lg border bg-background px-3 text-sm outline-none focus:ring-2 focus:ring-ring"
-                  />
-                </div>
-
-                {/* Model */}
-                <div>
-                  <label
-                    htmlFor="model"
-                    className="text-sm font-medium"
-                  >
-                    Model *
-                  </label>
-
-                  <input
-                    id="model"
-                    name="model"
-                    type="text"
-                    placeholder="e.g. Fortuner"
-                    required
-                    className="mt-2 h-11 w-full rounded-lg border bg-background px-3 text-sm outline-none focus:ring-2 focus:ring-ring"
-                  />
-                </div>
-
-                {/* Variant */}
-                <div>
-                  <label
-                    htmlFor="variant"
-                    className="text-sm font-medium"
-                  >
-                    Variant
-                  </label>
-
-                  <input
-                    id="variant"
-                    name="variant"
-                    type="text"
-                    placeholder="e.g. 4x4 Legender"
-                    className="mt-2 h-11 w-full rounded-lg border bg-background px-3 text-sm outline-none focus:ring-2 focus:ring-ring"
-                  />
-                </div>
-
-                {/* Registration Number */}
-                <div>
-                  <label
-                    htmlFor="registrationNumber"
-                    className="text-sm font-medium"
-                  >
-                    Registration Number
-                  </label>
-
-                  <input
-                    id="registrationNumber"
-                    name="registrationNumber"
-                    type="text"
-                    placeholder="e.g. UP32AB1234"
-                    className="mt-2 h-11 w-full rounded-lg border bg-background px-3 text-sm uppercase outline-none focus:ring-2 focus:ring-ring"
-                  />
-                </div>
-
-              </div>
-            </section>
-
-            {/* Vehicle Details */}
-            <section>
-              <h2 className="text-xl font-semibold">
-                Vehicle Details
-              </h2>
-
-              <div className="mt-6 grid gap-5 md:grid-cols-2">
-
-                {/* Fuel Type */}
-                <div>
-                  <label
-                    htmlFor="fuelType"
-                    className="text-sm font-medium"
-                  >
-                    Fuel Type
-                  </label>
-
-                  <select
-                    id="fuelType"
-                    name="fuelType"
-                    defaultValue=""
-                    className="mt-2 h-11 w-full rounded-lg border bg-background px-3 text-sm outline-none focus:ring-2 focus:ring-ring"
-                  >
-                    <option value="" disabled>
-                      Select fuel type
-                    </option>
-
-                    <option value="PETROL">
-                      Petrol
-                    </option>
-
-                    <option value="DIESEL">
-                      Diesel
-                    </option>
-
-                    <option value="CNG">
-                      CNG
-                    </option>
-
-                    <option value="ELECTRIC">
-                      Electric
-                    </option>
-
-                    <option value="HYBRID">
-                      Hybrid
-                    </option>
-                  </select>
-                </div>
-
-                {/* Transmission */}
-                <div>
-                  <label
-                    htmlFor="transmission"
-                    className="text-sm font-medium"
-                  >
-                    Transmission
-                  </label>
-
-                  <select
-                    id="transmission"
-                    name="transmission"
-                    defaultValue=""
-                    className="mt-2 h-11 w-full rounded-lg border bg-background px-3 text-sm outline-none focus:ring-2 focus:ring-ring"
-                  >
-                    <option value="" disabled>
-                      Select transmission
-                    </option>
-
-                    <option value="MANUAL">
-                      Manual
-                    </option>
-
-                    <option value="AUTOMATIC">
-                      Automatic
-                    </option>
-
-                    <option value="AMT">
-                      AMT
-                    </option>
-
-                    <option value="CVT">
-                      CVT
-                    </option>
-
-                    <option value="DCT">
-                      DCT
-                    </option>
-                  </select>
-                </div>
-
-                {/* Seating Capacity */}
-                <div>
-                  <label
-                    htmlFor="seatingCapacity"
-                    className="text-sm font-medium"
-                  >
-                    Seating Capacity
-                  </label>
-
-                  <input
-                    id="seatingCapacity"
-                    name="seatingCapacity"
-                    type="number"
-                    min="1"
-                    placeholder="e.g. 7"
-                    className="mt-2 h-11 w-full rounded-lg border bg-background px-3 text-sm outline-none focus:ring-2 focus:ring-ring"
-                  />
-                </div>
-
-                {/* Speed Limit */}
-                <div>
-                  <label
-                    htmlFor="speedLimit"
-                    className="text-sm font-medium"
-                  >
-                    Speed Limit (km/h)
-                  </label>
-
-                  <input
-                    id="speedLimit"
-                    name="speedLimit"
-                    type="number"
-                    min="0"
-                    placeholder="e.g. 120"
-                    className="mt-2 h-11 w-full rounded-lg border bg-background px-3 text-sm outline-none focus:ring-2 focus:ring-ring"
-                  />
-                </div>
-
-              </div>
-            </section>
-
-            {/* Pricing */}
-            <section>
-              <h2 className="text-xl font-semibold">
-                Pricing
-              </h2>
-
-              <div className="mt-6 grid gap-5 md:grid-cols-2">
-
-                {/* Base Price */}
-                <div>
-                  <label
-                    htmlFor="basePrice"
-                    className="text-sm font-medium"
-                  >
-                    Base Price *
-                  </label>
-
-                  <input
-                    id="basePrice"
-                    name="basePrice"
-                    type="number"
-                    min="0"
-                    step="0.01"
-                    placeholder="e.g. 2500"
-                    required
-                    className="mt-2 h-11 w-full rounded-lg border bg-background px-3 text-sm outline-none focus:ring-2 focus:ring-ring"
-                  />
-                </div>
-
-                {/* Deposit */}
-                <div>
-                  <label
-                    htmlFor="deposit"
-                    className="text-sm font-medium"
-                  >
-                    Security Deposit
-                  </label>
-
-                  <input
-                    id="deposit"
-                    name="deposit"
-                    type="number"
-                    min="0"
-                    step="0.01"
-                    placeholder="e.g. 5000"
-                    defaultValue="0"
-                    className="mt-2 h-11 w-full rounded-lg border bg-background px-3 text-sm outline-none focus:ring-2 focus:ring-ring"
-                  />
-                </div>
-
-              </div>
-            </section>
-
-            {/* Status */}
-            <section>
-              <h2 className="text-xl font-semibold">
-                Status & Visibility
-              </h2>
-
-              <div className="mt-6 grid gap-5 md:grid-cols-3">
-
-                {/* Availability */}
-                <div>
-                  <label
-                    htmlFor="availabilityStatus"
-                    className="text-sm font-medium"
-                  >
-                    Availability
-                  </label>
-
-                  <select
-                    id="availabilityStatus"
-                    name="availabilityStatus"
-                    defaultValue="AVAILABLE"
-                    className="mt-2 h-11 w-full rounded-lg border bg-background px-3 text-sm outline-none focus:ring-2 focus:ring-ring"
-                  >
-                    <option value="AVAILABLE">
-                      Available
-                    </option>
-
-                    <option value="UNAVAILABLE">
-                      Unavailable
-                    </option>
-                  </select>
-                </div>
-
-                {/* Maintenance */}
-                <div>
-                  <label
-                    htmlFor="maintenanceStatus"
-                    className="text-sm font-medium"
-                  >
-                    Maintenance
-                  </label>
-
-                  <select
-                    id="maintenanceStatus"
-                    name="maintenanceStatus"
-                    defaultValue="GOOD"
-                    className="mt-2 h-11 w-full rounded-lg border bg-background px-3 text-sm outline-none focus:ring-2 focus:ring-ring"
-                  >
-                    <option value="GOOD">
-                      Good
-                    </option>
-
-                    <option value="MAINTENANCE">
-                      Maintenance
-                    </option>
-                  </select>
-                </div>
-
-                {/* Search Priority */}
-                <div>
-                  <label
-                    htmlFor="searchPriority"
-                    className="text-sm font-medium"
-                  >
-                    Search Priority
-                  </label>
-
-                  <input
-                    id="searchPriority"
-                    name="searchPriority"
-                    type="number"
-                    min="0"
-                    defaultValue="0"
-                    className="mt-2 h-11 w-full rounded-lg border bg-background px-3 text-sm outline-none focus:ring-2 focus:ring-ring"
-                  />
-                </div>
-
-              </div>
-            </section>
-
-            {/* Image */}
-            <section>
-              <h2 className="text-xl font-semibold">
-                Vehicle Image
-              </h2>
-
-              <div className="mt-6">
-                <label
-                  htmlFor="primaryImage"
-                  className="text-sm font-medium"
-                >
-                  Primary Image URL
+            <div className="grid gap-5 sm:grid-cols-2">
+              {/* Brand */}
+              <div>
+                <label htmlFor="brand" className="block text-xs font-semibold uppercase tracking-wider text-slate-300 mb-1.5">
+                  Brand / Make *
                 </label>
-
                 <input
-                  id="primaryImage"
-                  name="primaryImage"
-                  type="url"
-                  placeholder="https://example.com/car.jpg"
-                  className="mt-2 h-11 w-full rounded-lg border bg-background px-3 text-sm outline-none focus:ring-2 focus:ring-ring"
+                  id="brand"
+                  name="brand"
+                  type="text"
+                  placeholder="e.g. Toyota"
+                  required
+                  className="w-full h-11 px-4 rounded-xl bg-slate-950 border border-slate-800 text-white placeholder-slate-500 focus:outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500 text-sm"
                 />
               </div>
-            </section>
 
-            {/* Rental Terms */}
-            <section>
-              <h2 className="text-xl font-semibold">
-                Rental Terms
-              </h2>
-
-              <div className="mt-6">
-                <label
-                  htmlFor="rentalTerms"
-                  className="text-sm font-medium"
-                >
-                  Rental Terms
+              {/* Model */}
+              <div>
+                <label htmlFor="model" className="block text-xs font-semibold uppercase tracking-wider text-slate-300 mb-1.5">
+                  Model *
                 </label>
-
-                <textarea
-                  id="rentalTerms"
-                  name="rentalTerms"
-                  rows={5}
-                  placeholder="Enter rental terms and conditions..."
-                  className="mt-2 w-full rounded-lg border bg-background px-3 py-3 text-sm outline-none focus:ring-2 focus:ring-ring"
+                <input
+                  id="model"
+                  name="model"
+                  type="text"
+                  placeholder="e.g. Fortuner"
+                  required
+                  className="w-full h-11 px-4 rounded-xl bg-slate-950 border border-slate-800 text-white placeholder-slate-500 focus:outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500 text-sm"
                 />
               </div>
-            </section>
 
-            {/* Actions */}
-            <div className="flex items-center justify-end gap-3 border-t pt-6">
+              {/* Variant */}
+              <div>
+                <label htmlFor="variant" className="block text-xs font-semibold uppercase tracking-wider text-slate-300 mb-1.5">
+                  Variant / Trim
+                </label>
+                <input
+                  id="variant"
+                  name="variant"
+                  type="text"
+                  placeholder="e.g. 4x4 Legender"
+                  className="w-full h-11 px-4 rounded-xl bg-slate-950 border border-slate-800 text-white placeholder-slate-500 focus:outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500 text-sm"
+                />
+              </div>
 
-              <Link
-                href="/admin/vehicles"
-                className="rounded-lg border px-5 py-2.5 text-sm font-medium hover:bg-muted"
-              >
-                Cancel
-              </Link>
+              {/* Registration Number */}
+              <div>
+                <label htmlFor="registrationNumber" className="block text-xs font-semibold uppercase tracking-wider text-slate-300 mb-1.5">
+                  Registration Plate Number
+                </label>
+                <input
+                  id="registrationNumber"
+                  name="registrationNumber"
+                  type="text"
+                  placeholder="e.g. DL 01 AB 1234"
+                  className="w-full h-11 px-4 rounded-xl bg-slate-950 border border-slate-800 text-white font-mono uppercase placeholder-slate-500 focus:outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500 text-sm"
+                />
+              </div>
+            </div>
+          </section>
 
-              <button
-                type="submit"
-                disabled={loading}
-                className="rounded-lg bg-black px-5 py-2.5 text-sm font-medium text-white hover:bg-zinc-800 disabled:cursor-not-allowed disabled:opacity-50"
-              >
-                {loading ? "Creating..." : "Create Vehicle"}
-              </button>
+          {/* Vehicle Specifications */}
+          <section className="space-y-4">
+            <h2 className="text-lg font-bold text-white border-b border-slate-800 pb-2">
+              Specifications & Features
+            </h2>
 
+            <div className="grid gap-5 sm:grid-cols-2 lg:grid-cols-4">
+              {/* Fuel Type */}
+              <div>
+                <label htmlFor="fuelType" className="block text-xs font-semibold uppercase tracking-wider text-slate-300 mb-1.5">
+                  Fuel Type
+                </label>
+                <select
+                  id="fuelType"
+                  name="fuelType"
+                  defaultValue="PETROL"
+                  className="w-full h-11 px-3 rounded-xl bg-slate-950 border border-slate-800 text-white focus:outline-none focus:border-blue-500 text-sm"
+                >
+                  <option value="PETROL">Petrol</option>
+                  <option value="DIESEL">Diesel</option>
+                  <option value="CNG">CNG</option>
+                  <option value="ELECTRIC">Electric</option>
+                  <option value="HYBRID">Hybrid</option>
+                </select>
+              </div>
+
+              {/* Transmission */}
+              <div>
+                <label htmlFor="transmission" className="block text-xs font-semibold uppercase tracking-wider text-slate-300 mb-1.5">
+                  Transmission
+                </label>
+                <select
+                  id="transmission"
+                  name="transmission"
+                  defaultValue="AUTOMATIC"
+                  className="w-full h-11 px-3 rounded-xl bg-slate-950 border border-slate-800 text-white focus:outline-none focus:border-blue-500 text-sm"
+                >
+                  <option value="MANUAL">Manual</option>
+                  <option value="AUTOMATIC">Automatic</option>
+                  <option value="AMT">AMT</option>
+                  <option value="CVT">CVT</option>
+                  <option value="DCT">DCT</option>
+                </select>
+              </div>
+
+              {/* Seating Capacity */}
+              <div>
+                <label htmlFor="seatingCapacity" className="block text-xs font-semibold uppercase tracking-wider text-slate-300 mb-1.5">
+                  Seating Capacity
+                </label>
+                <input
+                  id="seatingCapacity"
+                  name="seatingCapacity"
+                  type="number"
+                  min="1"
+                  placeholder="5"
+                  defaultValue="5"
+                  className="w-full h-11 px-4 rounded-xl bg-slate-950 border border-slate-800 text-white placeholder-slate-500 focus:outline-none focus:border-blue-500 text-sm"
+                />
+              </div>
+
+              {/* Speed Limit */}
+              <div>
+                <label htmlFor="speedLimit" className="block text-xs font-semibold uppercase tracking-wider text-slate-300 mb-1.5">
+                  Speed Limit (km/h)
+                </label>
+                <input
+                  id="speedLimit"
+                  name="speedLimit"
+                  type="number"
+                  min="0"
+                  placeholder="120"
+                  defaultValue="120"
+                  className="w-full h-11 px-4 rounded-xl bg-slate-950 border border-slate-800 text-white placeholder-slate-500 focus:outline-none focus:border-blue-500 text-sm"
+                />
+              </div>
+            </div>
+          </section>
+
+          {/* Pricing Details */}
+          <section className="space-y-4">
+            <h2 className="text-lg font-bold text-white border-b border-slate-800 pb-2">
+              Rental Pricing & Security Deposit
+            </h2>
+
+            <div className="grid gap-5 sm:grid-cols-2">
+              {/* Base Price */}
+              <div>
+                <label htmlFor="basePrice" className="block text-xs font-semibold uppercase tracking-wider text-slate-300 mb-1.5">
+                  Daily Rental Rate (₹/day) *
+                </label>
+                <input
+                  id="basePrice"
+                  name="basePrice"
+                  type="number"
+                  min="0"
+                  step="0.01"
+                  placeholder="2500"
+                  required
+                  className="w-full h-11 px-4 rounded-xl bg-slate-950 border border-slate-800 text-white placeholder-slate-500 focus:outline-none focus:border-blue-500 text-sm font-semibold"
+                />
+              </div>
+
+              {/* Deposit */}
+              <div>
+                <label htmlFor="deposit" className="block text-xs font-semibold uppercase tracking-wider text-slate-300 mb-1.5">
+                  Refundable Security Deposit (₹)
+                </label>
+                <input
+                  id="deposit"
+                  name="deposit"
+                  type="number"
+                  min="0"
+                  step="0.01"
+                  placeholder="5000"
+                  defaultValue="3000"
+                  className="w-full h-11 px-4 rounded-xl bg-slate-950 border border-slate-800 text-white placeholder-slate-500 focus:outline-none focus:border-blue-500 text-sm"
+                />
+              </div>
+            </div>
+          </section>
+
+          {/* Status & Priority */}
+          <section className="space-y-4">
+            <h2 className="text-lg font-bold text-white border-b border-slate-800 pb-2">
+              Status & Visibility
+            </h2>
+
+            <div className="grid gap-5 sm:grid-cols-3">
+              <div>
+                <label htmlFor="availabilityStatus" className="block text-xs font-semibold uppercase tracking-wider text-slate-300 mb-1.5">
+                  Availability Status
+                </label>
+                <select
+                  id="availabilityStatus"
+                  name="availabilityStatus"
+                  defaultValue="AVAILABLE"
+                  className="w-full h-11 px-3 rounded-xl bg-slate-950 border border-slate-800 text-white focus:outline-none focus:border-blue-500 text-sm"
+                >
+                  <option value="AVAILABLE">Available</option>
+                  <option value="UNAVAILABLE">Unavailable</option>
+                </select>
+              </div>
+
+              <div>
+                <label htmlFor="maintenanceStatus" className="block text-xs font-semibold uppercase tracking-wider text-slate-300 mb-1.5">
+                  Maintenance Status
+                </label>
+                <select
+                  id="maintenanceStatus"
+                  name="maintenanceStatus"
+                  defaultValue="GOOD"
+                  className="w-full h-11 px-3 rounded-xl bg-slate-950 border border-slate-800 text-white focus:outline-none focus:border-blue-500 text-sm"
+                >
+                  <option value="GOOD">Good / Active</option>
+                  <option value="MAINTENANCE">Under Maintenance</option>
+                </select>
+              </div>
+
+              <div>
+                <label htmlFor="searchPriority" className="block text-xs font-semibold uppercase tracking-wider text-slate-300 mb-1.5">
+                  Catalog Display Rank
+                </label>
+                <input
+                  id="searchPriority"
+                  name="searchPriority"
+                  type="number"
+                  min="0"
+                  defaultValue="0"
+                  className="w-full h-11 px-4 rounded-xl bg-slate-950 border border-slate-800 text-white focus:outline-none focus:border-blue-500 text-sm"
+                />
+              </div>
+            </div>
+          </section>
+
+          {/* Image & Terms */}
+          <section className="space-y-4">
+            <h2 className="text-lg font-bold text-white border-b border-slate-800 pb-2">
+              Media & Terms
+            </h2>
+
+            <div>
+              <label htmlFor="primaryImage" className="block text-xs font-semibold uppercase tracking-wider text-slate-300 mb-1.5">
+                Primary Vehicle Image URL
+              </label>
+              <input
+                id="primaryImage"
+                name="primaryImage"
+                type="url"
+                placeholder="https://images.unsplash.com/photo-1549399542-7e3f8b79c341"
+                className="w-full h-11 px-4 rounded-xl bg-slate-950 border border-slate-800 text-white placeholder-slate-500 focus:outline-none focus:border-blue-500 text-sm"
+              />
             </div>
 
-          </form>
-        </div>
+            <div>
+              <label htmlFor="rentalTerms" className="block text-xs font-semibold uppercase tracking-wider text-slate-300 mb-1.5">
+                Rental Terms & Conditions
+              </label>
+              <textarea
+                id="rentalTerms"
+                name="rentalTerms"
+                rows={4}
+                placeholder="Specify fuel policy, mileage cap per day, age minimum..."
+                className="w-full px-4 py-3 rounded-xl bg-slate-950 border border-slate-800 text-white placeholder-slate-500 focus:outline-none focus:border-blue-500 text-sm"
+              />
+            </div>
+          </section>
 
+          {/* Submit Actions */}
+          <div className="flex items-center justify-end gap-3 pt-4 border-t border-slate-800">
+            <Link
+              href="/admin/vehicles"
+              className="px-5 py-2.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-300 text-sm font-semibold transition-colors"
+            >
+              Cancel
+            </Link>
+            <button
+              type="submit"
+              disabled={loading}
+              className="px-6 py-2.5 rounded-xl bg-blue-600 hover:bg-blue-500 text-white text-sm font-semibold shadow-lg shadow-blue-600/25 transition-all disabled:opacity-50"
+            >
+              {loading ? "Registering Vehicle..." : "Save & Add Vehicle"}
+            </button>
+          </div>
+        </form>
       </div>
-    </main>
+    </div>
   );
 }

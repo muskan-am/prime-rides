@@ -1,9 +1,10 @@
 "use client";
 
 import Link from "next/link";
-import { Car } from "lucide-react";
+import Image from "next/image";
 import { signIn } from "next-auth/react";
 import { useState } from "react";
+import { ArrowLeft, Lock, Mail, Key } from "lucide-react";
 import GoogleButton from "@/components/auth/GoogleButton";
 
 export default function LoginPage() {
@@ -14,11 +15,10 @@ export default function LoginPage() {
 
   const handleLogin = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
-
     setError("");
 
     if (!email || !password) {
-      setError("Please enter your email and password");
+      setError("Please enter both email and password.");
       return;
     }
 
@@ -32,90 +32,99 @@ export default function LoginPage() {
       });
 
       if (result?.error) {
-        setError("Invalid email or password");
+        setError("Invalid email address or password.");
         setLoading(false);
         return;
       }
 
       window.location.href = "/";
-    } catch (error) {
-      console.error("Login error:", error);
+    } catch (err) {
+      console.error("Login error:", err);
       setError("Something went wrong. Please try again.");
       setLoading(false);
     }
   };
 
   return (
-    <main className="min-h-screen bg-background flex items-center justify-center px-6 py-12">
-      <div className="w-full max-w-md">
+    <main className="min-h-screen bg-slate-50 flex flex-col justify-center px-4 py-12 sm:px-6 lg:px-8 text-slate-900 relative overflow-hidden">
+      {/* Subtle atmospheric light background gradient */}
+      <div className="absolute inset-0 bg-[radial-gradient(circle_at_top,_var(--tw-gradient-stops))] from-blue-50/80 via-slate-50 to-slate-100 pointer-events-none" />
 
-        {/* Logo */}
-        <div className="flex justify-center mb-8">
+      <div className="relative mx-auto w-full max-w-md">
+
+        {/* Back link */}
+        <div className="mb-6">
           <Link
             href="/"
-            className="flex items-center gap-2 text-xl font-bold"
+            className="inline-flex items-center gap-1.5 text-xs font-bold text-slate-600 hover:text-slate-900 transition-colors"
           >
-            <Car className="h-6 w-6" />
-            PrimeRides
+            <ArrowLeft className="h-4 w-4 text-blue-600" />
+            <span>Back to Prime Rides</span>
           </Link>
         </div>
 
         {/* Login Card */}
-        <div className="rounded-2xl border bg-card p-8 shadow-sm">
+        <div className="overflow-hidden rounded-3xl border border-slate-200 bg-white p-8 shadow-xl">
 
-          {/* Heading */}
-          <div className="text-center">
-            <h1 className="text-3xl font-bold tracking-tight">
+          {/* Logo & Title Header */}
+          <div className="text-center space-y-3">
+            <Link href="/" className="inline-block">
+              <div className="relative h-14 w-[103px] mx-auto overflow-hidden rounded-2xl border border-slate-200/80 shadow-md">
+                <Image
+                  src="/prime-rides-logo.png"
+                  alt="Prime Rides Logo"
+                  fill
+                  sizes="103px"
+                  className="object-cover rounded-2xl"
+                  priority
+                />
+              </div>
+            </Link>
+
+            <h1 className="text-2xl font-black text-slate-900 tracking-tight">
               Welcome Back
             </h1>
 
-            <p className="mt-2 text-sm text-muted-foreground">
-              Login to continue to Prime Rides
+            <p className="text-xs text-slate-500">
+              Sign in to manage your bookings and self-drive rentals
             </p>
           </div>
 
-          {/* Login Form */}
-          <form
-            onSubmit={handleLogin}
-            className="mt-8 space-y-5"
-          >
+          {/* Form */}
+          <form onSubmit={handleLogin} className="mt-8 space-y-5">
 
             {/* Email */}
-            <div>
-              <label
-                htmlFor="email"
-                className="text-sm font-medium"
-              >
-                Email Address
+            <div className="space-y-2">
+              <label htmlFor="email" className="text-xs font-bold uppercase tracking-wider text-slate-700 flex items-center gap-1.5">
+                <Mail className="h-3.5 w-3.5 text-blue-600" />
+                <span>Email Address</span>
               </label>
 
               <input
                 id="email"
                 name="email"
                 type="email"
-                placeholder="Enter your email"
+                placeholder="name@domain.com"
                 autoComplete="email"
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
-                className="mt-2 h-11 w-full rounded-lg border bg-background px-3 text-sm outline-none focus:ring-2 focus:ring-ring"
+                className="h-12 w-full rounded-xl border border-slate-300 bg-slate-50 px-4 text-sm font-semibold text-slate-900 outline-none transition-all focus:bg-white focus:border-blue-600 focus:ring-4 focus:ring-blue-600/10 placeholder:text-slate-400"
               />
             </div>
 
             {/* Password */}
-            <div>
+            <div className="space-y-2">
               <div className="flex items-center justify-between">
-                <label
-                  htmlFor="password"
-                  className="text-sm font-medium"
-                >
-                  Password
+                <label htmlFor="password" className="text-xs font-bold uppercase tracking-wider text-slate-700 flex items-center gap-1.5">
+                  <Key className="h-3.5 w-3.5 text-blue-600" />
+                  <span>Password</span>
                 </label>
 
                 <Link
                   href="/forgot-password"
-                  className="text-xs text-muted-foreground hover:text-foreground"
+                  className="text-xs font-bold text-blue-600 hover:text-blue-700 transition-colors"
                 >
-                  Forgot password?
+                  Forgot?
                 </Link>
               </div>
 
@@ -123,68 +132,49 @@ export default function LoginPage() {
                 id="password"
                 name="password"
                 type="password"
-                placeholder="Enter your password"
+                placeholder="••••••••"
                 autoComplete="current-password"
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
-                className="mt-2 h-11 w-full rounded-lg border bg-background px-3 text-sm outline-none focus:ring-2 focus:ring-ring"
+                className="h-12 w-full rounded-xl border border-slate-300 bg-slate-50 px-4 text-sm font-semibold text-slate-900 outline-none transition-all focus:bg-white focus:border-blue-600 focus:ring-4 focus:ring-blue-600/10 placeholder:text-slate-400"
               />
             </div>
 
-            {/* Error Message */}
+            {/* Error message */}
             {error && (
-              <p
-                className="rounded-lg border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-600"
-                role="alert"
-              >
+              <div className="rounded-xl border border-red-200 bg-red-50 p-3.5 text-xs font-bold text-red-600 text-center">
                 {error}
-              </p>
+              </div>
             )}
 
-            {/* Login Button */}
+            {/* Submit CTA */}
             <button
               type="submit"
               disabled={loading}
-              className="h-11 w-full rounded-lg bg-black text-sm font-medium text-white transition hover:bg-zinc-800 disabled:cursor-not-allowed disabled:opacity-50"
+              className="flex h-12 w-full items-center justify-center gap-2 rounded-xl bg-blue-600 hover:bg-blue-700 text-sm font-extrabold text-white shadow-md shadow-blue-600/20 transition-all disabled:opacity-50"
             >
-              {loading ? "Logging in..." : "Login"}
+              <Lock className="h-4 w-4" />
+              <span>{loading ? "Verifying..." : "Sign In to Account"}</span>
             </button>
           </form>
 
           {/* Divider */}
           <div className="my-6 flex items-center gap-3">
-            <div className="h-px flex-1 bg-border" />
-
-            <span className="text-xs text-muted-foreground">
-              OR
-            </span>
-
-            <div className="h-px flex-1 bg-border" />
+            <div className="h-px flex-1 bg-slate-200" />
+            <span className="text-xs font-bold uppercase tracking-wider text-slate-400">OR</span>
+            <div className="h-px flex-1 bg-slate-200" />
           </div>
 
           {/* Google Login */}
           <GoogleButton />
 
-          {/* Signup */}
-          <p className="mt-6 text-center text-sm text-muted-foreground">
-            Don't have an account?{" "}
-            <Link
-              href="/signup"
-              className="font-medium text-foreground hover:underline"
-            >
+          {/* Footer link */}
+          <p className="mt-6 text-center text-xs font-semibold text-slate-500">
+            Don't have an account yet?{" "}
+            <Link href="/signup" className="font-bold text-blue-600 hover:text-blue-700 underline">
               Create Account
             </Link>
           </p>
-        </div>
-
-        {/* Back to Home */}
-        <div className="mt-6 text-center">
-          <Link
-            href="/"
-            className="text-sm text-muted-foreground hover:text-foreground"
-          >
-            ← Back to Home
-          </Link>
         </div>
 
       </div>

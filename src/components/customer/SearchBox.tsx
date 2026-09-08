@@ -1,187 +1,215 @@
-import { Button } from "@/components/ui/button";
+"use client";
+
+import { useState } from "react";
+import { useRouter } from "next/navigation";
 import {
   CalendarDays,
   Clock,
   MapPin,
   Search,
+  Car,
+  CalendarCheck
 } from "lucide-react";
 
 export default function SearchBox() {
+  const router = useRouter();
+  const [rentalType, setRentalType] = useState("self-drive");
+  const [pickupLocation, setPickupLocation] = useState("");
+  const [returnLocation, setReturnLocation] = useState("");
+  const [pickupDate, setPickupDate] = useState("");
+  const [pickupTime, setPickupTime] = useState("");
+  const [returnDate, setReturnDate] = useState("");
+  const [returnTime, setReturnTime] = useState("");
+
+  const handleSearch = (e: React.FormEvent) => {
+    e.preventDefault();
+    const params = new URLSearchParams();
+    if (pickupLocation) params.set("location", pickupLocation);
+    if (rentalType) params.set("type", rentalType);
+    router.push(`/cars?${params.toString()}`);
+  };
+
   return (
-    <div className="mx-auto w-full max-w-6xl rounded-2xl border bg-background p-4 shadow-lg sm:p-6">
+    <div className="mx-auto w-full max-w-5xl rounded-3xl border border-slate-200/80 bg-white/95 p-6 shadow-2xl backdrop-blur-xl sm:p-8">
       
-      {/* Rental Type */}
-      <div className="mb-5">
-        <label
-          htmlFor="rental-type"
-          className="mb-2 block text-sm font-medium"
-        >
-          Rental Type
-        </label>
+      {/* Rental Type Switcher */}
+      <div className="mb-6 flex flex-wrap items-center justify-between gap-4 border-b border-slate-100 pb-5">
+        <div className="flex rounded-2xl bg-slate-100 p-1.5 border border-slate-200/60">
+          <button
+            type="button"
+            onClick={() => setRentalType("self-drive")}
+            className={`flex items-center gap-2 rounded-xl px-5 py-2.5 text-sm font-bold transition-all ${
+              rentalType === "self-drive"
+                ? "bg-slate-950 text-white shadow-md"
+                : "text-slate-600 hover:text-slate-900"
+            }`}
+          >
+            <Car className="h-4 w-4 text-blue-400" />
+            <span>Self-Drive Daily</span>
+          </button>
 
-        <select
-          id="rental-type"
-          className="h-11 w-full rounded-md border bg-background px-3 text-sm outline-none focus:ring-2 focus:ring-ring"
-          defaultValue="self-drive"
-        >
-          <option value="self-drive">Self-Drive Rental</option>
-          <option value="monthly">Monthly Rental</option>
-        </select>
+          <button
+            type="button"
+            onClick={() => setRentalType("monthly")}
+            className={`flex items-center gap-2 rounded-xl px-5 py-2.5 text-sm font-bold transition-all ${
+              rentalType === "monthly"
+                ? "bg-slate-950 text-white shadow-md"
+                : "text-slate-600 hover:text-slate-900"
+            }`}
+          >
+            <CalendarCheck className="h-4 w-4 text-blue-400" />
+            <span>Monthly Subscription</span>
+          </button>
+        </div>
+
       </div>
 
-      {/* Location Fields */}
-      <div className="grid gap-4 md:grid-cols-2">
-        
-        {/* Pickup Location */}
-        <div>
-          <label
-            htmlFor="pickup-location"
-            className="mb-2 block text-sm font-medium"
-          >
-            Pickup Location
-          </label>
-
-          <div className="relative">
-            <MapPin className="absolute left-3 top-3 h-5 w-5 text-muted-foreground" />
-
-            <select
-              id="pickup-location"
-              className="h-11 w-full rounded-md border bg-background pl-10 pr-3 text-sm outline-none focus:ring-2 focus:ring-ring"
-              defaultValue=""
+      <form onSubmit={handleSearch}>
+        {/* Location Fields */}
+        <div className="grid gap-5 md:grid-cols-2">
+          
+          {/* Pickup Location */}
+          <div className="space-y-2">
+            <label
+              htmlFor="pickup-location"
+              className="text-xs font-bold uppercase tracking-wider text-slate-600 flex items-center gap-1.5"
             >
-              <option value="" disabled>
-                Select pickup location
-              </option>
-              <option value="delhi">Delhi</option>
-              <option value="goa">Goa</option>
-              <option value="bangalore">Bangalore</option>
-            </select>
+              <MapPin className="h-3.5 w-3.5 text-blue-600" />
+              <span>Pickup Location</span>
+            </label>
+
+            <div className="relative">
+              <select
+                id="pickup-location"
+                value={pickupLocation}
+                onChange={(e) => setPickupLocation(e.target.value)}
+                className="h-12 w-full rounded-xl border border-slate-200 bg-slate-50/80 px-4 text-sm font-semibold text-slate-800 outline-none transition-all focus:border-blue-600 focus:bg-white focus:ring-4 focus:ring-blue-100"
+              >
+                <option value="">Select Pickup Location (All Hubs)</option>
+                <option value="delhi">Delhi NCR Hub</option>
+                <option value="goa">Goa International Hub</option>
+                <option value="bangalore">Bangalore Airport Hub</option>
+              </select>
+            </div>
+          </div>
+
+          {/* Return Location */}
+          <div className="space-y-2">
+            <label
+              htmlFor="return-location"
+              className="text-xs font-bold uppercase tracking-wider text-slate-600 flex items-center gap-1.5"
+            >
+              <MapPin className="h-3.5 w-3.5 text-slate-400" />
+              <span>Return Location</span>
+            </label>
+
+            <div className="relative">
+              <select
+                id="return-location"
+                value={returnLocation}
+                onChange={(e) => setReturnLocation(e.target.value)}
+                className="h-12 w-full rounded-xl border border-slate-200 bg-slate-50/80 px-4 text-sm font-semibold text-slate-800 outline-none transition-all focus:border-blue-600 focus:bg-white focus:ring-4 focus:ring-blue-100"
+              >
+                <option value="">Same as Pickup Location</option>
+                <option value="delhi">Delhi NCR Hub</option>
+                <option value="goa">Goa Hub</option>
+                <option value="bangalore">Bangalore Hub</option>
+              </select>
+            </div>
           </div>
         </div>
 
-        {/* Return Location */}
-        <div>
-          <label
-            htmlFor="return-location"
-            className="mb-2 block text-sm font-medium"
-          >
-            Return Location
-          </label>
+        {/* Date & Time Grid */}
+        <div className="mt-5 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
 
-          <div className="relative">
-            <MapPin className="absolute left-3 top-3 h-5 w-5 text-muted-foreground" />
-
-            <select
-              id="return-location"
-              className="h-11 w-full rounded-md border bg-background pl-10 pr-3 text-sm outline-none focus:ring-2 focus:ring-ring"
-              defaultValue=""
+          {/* Pickup Date */}
+          <div className="space-y-2">
+            <label
+              htmlFor="pickup-date"
+              className="text-xs font-bold uppercase tracking-wider text-slate-600 flex items-center gap-1"
             >
-              <option value="" disabled>
-                Select return location
-              </option>
-              <option value="delhi">Delhi</option>
-              <option value="goa">Goa</option>
-              <option value="bangalore">Bangalore</option>
-            </select>
-          </div>
-        </div>
-      </div>
-
-      {/* Date & Time */}
-      <div className="mt-4 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-
-        {/* Pickup Date */}
-        <div>
-          <label
-            htmlFor="pickup-date"
-            className="mb-2 block text-sm font-medium"
-          >
-            Pickup Date
-          </label>
-
-          <div className="relative">
-            <CalendarDays className="absolute left-3 top-3 h-5 w-5 text-muted-foreground" />
+              <CalendarDays className="h-3.5 w-3.5 text-blue-600" />
+              <span>Pickup Date</span>
+            </label>
 
             <input
               id="pickup-date"
               type="date"
-              className="h-11 w-full rounded-md border bg-background pl-10 pr-3 text-sm outline-none focus:ring-2 focus:ring-ring"
+              value={pickupDate}
+              onChange={(e) => setPickupDate(e.target.value)}
+              className="h-12 w-full rounded-xl border border-slate-200 bg-slate-50/80 px-3.5 text-sm font-semibold text-slate-800 outline-none transition-all focus:border-blue-600 focus:bg-white focus:ring-4 focus:ring-blue-100"
             />
           </div>
-        </div>
 
-        {/* Pickup Time */}
-        <div>
-          <label
-            htmlFor="pickup-time"
-            className="mb-2 block text-sm font-medium"
-          >
-            Pickup Time
-          </label>
-
-          <div className="relative">
-            <Clock className="absolute left-3 top-3 h-5 w-5 text-muted-foreground" />
+          {/* Pickup Time */}
+          <div className="space-y-2">
+            <label
+              htmlFor="pickup-time"
+              className="text-xs font-bold uppercase tracking-wider text-slate-600 flex items-center gap-1"
+            >
+              <Clock className="h-3.5 w-3.5 text-slate-400" />
+              <span>Pickup Time</span>
+            </label>
 
             <input
               id="pickup-time"
               type="time"
-              className="h-11 w-full rounded-md border bg-background pl-10 pr-3 text-sm outline-none focus:ring-2 focus:ring-ring"
+              value={pickupTime}
+              onChange={(e) => setPickupTime(e.target.value)}
+              className="h-12 w-full rounded-xl border border-slate-200 bg-slate-50/80 px-3.5 text-sm font-semibold text-slate-800 outline-none transition-all focus:border-blue-600 focus:bg-white focus:ring-4 focus:ring-blue-100"
             />
           </div>
-        </div>
 
-        {/* Return Date */}
-        <div>
-          <label
-            htmlFor="return-date"
-            className="mb-2 block text-sm font-medium"
-          >
-            Return Date
-          </label>
-
-          <div className="relative">
-            <CalendarDays className="absolute left-3 top-3 h-5 w-5 text-muted-foreground" />
+          {/* Return Date */}
+          <div className="space-y-2">
+            <label
+              htmlFor="return-date"
+              className="text-xs font-bold uppercase tracking-wider text-slate-600 flex items-center gap-1"
+            >
+              <CalendarDays className="h-3.5 w-3.5 text-blue-600" />
+              <span>Return Date</span>
+            </label>
 
             <input
               id="return-date"
               type="date"
-              className="h-11 w-full rounded-md border bg-background pl-10 pr-3 text-sm outline-none focus:ring-2 focus:ring-ring"
+              value={returnDate}
+              onChange={(e) => setReturnDate(e.target.value)}
+              className="h-12 w-full rounded-xl border border-slate-200 bg-slate-50/80 px-3.5 text-sm font-semibold text-slate-800 outline-none transition-all focus:border-blue-600 focus:bg-white focus:ring-4 focus:ring-blue-100"
             />
           </div>
-        </div>
 
-        {/* Return Time */}
-        <div>
-          <label
-            htmlFor="return-time"
-            className="mb-2 block text-sm font-medium"
-          >
-            Return Time
-          </label>
-
-          <div className="relative">
-            <Clock className="absolute left-3 top-3 h-5 w-5 text-muted-foreground" />
+          {/* Return Time */}
+          <div className="space-y-2">
+            <label
+              htmlFor="return-time"
+              className="text-xs font-bold uppercase tracking-wider text-slate-600 flex items-center gap-1"
+            >
+              <Clock className="h-3.5 w-3.5 text-slate-400" />
+              <span>Return Time</span>
+            </label>
 
             <input
               id="return-time"
               type="time"
-              className="h-11 w-full rounded-md border bg-background pl-10 pr-3 text-sm outline-none focus:ring-2 focus:ring-ring"
+              value={returnTime}
+              onChange={(e) => setReturnTime(e.target.value)}
+              className="h-12 w-full rounded-xl border border-slate-200 bg-slate-50/80 px-3.5 text-sm font-semibold text-slate-800 outline-none transition-all focus:border-blue-600 focus:bg-white focus:ring-4 focus:ring-blue-100"
             />
           </div>
         </div>
-      </div>
 
-      {/* Search Button */}
-      <div className="mt-5">
-        <Button
-          type="button"
-          size="lg"
-          className="w-full gap-2"
-        >
-          <Search className="h-5 w-5" />
-          Search Available Cars
-        </Button>
-      </div>
+        {/* Search CTA */}
+        <div className="mt-7">
+          <button
+            type="submit"
+            className="flex h-14 w-full items-center justify-center gap-3 rounded-2xl bg-gradient-to-r from-slate-950 via-blue-900 to-blue-600 text-base font-extrabold text-white shadow-xl transition-all hover:scale-[1.005] hover:shadow-blue-500/25 active:scale-[0.99]"
+          >
+            <Search className="h-5 w-5 text-blue-300" />
+            <span>Search Available Cars</span>
+          </button>
+        </div>
+      </form>
     </div>
   );
 }

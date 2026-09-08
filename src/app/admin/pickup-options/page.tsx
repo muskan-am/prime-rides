@@ -2,26 +2,18 @@ import { getServerSession } from "next-auth";
 import { authOptions } from "@/auth";
 import { redirect } from "next/navigation";
 import Link from "next/link";
-
 import { prisma } from "@/lib/prisma";
-import LogoutButton from "@/components/auth/LogoutButton";
 import PickupOptionActions from "@/components/admin/PickupOptionActions";
 
 export default async function AdminPickupOptionsPage() {
   const session = await getServerSession(authOptions);
 
-  if (!session?.user) {
+  if (!session?.user || session.user.role !== "ADMIN") {
     redirect("/login");
   }
 
-  if (session.user.role !== "ADMIN") {
-    redirect("/");
-  }
-
   const pickupOptions = await prisma.pickupOption.findMany({
-    orderBy: {
-      createdAt: "desc",
-    },
+    orderBy: { createdAt: "desc" },
     include: {
       _count: {
         select: {
@@ -31,192 +23,98 @@ export default async function AdminPickupOptionsPage() {
     },
   });
 
-  const activeOptions = pickupOptions.filter(
-    (option) => option.isActive
-  ).length;
-
-  const inactiveOptions = pickupOptions.filter(
-    (option) => !option.isActive
-  ).length;
+  const activeOptions = pickupOptions.filter((o) => o.isActive).length;
+  const inactiveOptions = pickupOptions.filter((o) => !o.isActive).length;
 
   return (
-    <main className="min-h-screen bg-background px-4 py-8 sm:px-6 lg:px-8">
-      <div className="mx-auto max-w-7xl">
-
-        {/* Header */}
-        <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
-          <div>
-            <Link
-              href="/admin"
-              className="text-sm text-muted-foreground transition hover:text-foreground"
-            >
-              ← Back to Admin Dashboard
-            </Link>
-
-            <p className="mt-4 text-sm text-muted-foreground">
-              Prime Rides Admin
-            </p>
-
-            <h1 className="mt-1 text-3xl font-bold">
-              Pickup Options
-            </h1>
-
-            <p className="mt-1 text-sm text-muted-foreground">
-              Manage pickup options available for customer bookings.
-            </p>
-          </div>
-
-          <div className="flex items-center gap-3">
-            <Link
-              href="/admin/pickup-options/new"
-              className="rounded-lg bg-primary px-4 py-2.5 text-sm font-medium text-primary-foreground transition hover:opacity-90"
-            >
-              + Add Pickup Option
-            </Link>
-
-            <LogoutButton />
-          </div>
+    <div className="space-y-6">
+      {/* Header */}
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+        <div>
+          <h1 className="text-2xl sm:text-3xl font-extrabold text-white tracking-tight">
+            Pickup Method Configuration
+          </h1>
+          <p className="text-slate-400 text-sm mt-1">
+            Configure delivery methods (Self Pickup, Doorstep Delivery) and status.
+          </p>
         </div>
 
-        {/* Statistics */}
-        <div className="mt-8 grid gap-4 sm:grid-cols-3">
-
-          <div className="rounded-2xl border bg-card p-5">
-            <p className="text-sm text-muted-foreground">
-              Total Options
-            </p>
-
-            <p className="mt-2 text-3xl font-bold">
-              {pickupOptions.length}
-            </p>
-          </div>
-
-          <div className="rounded-2xl border bg-card p-5">
-            <p className="text-sm text-muted-foreground">
-              Active Options
-            </p>
-
-            <p className="mt-2 text-3xl font-bold">
-              {activeOptions}
-            </p>
-          </div>
-
-          <div className="rounded-2xl border bg-card p-5">
-            <p className="text-sm text-muted-foreground">
-              Inactive Options
-            </p>
-
-            <p className="mt-2 text-3xl font-bold">
-              {inactiveOptions}
-            </p>
-          </div>
-
-        </div>
-
-        {/* Pickup Options List */}
-        <div className="mt-8 rounded-2xl border bg-card">
-
-          <div className="border-b p-6">
-            <h2 className="text-lg font-semibold">
-              All Pickup Options
-            </h2>
-
-            <p className="mt-1 text-sm text-muted-foreground">
-              Options customers can select while making a booking.
-            </p>
-          </div>
-
-          {/* Empty State */}
-          {pickupOptions.length === 0 ? (
-            <div className="p-10 text-center">
-
-              <p className="font-medium">
-                No pickup options found
-              </p>
-
-              <p className="mt-1 text-sm text-muted-foreground">
-                Add your first pickup option.
-              </p>
-
-              <Link
-                href="/admin/pickup-options/new"
-                className="mt-5 inline-flex rounded-lg bg-primary px-4 py-2 text-sm font-medium text-primary-foreground"
-              >
-                Add Pickup Option
-              </Link>
-
-            </div>
-          ) : (
-            <div className="divide-y">
-
-              {pickupOptions.map((option) => (
-                <div
-                  key={option.id}
-                  className="p-6 transition hover:bg-muted/20"
-                >
-                  <div className="flex flex-col gap-6 lg:flex-row lg:items-center lg:justify-between">
-
-                    {/* Option Information */}
-                    <div className="min-w-0 flex-1">
-
-                      <div className="flex flex-wrap items-center gap-3">
-
-                        <h3 className="text-lg font-semibold">
-                          {option.name}
-                        </h3>
-
-                        <span
-                          className={`rounded-full px-3 py-1 text-xs font-semibold ${
-                            option.isActive
-                              ? "bg-green-100 text-green-700"
-                              : "bg-red-100 text-red-700"
-                          }`}
-                        >
-                          {option.isActive
-                            ? "ACTIVE"
-                            : "INACTIVE"}
-                        </span>
-
-                      </div>
-
-                      <p className="mt-2 text-sm text-muted-foreground">
-                        {option.description ||
-                          "No description available"}
-                      </p>
-
-                    </div>
-
-                    {/* Booking Count */}
-                    <div className="shrink-0">
-                      <p className="text-xs text-muted-foreground">
-                        Bookings
-                      </p>
-
-                      <p className="mt-1 text-lg font-semibold">
-                        {option._count.bookings}
-                      </p>
-                    </div>
-
-                    {/* Actions */}
-                    <PickupOptionActions
-                      id={option.id}
-                      name={option.name}
-                      isActive={option.isActive}
-                      hasBookings={
-                        option._count.bookings > 0
-                      }
-                    />
-
-                  </div>
-                </div>
-              ))}
-
-            </div>
-          )}
-
-        </div>
-
+        <Link
+          href="/admin/pickup-options/new"
+          className="inline-flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl bg-blue-600 hover:bg-blue-500 text-white text-sm font-semibold shadow-lg shadow-blue-600/25 transition-all"
+        >
+          + Add Pickup Option
+        </Link>
       </div>
-    </main>
+
+      {/* Stats */}
+      <div className="grid gap-4 sm:grid-cols-3">
+        <div className="p-5 rounded-2xl bg-slate-900/80 border border-slate-800">
+          <p className="text-xs font-semibold text-slate-400 uppercase tracking-wider">Total Options</p>
+          <p className="text-3xl font-extrabold text-white mt-2">{pickupOptions.length}</p>
+        </div>
+        <div className="p-5 rounded-2xl bg-slate-900/80 border border-slate-800">
+          <p className="text-xs font-semibold text-emerald-400 uppercase tracking-wider">Active Options</p>
+          <p className="text-3xl font-extrabold text-emerald-300 mt-2">{activeOptions}</p>
+        </div>
+        <div className="p-5 rounded-2xl bg-slate-900/80 border border-slate-800">
+          <p className="text-xs font-semibold text-rose-400 uppercase tracking-wider">Inactive Options</p>
+          <p className="text-3xl font-extrabold text-rose-300 mt-2">{inactiveOptions}</p>
+        </div>
+      </div>
+
+      {/* Pickup Options List */}
+      <div className="rounded-2xl border border-slate-800 bg-slate-900/80 overflow-hidden shadow-xl">
+        <div className="p-5 border-b border-slate-800 flex items-center justify-between">
+          <h2 className="font-bold text-white text-lg">Configured Pickup Methods</h2>
+          <span className="text-xs text-slate-400">Total: {pickupOptions.length}</span>
+        </div>
+
+        {pickupOptions.length === 0 ? (
+          <div className="p-12 text-center text-slate-400 text-sm">
+            No pickup options added yet. Click above to create one.
+          </div>
+        ) : (
+          <div className="divide-y divide-slate-800">
+            {pickupOptions.map((opt) => (
+              <div key={opt.id} className="p-6 hover:bg-slate-800/40 transition-colors">
+                <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-6">
+                  <div className="flex-1 min-w-0">
+                    <div className="flex items-center gap-3">
+                      <h3 className="text-lg font-bold text-white">{opt.name}</h3>
+                      <span
+                        className={`px-2.5 py-0.5 rounded-full text-xs font-bold border ${
+                          opt.isActive
+                            ? "bg-emerald-500/10 text-emerald-400 border-emerald-500/30"
+                            : "bg-rose-500/10 text-rose-400 border-rose-500/30"
+                        }`}
+                      >
+                        {opt.isActive ? "ACTIVE" : "INACTIVE"}
+                      </span>
+                    </div>
+
+                    <p className="mt-1 text-xs text-slate-400">
+                      {opt.description || "No description specified."}
+                    </p>
+                  </div>
+
+                  <div className="p-3 rounded-xl bg-slate-950 border border-slate-800 text-center min-w-[120px]">
+                    <span className="text-slate-400 block text-[10px]">Reservations</span>
+                    <strong className="text-white text-sm">{opt._count.bookings}</strong>
+                  </div>
+
+                  <PickupOptionActions
+                    id={opt.id}
+                    name={opt.name}
+                    isActive={opt.isActive}
+                    hasBookings={opt._count.bookings > 0}
+                  />
+                </div>
+              </div>
+            ))}
+          </div>
+        )}
+      </div>
+    </div>
   );
 }

@@ -1,95 +1,99 @@
 "use client";
 
-import { ChevronDown } from "lucide-react";
+import { ChevronDown, HelpCircle } from "lucide-react";
 import { useState } from "react";
 
 const faqs = [
   {
-    question: "How can I book a self-drive car?",
+    question: "How can I book a self-drive car with Prime Rides?",
     answer:
-      "Select your pickup and return locations, choose your rental dates and times, select an available car and rental package, then complete the payment to confirm your booking.",
+      "Select your pickup location and dates on our homepage, browse available vehicles, choose your preferred daily or monthly package, and complete the reservation with instant verification.",
   },
   {
-    question: "Which cities are currently available?",
+    question: "What documents are required to pick up the car?",
     answer:
-      "Prime Rides is initially available in Delhi, Goa and Bangalore. More locations can be added in the future.",
+      "You need a valid Original Driving License (min 1 year old) and a government-issued ID (Aadhaar/Passport). Digilocker digital verification is supported at hub pickup.",
   },
   {
-    question: "Can I choose doorstep delivery?",
+    question: "Which cities are currently covered by Prime Rides?",
     answer:
-      "Yes. Where doorstep delivery is available, you can select it during the booking process. Delivery charges may vary by location.",
+      "Prime Rides operates dedicated fleet hubs in Delhi NCR, Goa, and Bangalore, offering airport pickup and doorstep delivery.",
   },
   {
-    question: "How do I pay for my booking?",
+    question: "Are security deposits required?",
     answer:
-      "Online payments are processed securely through Razorpay. Your booking is confirmed after the payment is successfully verified.",
+      "We offer Zero Security Deposit deals for verified profile holders on standard hatchbacks & sedans. Minimal refundable deposits apply for premium SUVs and luxury vehicles.",
   },
   {
-    question: "Can I cancel my booking?",
+    question: "What is your cancellation and modification policy?",
     answer:
-      "Yes, bookings can be cancelled according to the applicable Prime Rides cancellation and refund policy.",
+      "Free cancellations are allowed up to 24 hours before pickup time with a 100% full refund to your original payment method.",
   },
   {
-    question: "Do you offer monthly rentals?",
+    question: "Do you offer monthly car subscriptions?",
     answer:
-      "Yes. Prime Rides provides monthly rental plans with different vehicle categories and pricing options.",
+      "Yes! Our monthly plans offer flexible 1 to 12-month rentals with free maintenance, comprehensive insurance, and zero long-term commitments.",
   },
 ];
 
 export default function FAQSection() {
-  const [openIndex, setOpenIndex] = useState<number | null>(null);
+  const [openIndex, setOpenIndex] = useState<number | null>(0);
 
   const toggleFAQ = (index: number) => {
     setOpenIndex(openIndex === index ? null : index);
   };
 
   return (
-    <section className="border-t px-4 py-20 sm:px-6 lg:px-8">
+    <section className="bg-white px-4 py-24 sm:px-6 lg:px-8">
       <div className="mx-auto max-w-4xl">
 
         {/* Heading */}
         <div className="text-center">
-          <p className="text-sm font-medium uppercase tracking-[0.2em] text-muted-foreground">
-            FAQs
-          </p>
+          <div className="mx-auto inline-flex items-center gap-2 rounded-full border border-blue-200 bg-blue-50 px-3.5 py-1 text-xs font-bold uppercase tracking-wider text-blue-700">
+            <HelpCircle className="h-3.5 w-3.5 text-blue-600" />
+            <span>Got Questions?</span>
+          </div>
 
-          <h2 className="mt-2 text-3xl font-bold tracking-tight sm:text-4xl">
+          <h2 className="mt-4 text-3xl font-extrabold tracking-tight text-slate-900 sm:text-5xl">
             Frequently Asked Questions
           </h2>
 
-          <p className="mx-auto mt-3 max-w-2xl text-muted-foreground">
-            Find answers to common questions about Prime Rides
-            self-drive rentals.
+          <p className="mx-auto mt-4 max-w-2xl text-base text-slate-600">
+            Everything you need to know about Prime Rides self-drive booking, documents, deposits, and delivery.
           </p>
         </div>
 
         {/* FAQ List */}
-        <div className="mt-10 space-y-3">
+        <div className="mt-12 space-y-4">
           {faqs.map((faq, index) => {
             const isOpen = openIndex === index;
 
             return (
               <div
                 key={faq.question}
-                className="overflow-hidden rounded-xl border bg-background"
+                className={`overflow-hidden rounded-2xl border transition-all duration-200 ${
+                  isOpen
+                    ? "border-blue-300 bg-slate-50/80 shadow-md"
+                    : "border-slate-200 bg-white hover:border-slate-300"
+                }`}
               >
                 <button
                   type="button"
                   onClick={() => toggleFAQ(index)}
-                  className="flex w-full items-center justify-between gap-4 px-5 py-5 text-left font-medium transition-colors hover:bg-muted/50"
+                  className="flex w-full items-center justify-between gap-4 px-6 py-5 text-left font-bold text-slate-900 transition-colors"
                   aria-expanded={isOpen}
                 >
-                  <span>{faq.question}</span>
+                  <span className="text-base sm:text-lg">{faq.question}</span>
 
-                  <ChevronDown
-                    className={`h-5 w-5 shrink-0 transition-transform duration-200 ${
-                      isOpen ? "rotate-180" : ""
-                    }`}
-                  />
+                  <div className={`flex h-8 w-8 shrink-0 items-center justify-center rounded-full transition-transform duration-300 ${
+                    isOpen ? "rotate-180 bg-blue-600 text-white" : "bg-slate-100 text-slate-600"
+                  }`}>
+                    <ChevronDown className="h-5 w-5" />
+                  </div>
                 </button>
 
                 {isOpen && (
-                  <div className="border-t px-5 py-5 text-sm leading-6 text-muted-foreground">
+                  <div className="border-t border-slate-200/80 px-6 py-5 text-sm leading-relaxed text-slate-600 bg-white">
                     {faq.answer}
                   </div>
                 )}

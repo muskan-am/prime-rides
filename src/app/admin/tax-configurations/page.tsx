@@ -12,370 +12,195 @@ type TaxConfiguration = {
 };
 
 export default function TaxConfigurationsPage() {
-  const [taxConfigurations, setTaxConfigurations] =
-    useState<TaxConfiguration[]>([]);
+  const [taxConfigurations, setTaxConfigurations] = useState<TaxConfiguration[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState("");
+  const [deletingId, setDeletingId] = useState<string | null>(null);
 
-  const [loading, setLoading] =
-    useState(true);
+  const fetchTaxConfigurations = async () => {
+    try {
+      setLoading(true);
+      setError("");
 
-  const [error, setError] =
-    useState("");
+      const response = await fetch("/api/admin/tax-configurations");
+      const data = await response.json();
 
-  const [deletingId, setDeletingId] =
-    useState<string | null>(null);
-
-  /* =========================================
-     Fetch Tax Configurations
-  ========================================= */
-
-  const fetchTaxConfigurations =
-    async () => {
-      try {
-        setLoading(true);
-        setError("");
-
-        const response = await fetch(
-          "/api/admin/tax-configurations"
-        );
-
-        const data =
-          await response.json();
-
-        if (!response.ok) {
-          throw new Error(
-            data?.error ||
-              "Failed to fetch tax configurations."
-          );
-        }
-
-        setTaxConfigurations(
-          data.taxConfigurations || []
-        );
-      } catch (err) {
-        console.error(
-          "Fetch Tax Configurations Error:",
-          err
-        );
-
-        setError(
-          err instanceof Error
-            ? err.message
-            : "Something went wrong."
-        );
-      } finally {
-        setLoading(false);
+      if (!response.ok) {
+        throw new Error(data?.error || "Failed to fetch tax configurations.");
       }
-    };
 
-  /* =========================================
-     Initial Load
-  ========================================= */
+      setTaxConfigurations(data.taxConfigurations || []);
+    } catch (err) {
+      console.error("Fetch Tax Configurations Error:", err);
+      setError(err instanceof Error ? err.message : "Something went wrong.");
+    } finally {
+      setLoading(false);
+    }
+  };
 
   useEffect(() => {
     fetchTaxConfigurations();
   }, []);
 
-  /* =========================================
-     Delete
-  ========================================= */
-
-  const handleDelete = async (
-    id: string
-  ) => {
+  const handleDelete = async (id: string) => {
     const confirmed = window.confirm(
       "Are you sure you want to delete this tax configuration?"
     );
 
-    if (!confirmed) {
-      return;
-    }
+    if (!confirmed) return;
 
     try {
       setDeletingId(id);
       setError("");
 
-      const response = await fetch(
-        `/api/admin/tax-configurations/${id}`,
-        {
-          method: "DELETE",
-        }
-      );
+      const response = await fetch(`/api/admin/tax-configurations/${id}`, {
+        method: "DELETE",
+      });
 
-      const data =
-        await response.json();
+      const data = await response.json();
 
       if (!response.ok) {
-        throw new Error(
-          data?.error ||
-            "Failed to delete tax configuration."
-        );
+        throw new Error(data?.error || "Failed to delete tax configuration.");
       }
 
-      setTaxConfigurations(
-        (current) =>
-          current.filter(
-            (item) => item.id !== id
-          )
-      );
+      setTaxConfigurations((current) => current.filter((item) => item.id !== id));
     } catch (err) {
-      console.error(
-        "Delete Tax Configuration Error:",
-        err
-      );
-
-      setError(
-        err instanceof Error
-          ? err.message
-          : "Something went wrong while deleting."
-      );
+      console.error("Delete Tax Configuration Error:", err);
+      setError(err instanceof Error ? err.message : "Something went wrong while deleting.");
     } finally {
       setDeletingId(null);
     }
   };
 
-  /* =========================================
-     Render
-  ========================================= */
+  if (loading) {
+    return (
+      <div className="p-8 text-slate-400 text-center animate-pulse">
+        Loading tax configuration rates...
+      </div>
+    );
+  }
+
+  const activeTax = taxConfigurations.find((t) => t.isActive);
 
   return (
-    <main className="min-h-screen bg-background px-6 py-8">
-      <div className="mx-auto max-w-6xl">
-
-        {/* =====================================
-            Header
-        ===================================== */}
-
-        <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
-
-          <div>
-            <p className="text-sm text-muted-foreground">
-              Admin Panel
-            </p>
-
-            <h1 className="mt-1 text-3xl font-bold">
-              Tax Configuration
-            </h1>
-
-            <p className="mt-2 text-sm text-muted-foreground">
-              Manage the tax rate used for bookings.
-            </p>
-          </div>
-
-          <Link
-            href="/admin/tax-configurations/new"
-            className="inline-flex h-11 items-center justify-center rounded-lg bg-black px-5 text-sm font-medium text-white transition hover:bg-zinc-800"
-          >
-            + Add Tax
-          </Link>
+    <div className="space-y-6">
+      {/* Header */}
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+        <div>
+          <h1 className="text-2xl sm:text-3xl font-extrabold text-white tracking-tight">
+            GST & Tax Rates Configuration
+          </h1>
+          <p className="text-slate-400 text-sm mt-1">
+            Configure system GST percentage applied dynamically to booking checkouts.
+          </p>
         </div>
 
-        {/* =====================================
-            Error
-        ===================================== */}
+        <Link
+          href="/admin/tax-configurations/new"
+          className="inline-flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl bg-blue-600 hover:bg-blue-500 text-white text-sm font-semibold shadow-lg shadow-blue-600/25 transition-all"
+        >
+          + Add Tax Configuration
+        </Link>
+      </div>
 
-        {error && (
-          <div
-            role="alert"
-            className="mt-6 rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700"
-          >
-            {error}
-          </div>
-        )}
+      {error && (
+        <div className="rounded-xl border border-rose-500/30 bg-rose-500/10 px-4 py-3 text-sm text-rose-300">
+          {error}
+        </div>
+      )}
 
-        {/* =====================================
-            Loading
-        ===================================== */}
-
-        {loading ? (
-          <div className="mt-6 rounded-xl border bg-card p-8 text-center">
-            <p className="text-sm text-muted-foreground">
-              Loading tax configurations...
-            </p>
-          </div>
-        ) : taxConfigurations.length ===
-          0 ? (
-          /* ===================================
-             Empty State
-          =================================== */
-
-          <div className="mt-6 rounded-xl border border-dashed bg-card p-10 text-center">
-            <h2 className="font-semibold">
-              No tax configuration found
-            </h2>
-
-            <p className="mt-2 text-sm text-muted-foreground">
-              Add a tax configuration to apply
-              tax to new bookings.
-            </p>
-
-            <Link
-              href="/admin/tax-configurations/new"
-              className="mt-5 inline-flex h-10 items-center justify-center rounded-lg bg-black px-4 text-sm font-medium text-white hover:bg-zinc-800"
-            >
-              Add Tax Configuration
-            </Link>
-          </div>
-        ) : (
-          /* ===================================
-             Tax Configuration List
-          =================================== */
-
-          <div className="mt-6 overflow-hidden rounded-xl border bg-card">
-
-            {/* Desktop Header */}
-
-            <div className="hidden grid-cols-[1fr_160px_140px_180px] border-b bg-muted/30 px-5 py-3 text-xs font-semibold uppercase tracking-wide text-muted-foreground md:grid">
-              <span>Name</span>
-              <span>Tax Rate</span>
-              <span>Status</span>
-              <span className="text-right">
-                Actions
-              </span>
+      {/* Active Tax Alert Banner */}
+      {activeTax && (
+        <div className="rounded-2xl border border-emerald-500/30 bg-emerald-500/10 p-5 flex items-center justify-between">
+          <div className="flex items-center gap-3">
+            <span className="p-2 rounded-xl bg-emerald-500/20 text-emerald-400 text-lg">🧾</span>
+            <div>
+              <p className="text-xs text-emerald-400 font-semibold uppercase tracking-wider">Active System Tax Rate</p>
+              <h3 className="text-lg font-bold text-white mt-0.5">
+                {activeTax.name} — <span className="text-emerald-300">{Number(activeTax.rate)}% GST</span>
+              </h3>
             </div>
+          </div>
+          <span className="text-xs text-slate-400">Used for all new reservations</span>
+        </div>
+      )}
 
-            {/* Rows */}
+      {/* Table */}
+      {taxConfigurations.length === 0 ? (
+        <div className="rounded-2xl border border-slate-800 bg-slate-900/60 p-12 text-center">
+          <div className="text-3xl mb-3">🧾</div>
+          <h3 className="text-lg font-bold text-white">No Tax Rates Configured</h3>
+          <p className="text-sm text-slate-400 mt-1">Add GST or rental tax rate for booking calculations.</p>
+          <Link
+            href="/admin/tax-configurations/new"
+            className="mt-5 inline-flex items-center gap-2 px-5 py-2.5 rounded-xl bg-blue-600 text-white text-sm font-semibold hover:bg-blue-500 transition-colors"
+          >
+            + Add Tax Rate
+          </Link>
+        </div>
+      ) : (
+        <div className="rounded-2xl border border-slate-800 bg-slate-900/80 overflow-hidden shadow-xl">
+          <div className="p-5 border-b border-slate-800 flex items-center justify-between">
+            <h2 className="font-bold text-white text-lg">Tax Configuration Table</h2>
+            <span className="text-xs text-slate-400">Total: {taxConfigurations.length}</span>
+          </div>
 
-            <div className="divide-y">
-              {taxConfigurations.map(
-                (tax) => (
-                  <div
-                    key={tax.id}
-                    className="grid grid-cols-1 gap-4 px-5 py-5 md:grid-cols-[1fr_160px_140px_180px] md:items-center"
-                  >
-
-                    {/* Name */}
-
-                    <div>
-                      <p className="font-semibold">
-                        {tax.name}
-                      </p>
-
-                      <p className="mt-1 text-xs text-muted-foreground">
-                        Created{" "}
-                        {new Date(
-                          tax.createdAt
-                        ).toLocaleDateString(
-                          "en-IN"
-                        )}
-                      </p>
-                    </div>
-
-                    {/* Rate */}
-
-                    <div>
-                      <p className="text-xs text-muted-foreground md:hidden">
-                        Tax Rate
-                      </p>
-
-                      <p className="mt-1 font-semibold md:mt-0">
-                        {Number(
-                          tax.rate
-                        ).toLocaleString(
-                          "en-IN"
-                        )}
-                        %
-                      </p>
-                    </div>
-
-                    {/* Status */}
-
-                    <div>
-                      <p className="text-xs text-muted-foreground md:hidden">
-                        Status
-                      </p>
-
+          <div className="overflow-x-auto">
+            <table className="w-full text-left text-sm text-slate-300">
+              <thead className="text-xs uppercase bg-slate-950/60 text-slate-400 border-b border-slate-800">
+                <tr>
+                  <th className="px-6 py-4 font-semibold">Tax Name</th>
+                  <th className="px-6 py-4 font-semibold">Rate (%)</th>
+                  <th className="px-6 py-4 font-semibold">Status</th>
+                  <th className="px-6 py-4 font-semibold">Created Date</th>
+                  <th className="px-6 py-4 font-semibold text-right">Actions</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-slate-800">
+                {taxConfigurations.map((tax) => (
+                  <tr key={tax.id} className="hover:bg-slate-800/40 transition-colors">
+                    <td className="px-6 py-4 font-bold text-white">{tax.name}</td>
+                    <td className="px-6 py-4 font-extrabold text-blue-400 text-base">{Number(tax.rate)}%</td>
+                    <td className="px-6 py-4">
                       <span
-                        className={`mt-1 inline-flex rounded-full px-3 py-1 text-xs font-semibold md:mt-0 ${
+                        className={`inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-xs font-semibold border ${
                           tax.isActive
-                            ? "bg-green-100 text-green-700"
-                            : "bg-gray-100 text-gray-700"
+                            ? "bg-emerald-500/10 text-emerald-400 border-emerald-500/30"
+                            : "bg-rose-500/10 text-rose-400 border-rose-500/30"
                         }`}
                       >
-                        {tax.isActive
-                          ? "Active"
-                          : "Inactive"}
+                        <span className={`w-1.5 h-1.5 rounded-full ${tax.isActive ? "bg-emerald-400" : "bg-rose-400"}`} />
+                        {tax.isActive ? "Active" : "Inactive"}
                       </span>
-                    </div>
-
-                    {/* Actions */}
-
-                    <div className="flex items-center justify-start gap-2 md:justify-end">
-
-                      <Link
-                        href={`/admin/tax-configurations/${tax.id}/edit`}
-                        className="inline-flex h-9 items-center justify-center rounded-lg border px-3 text-sm font-medium transition hover:bg-muted"
-                      >
-                        Edit
-                      </Link>
-
-                      <button
-                        type="button"
-                        disabled={
-                          deletingId ===
-                          tax.id
-                        }
-                        onClick={() =>
-                          handleDelete(
-                            tax.id
-                          )
-                        }
-                        className="inline-flex h-9 items-center justify-center rounded-lg border border-red-200 px-3 text-sm font-medium text-red-600 transition hover:bg-red-50 disabled:cursor-not-allowed disabled:opacity-50"
-                      >
-                        {deletingId ===
-                        tax.id
-                          ? "Deleting..."
-                          : "Delete"}
-                      </button>
-
-                    </div>
-                  </div>
-                )
-              )}
-            </div>
+                    </td>
+                    <td className="px-6 py-4 text-xs text-slate-400">
+                      {new Date(tax.createdAt).toLocaleDateString("en-IN")}
+                    </td>
+                    <td className="px-6 py-4 text-right">
+                      <div className="flex items-center justify-end gap-2">
+                        <Link
+                          href={`/admin/tax-configurations/${tax.id}/edit`}
+                          className="px-3 py-1.5 rounded-lg bg-blue-600/20 hover:bg-blue-600/30 text-blue-400 text-xs font-medium border border-blue-500/30 transition-colors"
+                        >
+                          Edit
+                        </Link>
+                        <button
+                          type="button"
+                          disabled={deletingId === tax.id}
+                          onClick={() => handleDelete(tax.id)}
+                          className="px-3 py-1.5 rounded-lg bg-rose-500/10 hover:bg-rose-500/20 text-rose-400 text-xs font-medium border border-rose-500/30 transition-colors disabled:opacity-50"
+                        >
+                          {deletingId === tax.id ? "Deleting..." : "Delete"}
+                        </button>
+                      </div>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
           </div>
-        )}
-
-        {/* =====================================
-            Information
-        ===================================== */}
-
-        {!loading &&
-          taxConfigurations.some(
-            (tax) => tax.isActive
-          ) && (
-            <div className="mt-5 rounded-xl border bg-muted/30 p-4">
-              <p className="text-sm">
-                <span className="font-semibold">
-                  Active tax:
-                </span>{" "}
-                {
-                  taxConfigurations.find(
-                    (tax) =>
-                      tax.isActive
-                  )?.name
-                }{" "}
-                (
-                {
-                  Number(
-                    taxConfigurations.find(
-                      (tax) =>
-                        tax.isActive
-                    )?.rate
-                  ).toLocaleString(
-                    "en-IN"
-                  )}
-                %)
-              </p>
-
-              <p className="mt-1 text-xs text-muted-foreground">
-                This active tax configuration
-                will be used when creating new
-                bookings.
-              </p>
-            </div>
-          )}
-
-      </div>
-    </main>
+        </div>
+      )}
+    </div>
   );
 }

@@ -3,75 +3,70 @@ import {
   Headphones,
   MapPinned,
   ShieldCheck,
+  Award,
+  Sparkles
 } from "lucide-react";
 
 const benefits = [
   {
     icon: Car,
-    title: "Wide Car Selection",
-    description:
-      "Choose from a growing range of well-maintained self-drive cars for different travel needs.",
+    title: "Sanitized & Verified Fleet",
+    description: "Every car undergoes 35+ mechanical inspections and thorough deep sanitization before key handover.",
   },
   {
     icon: MapPinned,
-    title: "Multiple Locations",
-    description:
-      "Pick up your car from convenient locations across Delhi, Goa and Bangalore.",
+    title: "Flexible Airport & Hub Pickups",
+    description: "Collect your car directly from Delhi NCR, Goa, or Bangalore airports or schedule doorstep delivery.",
   },
   {
     icon: ShieldCheck,
-    title: "Secure Booking",
-    description:
-      "Enjoy a simple and secure booking experience with trusted online payments.",
+    title: "Transparent & Zero Hidden Fees",
+    description: "What you see is what you pay. Dynamic taxes, insurance, and delivery charges are calculated upfront.",
   },
   {
     icon: Headphones,
-    title: "Customer Support",
-    description:
-      "Our team is available to help you with bookings, enquiries and rental assistance.",
+    title: "24/7 Roadside Assistance",
+    description: "Dedicated assistance hotline and instant breakdown replacement support anytime, anywhere.",
   },
 ];
 
 export default function WhyChooseUs() {
   return (
-    <section className="border-t bg-muted/20 px-4 py-20 sm:px-6 lg:px-8">
+    <section id="why-us" className="bg-slate-50 px-4 py-24 sm:px-6 lg:px-8">
       <div className="mx-auto max-w-7xl">
 
         {/* Heading */}
-        <div className="mx-auto max-w-2xl text-center">
-          <p className="text-sm font-medium uppercase tracking-[0.2em] text-muted-foreground">
-            Why Prime Rides
-          </p>
+        <div className="mx-auto max-w-3xl text-center">
 
-          <h2 className="mt-2 text-3xl font-bold tracking-tight sm:text-4xl">
-            Why Choose Prime Rides?
+
+          <h2 className="mt-4 text-3xl font-extrabold tracking-tight text-slate-900 sm:text-5xl">
+            Why Drive With Prime Rides?
           </h2>
 
-          <p className="mt-3 text-muted-foreground">
-            Everything you need for a convenient, reliable and
-            hassle-free self-drive rental experience.
+          <p className="mt-4 text-base text-slate-600 leading-relaxed">
+            We eliminate traditional rental hassles with digital key verification, zero paperwork delays, and transparent pricing.
           </p>
         </div>
 
-        {/* Benefits */}
-        <div className="mt-12 grid gap-6 sm:grid-cols-2 lg:grid-cols-4">
+        {/* Benefits Grid */}
+        <div className="mt-16 grid gap-8 sm:grid-cols-2 lg:grid-cols-4">
           {benefits.map((benefit) => {
             const Icon = benefit.icon;
 
             return (
               <div
                 key={benefit.title}
-                className="rounded-2xl border bg-background p-6 text-center transition-all duration-300 hover:-translate-y-1 hover:shadow-lg"
+                className="group rounded-3xl border border-slate-200/80 bg-white p-8 text-left shadow-sm transition-all duration-300 hover:-translate-y-2 hover:shadow-xl hover:border-blue-300"
               >
-                <div className="mx-auto flex h-14 w-14 items-center justify-center rounded-full bg-muted">
-                  <Icon className="h-6 w-6" />
+                <div className="flex h-14 w-14 items-center justify-center rounded-2xl bg-blue-50 text-blue-600 transition-colors group-hover:bg-slate-900 group-hover:text-blue-400">
+                  <Icon className="h-7 w-7" />
                 </div>
 
-                <h3 className="mt-6 text-lg font-semibold">
+                <h3 className="mt-6 text-xl font-extrabold text-slate-900">
                   {benefit.title}
                 </h3>
 
-                <p className="mt-3 text-sm leading-6 text-muted-foreground">
+                <p className="mt-3 text-sm leading-relaxed text-slate-600">
                   {benefit.description}
                 </p>
               </div>
