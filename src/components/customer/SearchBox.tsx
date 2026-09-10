@@ -8,10 +8,19 @@ import {
   MapPin,
   Search,
   Car,
-  CalendarCheck
+  CalendarCheck,
 } from "lucide-react";
 
-export default function SearchBox() {
+export type SearchLocationItem = {
+  id: string;
+  name: string;
+};
+
+type SearchBoxProps = {
+  locations?: SearchLocationItem[];
+};
+
+export default function SearchBox({ locations = [] }: SearchBoxProps) {
   const router = useRouter();
   const [rentalType, setRentalType] = useState("self-drive");
   const [pickupLocation, setPickupLocation] = useState("");
@@ -24,14 +33,33 @@ export default function SearchBox() {
   const handleSearch = (e: React.FormEvent) => {
     e.preventDefault();
     const params = new URLSearchParams();
-    if (pickupLocation) params.set("location", pickupLocation);
-    if (rentalType) params.set("type", rentalType);
+
+    if (pickupLocation) {
+      params.set("location", pickupLocation);
+    }
+    if (rentalType) {
+      params.set("type", rentalType);
+    }
+
+    if (pickupDate) {
+      const fullPickup = pickupTime
+        ? `${pickupDate}T${pickupTime}`
+        : `${pickupDate}T09:00`;
+      params.set("startDate", fullPickup);
+    }
+
+    if (returnDate) {
+      const fullReturn = returnTime
+        ? `${returnDate}T${returnTime}`
+        : `${returnDate}T09:00`;
+      params.set("endDate", fullReturn);
+    }
+
     router.push(`/cars?${params.toString()}`);
   };
 
   return (
     <div className="mx-auto w-full max-w-5xl rounded-3xl border border-slate-200/80 bg-white/95 p-6 shadow-2xl backdrop-blur-xl sm:p-8">
-      
       {/* Rental Type Switcher */}
       <div className="mb-6 flex flex-wrap items-center justify-between gap-4 border-b border-slate-100 pb-5">
         <div className="flex rounded-2xl bg-slate-100 p-1.5 border border-slate-200/60">
@@ -61,13 +89,11 @@ export default function SearchBox() {
             <span>Monthly Subscription</span>
           </button>
         </div>
-
       </div>
 
       <form onSubmit={handleSearch}>
         {/* Location Fields */}
         <div className="grid gap-5 md:grid-cols-2">
-          
           {/* Pickup Location */}
           <div className="space-y-2">
             <label
@@ -86,9 +112,23 @@ export default function SearchBox() {
                 className="h-12 w-full rounded-xl border border-slate-200 bg-slate-50/80 px-4 text-sm font-semibold text-slate-800 outline-none transition-all focus:border-blue-600 focus:bg-white focus:ring-4 focus:ring-blue-100"
               >
                 <option value="">Select Pickup Location (All Hubs)</option>
-                <option value="delhi">Delhi NCR Hub</option>
-                <option value="goa">Goa International Hub</option>
-                <option value="bangalore">Bangalore Airport Hub</option>
+                {locations.length > 0
+                  ? locations.map((loc) => (
+                      <option key={loc.id} value={loc.name}>
+                        {loc.name}
+                      </option>
+                    ))
+                  : [
+                      <option key="delhi" value="delhi">
+                        Delhi NCR Hub
+                      </option>,
+                      <option key="goa" value="goa">
+                        Goa International Hub
+                      </option>,
+                      <option key="bangalore" value="bangalore">
+                        Bangalore Airport Hub
+                      </option>,
+                    ]}
               </select>
             </div>
           </div>
@@ -111,9 +151,23 @@ export default function SearchBox() {
                 className="h-12 w-full rounded-xl border border-slate-200 bg-slate-50/80 px-4 text-sm font-semibold text-slate-800 outline-none transition-all focus:border-blue-600 focus:bg-white focus:ring-4 focus:ring-blue-100"
               >
                 <option value="">Same as Pickup Location</option>
-                <option value="delhi">Delhi NCR Hub</option>
-                <option value="goa">Goa Hub</option>
-                <option value="bangalore">Bangalore Hub</option>
+                {locations.length > 0
+                  ? locations.map((loc) => (
+                      <option key={loc.id} value={loc.name}>
+                        {loc.name}
+                      </option>
+                    ))
+                  : [
+                      <option key="delhi" value="delhi">
+                        Delhi NCR Hub
+                      </option>,
+                      <option key="goa" value="goa">
+                        Goa Hub
+                      </option>,
+                      <option key="bangalore" value="bangalore">
+                        Bangalore Hub
+                      </option>,
+                    ]}
               </select>
             </div>
           </div>
@@ -121,7 +175,6 @@ export default function SearchBox() {
 
         {/* Date & Time Grid */}
         <div className="mt-5 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-
           {/* Pickup Date */}
           <div className="space-y-2">
             <label

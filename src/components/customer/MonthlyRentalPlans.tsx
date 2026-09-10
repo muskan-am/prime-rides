@@ -121,14 +121,14 @@ export default function MonthlyRentalPlans() {
 
               <div className="pt-8">
                 <Link
-                  href="/cars?type=monthly"
+                  href="/packages/monthly"
                   className={`flex h-12 w-full items-center justify-center rounded-2xl text-sm font-bold transition-all shadow-md ${
                     plan.popular
                       ? "bg-blue-600 text-white hover:bg-blue-500 hover:shadow-blue-500/30"
                       : "bg-slate-800 text-white hover:bg-slate-700"
                   }`}
                 >
-                  Select Subscription Plan
+                  Select Monthly Package
                 </Link>
               </div>
             </div>

@@ -1,17 +1,88 @@
 import Link from "next/link";
-import { Car, ShieldCheck, Sparkles, Compass, KeyRound, MapPin } from "lucide-react";
+import { Car, ShieldCheck, Tag, Headphones, Compass, KeyRound } from "lucide-react";
 import Navbar from "@/components/customer/Navbar";
 import Footer from "@/components/customer/Footer";
-import SearchBox from "@/components/customer/SearchBox";
-import FeaturedCars from "@/components/customer/FeaturedCars";
+import SearchBox, { SearchLocationItem } from "@/components/customer/SearchBox";
+import FeaturedCars, { FeaturedVehicleItem } from "@/components/customer/FeaturedCars";
 import PopularLocations from "@/components/customer/PopularLocations";
 import MonthlyRentalPlans from "@/components/customer/MonthlyRentalPlans";
 import OffersSection from "@/components/customer/OffersSection";
 import WhyChooseUs from "@/components/customer/WhyChooseUs";
 import FAQSection from "@/components/customer/FAQSection";
 import ContactSection from "@/components/customer/ContactSection";
+import { prisma } from "@/lib/prisma";
 
-export default function Home() {
+export const revalidate = 0;
+
+export default async function Home() {
+  let featuredVehicles: FeaturedVehicleItem[] = [];
+  let locations: SearchLocationItem[] = [];
+
+  try {
+    const [dbVehicles, dbLocations] = await Promise.all([
+      prisma.vehicle.findMany({
+        where: {
+          availabilityStatus: "AVAILABLE",
+          maintenanceStatus: "GOOD",
+        },
+        include: {
+          images: { orderBy: { sortOrder: "asc" } },
+        },
+        orderBy: [{ searchPriority: "desc" }, { createdAt: "desc" }],
+        take: 6,
+      }),
+      prisma.location.findMany({
+        where: { isActive: true },
+        orderBy: { name: "asc" },
+      }),
+    ]);
+
+    locations = dbLocations.map((loc) => ({
+      id: loc.id,
+      name: loc.name,
+    }));
+
+    featuredVehicles = dbVehicles.map((v) => {
+      const fuel = v.fuelType
+        ? v.fuelType.toUpperCase() === "PETROL"
+          ? "Petrol"
+          : v.fuelType.toUpperCase() === "DIESEL"
+          ? "Diesel"
+          : v.fuelType.charAt(0).toUpperCase() + v.fuelType.slice(1).toLowerCase()
+        : "Petrol";
+
+      const transmission = v.transmission
+        ? v.transmission.toUpperCase() === "AUTOMATIC"
+          ? "Automatic"
+          : v.transmission.toUpperCase() === "MANUAL"
+          ? "Manual"
+          : v.transmission.charAt(0).toUpperCase() + v.transmission.slice(1).toLowerCase()
+        : "Automatic";
+
+      const primaryImg =
+        v.primaryImage ||
+        v.images.find((img) => img.isPrimary)?.url ||
+        v.images[0]?.url ||
+        "https://images.unsplash.com/photo-1606664515524-ed2f786a0bd6?auto=format&fit=crop&w=900&q=80";
+
+      return {
+        id: v.id,
+        brand: v.brand,
+        model: v.model,
+        variant: v.variant || "",
+        type: v.variant || "SUV",
+        fuel,
+        transmission,
+        seats: v.seatingCapacity || 5,
+        price: Number(v.basePrice),
+        image: primaryImg,
+        badge: v.variant || (v.searchPriority > 0 ? "Popular" : "Verified"),
+      };
+    });
+  } catch (error) {
+    console.error("Failed to query homepage data:", error);
+  }
+
   return (
     <div className="min-h-screen bg-slate-50">
       <Navbar />
@@ -31,17 +102,17 @@ export default function Home() {
             <source src="/car.mp4" type="video/mp4" />
           </video>
 
-          {/* Clean Subtle Dark Overlay for Text Contrast (NO Blue Tint / NO Blue Shadow) */}
+          {/* Clean Subtle Dark Overlay for Text Contrast */}
           <div className="absolute inset-0 bg-gradient-to-b from-black/40 via-black/20 to-black/50 pointer-events-none z-1" />
 
           <div className="relative z-10 mx-auto max-w-7xl px-4 pt-16 pb-28 sm:px-6 lg:px-8">
             <div className="mx-auto max-w-4xl text-center space-y-6">
-
-
-
               {/* Headline */}
               <h1 className="text-4xl font-black tracking-tight text-white sm:text-6xl lg:text-7xl leading-none drop-shadow-md">
-                Your Ride. <span className="bg-gradient-to-r from-blue-400 via-cyan-300 to-white bg-clip-text text-transparent">Your Freedom.</span>
+                Your Ride.{" "}
+                <span className="bg-gradient-to-r from-blue-400 via-cyan-300 to-white bg-clip-text text-transparent">
+                  Your Freedom.
+                </span>
               </h1>
 
               {/* Supporting Text */}
@@ -68,60 +139,45 @@ export default function Home() {
                 </Link>
               </div>
 
-              {/* Quick Feature Stats */}
-              <div className="grid grid-cols-2 gap-4 pt-8 text-left sm:grid-cols-4 max-w-3xl mx-auto border-t border-slate-700/60 backdrop-blur-sm rounded-xl p-4 bg-slate-950/40">
-                <div className="flex items-center gap-3">
-                  <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-blue-950 border border-blue-800/60 text-blue-400">
-                    <Car className="h-5 w-5" />
-                  </div>
-                  <div>
-                    <p className="text-base font-extrabold text-white">500+ Fleet</p>
-                    <p className="text-xs text-slate-300">Verified Cars</p>
-                  </div>
+              {/* Text Feature Row */}
+              <div className="flex flex-wrap items-center justify-center gap-x-6 gap-y-3 pt-6 max-w-4xl mx-auto text-sm font-semibold text-slate-200">
+                <div className="flex items-center gap-2">
+                  <ShieldCheck className="h-4 w-4 text-blue-400 shrink-0" />
+                  <span>Trusted Service</span>
                 </div>
 
-                <div className="flex items-center gap-3">
-                  <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-blue-950 border border-blue-800/60 text-blue-400">
-                    <MapPin className="h-5 w-5" />
-                  </div>
-                  <div>
-                    <p className="text-base font-extrabold text-white">3 Major Hubs</p>
-                    <p className="text-xs text-slate-300">Delhi, Goa, BLR</p>
-                  </div>
+                <span className="hidden sm:inline text-slate-600 font-light">|</span>
+
+                <div className="flex items-center gap-2">
+                  <Car className="h-4 w-4 text-blue-400 shrink-0" />
+                  <span>Wide Car Selection</span>
                 </div>
 
-                <div className="flex items-center gap-3">
-                  <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-blue-950 border border-blue-800/60 text-blue-400">
-                    <ShieldCheck className="h-5 w-5" />
-                  </div>
-                  <div>
-                    <p className="text-base font-extrabold text-white">Zero Deposit</p>
-                    <p className="text-xs text-slate-300">Verified Deals</p>
-                  </div>
+                <span className="hidden sm:inline text-slate-600 font-light">|</span>
+
+                <div className="flex items-center gap-2">
+                  <Tag className="h-4 w-4 text-blue-400 shrink-0" />
+                  <span>Best Prices</span>
                 </div>
 
-                <div className="flex items-center gap-3">
-                  <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-blue-950 border border-blue-800/60 text-blue-400">
-                    <Sparkles className="h-5 w-5" />
-                  </div>
-                  <div>
-                    <p className="text-base font-extrabold text-white">24/7 Service</p>
-                    <p className="text-xs text-slate-300">Roadside Assist</p>
-                  </div>
+                <span className="hidden sm:inline text-slate-600 font-light">|</span>
+
+                <div className="flex items-center gap-2">
+                  <Headphones className="h-4 w-4 text-blue-400 shrink-0" />
+                  <span>24/7 Support</span>
                 </div>
               </div>
-
             </div>
           </div>
         </section>
 
         {/* Floating Search Section */}
         <section id="search-section" className="relative -mt-16 px-4 z-20 sm:px-6 lg:px-8">
-          <SearchBox />
+          <SearchBox locations={locations} />
         </section>
 
         {/* Fleet Discovery Section */}
-        <FeaturedCars />
+        <FeaturedCars vehicles={featuredVehicles} />
 
         {/* Popular Locations */}
         <PopularLocations />

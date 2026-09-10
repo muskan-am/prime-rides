@@ -39,6 +39,24 @@ export default function AdminSidebar({ user }: AdminSidebarProps) {
       ),
     },
     {
+      label: "Packages",
+      href: "/admin/packages",
+      icon: (
+        <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4" />
+        </svg>
+      ),
+    },
+    {
+      label: "Coupons",
+      href: "/admin/coupons",
+      icon: (
+        <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 7h.01M7 10h5M7 13h5M17 7h.01M17 10h-2.5M17 13h-2.5M3 12a9 9 0 1018 0 9 9 0 00-18 0z" />
+        </svg>
+      ),
+    },
+    {
       label: "Bookings",
       href: "/admin/bookings",
       icon: (

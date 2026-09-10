@@ -9,6 +9,26 @@ import {
 
 import { useRouter } from "next/navigation";
 
+declare global {
+  interface Window {
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    Razorpay: any;
+  }
+}
+
+const loadRazorpayScript = (): Promise<boolean> => {
+  return new Promise((resolve) => {
+    if (typeof window !== "undefined" && window.Razorpay) {
+      return resolve(true);
+    }
+    const script = document.createElement("script");
+    script.src = "https://checkout.razorpay.com/v1/checkout.js";
+    script.onload = () => resolve(true);
+    script.onerror = () => resolve(false);
+    document.body.appendChild(script);
+  });
+};
+
 type RentalPackage = {
   id: string;
   name: string;
@@ -22,6 +42,15 @@ type MonthlyPlan = {
   name: string;
   months: number;
   price: string | number;
+};
+
+type GlobalPackage = {
+  id: string;
+  name: string;
+  type: string;
+  duration: number;
+  price: string | number;
+  description?: string | null;
 };
 
 type Location = {
@@ -39,10 +68,22 @@ type PickupOption = {
 
 type BookingFormProps = {
   vehicleId: string;
+  isBookable?: boolean;
+  unbookableReason?: string;
+  initialSearchParams?: {
+    location?: string;
+    startDate?: string;
+    endDate?: string;
+    rentalPackageId?: string;
+    monthlyPlanId?: string;
+    packageId?: string;
+    type?: string;
+  };
   basePrice: string | number;
   taxRate: string | number;
   rentalPackages: RentalPackage[];
   monthlyPlans: MonthlyPlan[];
+  globalPackages?: GlobalPackage[];
   locations: Location[];
   pickupOptions: PickupOption[];
 };
@@ -117,42 +158,119 @@ const calculateEndDate = (
 
 export default function BookingForm({
   vehicleId,
+  isBookable = true,
+  unbookableReason,
+  initialSearchParams,
   basePrice,
   taxRate,
   rentalPackages,
   monthlyPlans,
+  globalPackages = [],
   locations,
   pickupOptions,
 }: BookingFormProps) {
   const router = useRouter();
 
   /* =========================================
+     Initial Search Params Processing
+  ========================================= */
+
+  const formatDatetimeLocal = (input?: string) => {
+    if (!input) return "";
+    if (input.includes("T")) {
+      return input.slice(0, 16);
+    }
+    return `${input}T10:00`;
+  };
+
+  const paramPackageId = initialSearchParams?.rentalPackageId;
+  const paramGlobalPackageId = initialSearchParams?.packageId;
+  const paramPlanId = initialSearchParams?.monthlyPlanId;
+  const paramType = initialSearchParams?.type?.toUpperCase();
+
+  const validRentalPackage = rentalPackages.find((p) => p.id === paramPackageId);
+  const validGlobalPackage = globalPackages.find((p) => p.id === paramGlobalPackageId || p.id === paramPackageId);
+  const validPlan = monthlyPlans.find((p) => p.id === paramPlanId);
+
+  let initialBookingType: "PACKAGE" | "NORMAL" | "MONTHLY" = "PACKAGE";
+  if (validGlobalPackage || validRentalPackage || paramType === "PACKAGE") {
+    initialBookingType = "PACKAGE";
+  } else if (validPlan || paramType === "MONTHLY") {
+    initialBookingType = "MONTHLY";
+  } else if (
+    paramType === "NORMAL" ||
+    paramType === "DAILY" ||
+    (initialSearchParams?.startDate && !paramPackageId && !paramGlobalPackageId && !paramPlanId)
+  ) {
+    initialBookingType = "NORMAL";
+  } else if (rentalPackages.length > 0 || globalPackages.length > 0) {
+    initialBookingType = "PACKAGE";
+  } else if (monthlyPlans.length > 0) {
+    initialBookingType = "MONTHLY";
+  } else {
+    initialBookingType = "NORMAL";
+  }
+
+  const initialPackage = validGlobalPackage
+    ? validGlobalPackage.id
+    : validRentalPackage
+    ? validRentalPackage.id
+    : globalPackages[0]?.id ?? rentalPackages[0]?.id ?? "";
+
+  const initialPlan = validPlan
+    ? validPlan.id
+    : monthlyPlans[0]?.id ?? "";
+
+  const paramLocation = initialSearchParams?.location;
+  const matchedLocation = locations.find(
+    (l) =>
+      l.id === paramLocation ||
+      l.name.toLowerCase() === paramLocation?.toLowerCase()
+  );
+  const initialLocationId = matchedLocation?.id ?? locations[0]?.id ?? "";
+
+  const initialStartDate = formatDatetimeLocal(initialSearchParams?.startDate);
+  let initialEndDate = formatDatetimeLocal(initialSearchParams?.endDate);
+
+  if (initialBookingType === "PACKAGE" && initialStartDate && initialPackage) {
+    const pkg = globalPackages.find((p) => p.id === initialPackage) || rentalPackages.find((p) => p.id === initialPackage);
+    if (pkg) {
+      initialEndDate = calculateEndDate(initialStartDate, pkg.duration, false);
+    }
+  } else if (
+    initialBookingType === "MONTHLY" &&
+    initialStartDate &&
+    initialPlan
+  ) {
+    const pln = monthlyPlans.find((p) => p.id === initialPlan);
+    if (pln) {
+      initialEndDate = calculateEndDate(initialStartDate, pln.months, true);
+    }
+  }
+
+  /* =========================================
      Booking Type
   ========================================= */
 
   const [bookingType, setBookingType] =
-    useState<
-      "PACKAGE" | "NORMAL" | "MONTHLY"
-    >("PACKAGE");
+    useState<"PACKAGE" | "NORMAL" | "MONTHLY">(initialBookingType);
 
   /* =========================================
      Selected Package / Plan
   ========================================= */
 
   const [selectedPackage, setSelectedPackage] =
-    useState<string>("");
+    useState<string>(initialPackage);
 
   const [selectedPlan, setSelectedPlan] =
-    useState<string>("");
+    useState<string>(initialPlan);
 
   /* =========================================
      Pickup Location
   ========================================= */
 
   const [locationId, setLocationId] =
-    useState<string>(
-      locations[0]?.id ?? ""
-    );
+    useState<string>(initialLocationId);
 
   useEffect(() => {
     if (locations.length === 0) {
@@ -208,17 +326,23 @@ export default function BookingForm({
   ========================================= */
 
   const [pickupOptionId, setPickupOptionId] =
-    useState<string>("");
+    useState<string>(pickupOptions[0]?.id ?? "");
+
+  useEffect(() => {
+    if (pickupOptions.length > 0 && !pickupOptionId) {
+      setPickupOptionId(pickupOptions[0].id);
+    }
+  }, [pickupOptions, pickupOptionId]);
 
   /* =========================================
      Dates
   ========================================= */
 
   const [startDate, setStartDate] =
-    useState<string>("");
+    useState<string>(initialStartDate);
 
   const [endDate, setEndDate] =
-    useState<string>("");
+    useState<string>(initialEndDate);
 
   /* =========================================
      UI State
@@ -236,6 +360,10 @@ export default function BookingForm({
 
   const selectedPackageData =
     rentalPackages.find(
+      (item) =>
+        item.id === selectedPackage
+    ) ||
+    globalPackages.find(
       (item) =>
         item.id === selectedPackage
     );
@@ -291,27 +419,100 @@ export default function BookingForm({
         : 0;
 
   /* =========================================
+     Coupon State & Handlers
+  ========================================= */
+
+  const [couponCodeInput, setCouponCodeInput] = useState<string>("");
+  const [appliedCoupon, setAppliedCoupon] = useState<{
+    code: string;
+    discountType: string;
+    discountValue: number;
+    discountAmount: number;
+  } | null>(null);
+  const [couponLoading, setCouponLoading] = useState<boolean>(false);
+  const [couponError, setCouponError] = useState<string>("");
+  const [couponSuccess, setCouponSuccess] = useState<string>("");
+
+  const handleApplyCoupon = async () => {
+    setCouponError("");
+    setCouponSuccess("");
+
+    const codeToApply = couponCodeInput.trim().toUpperCase();
+    if (!codeToApply) {
+      setCouponError("Please enter a coupon code.");
+      return;
+    }
+
+    if (rentalAmount <= 0) {
+      setCouponError("Please select rental dates or package first.");
+      return;
+    }
+
+    setCouponLoading(true);
+
+    try {
+      const res = await fetch("/api/coupons/apply", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          code: codeToApply,
+          bookingValue: rentalAmount,
+        }),
+      });
+
+      const data = await res.json();
+
+      if (!res.ok) {
+        throw new Error(data.error || "Failed to apply coupon.");
+      }
+
+      setAppliedCoupon({
+        code: data.code,
+        discountType: data.discountType,
+        discountValue: data.discountValue,
+        discountAmount: data.discountAmount,
+      });
+      setCouponSuccess(data.message || `Coupon "${data.code}" applied successfully!`);
+    } catch (err) {
+      setAppliedCoupon(null);
+      setCouponError(err instanceof Error ? err.message : "Failed to apply coupon.");
+    } finally {
+      setCouponLoading(false);
+    }
+  };
+
+  const handleRemoveCoupon = () => {
+    setAppliedCoupon(null);
+    setCouponCodeInput("");
+    setCouponError("");
+    setCouponSuccess("");
+  };
+
+  /* =========================================
      Discount
   ========================================= */
 
-  const discountAmount = 0;
+  const discountAmount = appliedCoupon ? appliedCoupon.discountAmount : 0;
 
-   /* =========================================
-   Tax
-========================================= */
+  /* =========================================
+     Tax
+  ========================================= */
 
   const taxAmount =
-  rentalAmount *
-  (Number(taxRate) / 100);
+    rentalAmount *
+    (Number(taxRate) / 100);
+
   /* =========================================
      Total Amount
   ========================================= */
 
-  const totalAmount =
+  const totalAmount = Math.max(
+    0,
     rentalAmount +
-    deliveryCharge +
-    taxAmount -
-    discountAmount;
+      deliveryCharge +
+      taxAmount -
+      discountAmount
+  );
 
   /* =========================================
      Booking Type Change
@@ -560,6 +761,14 @@ export default function BookingForm({
 
     setError("");
 
+    if (!isBookable) {
+      setError(
+        unbookableReason ||
+          "This vehicle is currently marked as unavailable for booking."
+      );
+      return;
+    }
+
     if (!effectiveLocationId) {
       setError(
         "Please select a pickup location."
@@ -630,11 +839,19 @@ export default function BookingForm({
     setLoading(true);
 
     try {
+      const isGlobalPkg = globalPackages.some((g) => g.id === selectedPackage);
+      const isRentalPkg = rentalPackages.some((r) => r.id === selectedPackage);
+
       const requestBody = {
         vehicleId,
 
+        packageId:
+          bookingType === "PACKAGE" && (isGlobalPkg || (!isRentalPkg && Boolean(selectedPackage)))
+            ? selectedPackage
+            : undefined,
+
         rentalPackageId:
-          bookingType === "PACKAGE"
+          bookingType === "PACKAGE" && isRentalPkg
             ? selectedPackage
             : undefined,
 
@@ -651,51 +868,113 @@ export default function BookingForm({
 
         startDate,
         endDate,
+        couponCode: appliedCoupon?.code || undefined,
       };
 
-      console.log(
-        "Booking Request:",
-        requestBody
-      );
+      /* 1. Create Booking (PENDING) */
+      const response = await fetch("/api/bookings", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify(requestBody),
+      });
 
-      const response =
-        await fetch(
-          "/api/bookings",
-          {
-            method: "POST",
-
-            headers: {
-              "Content-Type":
-                "application/json",
-            },
-
-            body: JSON.stringify(
-              requestBody
-            ),
-          }
-        );
-
-      const data =
-        await response.json();
+      const data = await response.json();
 
       if (!response.ok) {
-        throw new Error(
-          data?.error ||
-            "Failed to create booking."
-        );
+        throw new Error(data?.error || "Failed to create booking.");
       }
 
       if (!data?.booking?.id) {
-        throw new Error(
-          "Booking was created but no booking ID was returned."
-        );
+        throw new Error("Booking was created but no booking ID was returned.");
       }
 
-      router.push(
-        `/dashboard?booking=${data.booking.id}`
-      );
+      const bookingId = data.booking.id;
 
-      router.refresh();
+      /* 2. Create Razorpay Order */
+      const orderResponse = await fetch("/api/payments/create-order", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({ bookingId }),
+      });
+
+      const orderData = await orderResponse.json();
+
+      if (!orderResponse.ok) {
+        throw new Error(orderData?.error || "Failed to create payment order.");
+      }
+
+      /* 3. Load Razorpay SDK Script */
+      const isScriptLoaded = await loadRazorpayScript();
+      if (!isScriptLoaded || typeof window === "undefined" || !window.Razorpay) {
+        throw new Error("Razorpay SDK failed to load. Please check your internet connection.");
+      }
+
+      /* 4. Open Razorpay Standard Checkout */
+      const options = {
+        key: orderData.keyId,
+        amount: orderData.amount,
+        currency: orderData.currency || "INR",
+        name: "Prime Rides",
+        description: "Self-Drive Vehicle Rental Booking",
+        order_id: orderData.orderId,
+        handler: async function (paymentResponse: {
+          razorpay_payment_id: string;
+          razorpay_order_id: string;
+          razorpay_signature: string;
+        }) {
+          try {
+            setLoading(true);
+
+            const verifyResponse = await fetch("/api/payments/verify", {
+              method: "POST",
+              headers: {
+                "Content-Type": "application/json",
+              },
+              body: JSON.stringify({
+                bookingId,
+                razorpay_payment_id: paymentResponse.razorpay_payment_id,
+                razorpay_order_id: paymentResponse.razorpay_order_id,
+                razorpay_signature: paymentResponse.razorpay_signature,
+                couponCode: appliedCoupon?.code || undefined,
+              }),
+            });
+
+            const verifyData = await verifyResponse.json();
+
+            if (!verifyResponse.ok) {
+              throw new Error(verifyData?.error || "Payment verification failed.");
+            }
+
+            router.push(`/dashboard?booking=${bookingId}&payment=success`);
+            router.refresh();
+          } catch (verifyErr) {
+            console.error("Verification Error:", verifyErr);
+            setError(
+              verifyErr instanceof Error
+                ? verifyErr.message
+                : "Something went wrong while verifying payment."
+            );
+          } finally {
+            setLoading(false);
+          }
+        },
+        modal: {
+          ondismiss: function () {
+            setLoading(false);
+            setError("Payment checkout was closed. Your booking remains pending in your dashboard.");
+          },
+        },
+        theme: {
+          color: "#000000",
+        },
+      };
+
+      const paymentObject = new window.Razorpay(options);
+      paymentObject.open();
     } catch (err) {
       console.error(
         "Booking Error:",
@@ -707,7 +986,6 @@ export default function BookingForm({
           ? err.message
           : "Something went wrong while creating the booking."
       );
-    } finally {
       setLoading(false);
     }
   };
@@ -727,8 +1005,8 @@ export default function BookingForm({
       ===================================== */}
 
       <div>
-        <h2 className="text-lg font-semibold">
-          Choose Rental Type
+        <h2 className="text-base font-bold uppercase tracking-wider text-slate-900">
+          1. Choose Rental Type
         </h2>
 
         <div className="mt-3 grid grid-cols-1 gap-3 sm:grid-cols-3">
@@ -743,21 +1021,26 @@ export default function BookingForm({
                 "PACKAGE"
               )
             }
-            className={`rounded-xl border p-4 text-left transition ${
+            className={`rounded-2xl border p-4 text-left transition-all ${
               bookingType === "PACKAGE"
-                ? "border-black bg-black text-white"
-                : "bg-background hover:bg-muted"
+                ? "border-blue-600 bg-blue-50/90 text-blue-900 ring-2 ring-blue-600/30 shadow-sm"
+                : "border-slate-200 bg-slate-50/60 text-slate-700 hover:border-slate-300 hover:bg-slate-100/70"
             } disabled:cursor-not-allowed disabled:opacity-60`}
           >
-            <p className="font-semibold">
-              Rental Package
-            </p>
+            <div className="flex items-center justify-between">
+              <p className="font-bold text-sm">
+                Rental Package
+              </p>
+              <div className={`h-4 w-4 rounded-full border flex items-center justify-center ${bookingType === "PACKAGE" ? "border-blue-600 bg-blue-600" : "border-slate-300 bg-white"}`}>
+                {bookingType === "PACKAGE" && <div className="h-1.5 w-1.5 rounded-full bg-white" />}
+              </div>
+            </div>
 
             <p
-              className={`mt-1 text-sm ${
+              className={`mt-1 text-xs ${
                 bookingType === "PACKAGE"
-                  ? "text-white/70"
-                  : "text-muted-foreground"
+                  ? "text-blue-700/80 font-medium"
+                  : "text-slate-500"
               }`}
             >
               Fixed duration package
@@ -774,21 +1057,26 @@ export default function BookingForm({
                 "NORMAL"
               )
             }
-            className={`rounded-xl border p-4 text-left transition ${
+            className={`rounded-2xl border p-4 text-left transition-all ${
               bookingType === "NORMAL"
-                ? "border-black bg-black text-white"
-                : "bg-background hover:bg-muted"
+                ? "border-blue-600 bg-blue-50/90 text-blue-900 ring-2 ring-blue-600/30 shadow-sm"
+                : "border-slate-200 bg-slate-50/60 text-slate-700 hover:border-slate-300 hover:bg-slate-100/70"
             } disabled:cursor-not-allowed disabled:opacity-60`}
           >
-            <p className="font-semibold">
-              Normal Days
-            </p>
+            <div className="flex items-center justify-between">
+              <p className="font-bold text-sm">
+                Normal Days
+              </p>
+              <div className={`h-4 w-4 rounded-full border flex items-center justify-center ${bookingType === "NORMAL" ? "border-blue-600 bg-blue-600" : "border-slate-300 bg-white"}`}>
+                {bookingType === "NORMAL" && <div className="h-1.5 w-1.5 rounded-full bg-white" />}
+              </div>
+            </div>
 
             <p
-              className={`mt-1 text-sm ${
+              className={`mt-1 text-xs ${
                 bookingType === "NORMAL"
-                  ? "text-white/70"
-                  : "text-muted-foreground"
+                  ? "text-blue-700/80 font-medium"
+                  : "text-slate-500"
               }`}
             >
               Choose your own dates
@@ -805,21 +1093,26 @@ export default function BookingForm({
                 "MONTHLY"
               )
             }
-            className={`rounded-xl border p-4 text-left transition ${
+            className={`rounded-2xl border p-4 text-left transition-all ${
               bookingType === "MONTHLY"
-                ? "border-black bg-black text-white"
-                : "bg-background hover:bg-muted"
+                ? "border-blue-600 bg-blue-50/90 text-blue-900 ring-2 ring-blue-600/30 shadow-sm"
+                : "border-slate-200 bg-slate-50/60 text-slate-700 hover:border-slate-300 hover:bg-slate-100/70"
             } disabled:cursor-not-allowed disabled:opacity-60`}
           >
-            <p className="font-semibold">
-              Monthly Plan
-            </p>
+            <div className="flex items-center justify-between">
+              <p className="font-bold text-sm">
+                Monthly Plan
+              </p>
+              <div className={`h-4 w-4 rounded-full border flex items-center justify-center ${bookingType === "MONTHLY" ? "border-blue-600 bg-blue-600" : "border-slate-300 bg-white"}`}>
+                {bookingType === "MONTHLY" && <div className="h-1.5 w-1.5 rounded-full bg-white" />}
+              </div>
+            </div>
 
             <p
-              className={`mt-1 text-sm ${
+              className={`mt-1 text-xs ${
                 bookingType === "MONTHLY"
-                  ? "text-white/70"
-                  : "text-muted-foreground"
+                  ? "text-blue-700/80 font-medium"
+                  : "text-slate-500"
               }`}
             >
               Long-term monthly rental
@@ -834,15 +1127,15 @@ export default function BookingForm({
       ===================================== */}
 
       {bookingType === "PACKAGE" && (
-        <div>
-          <label className="text-sm font-medium">
-            Rental Package
+        <div className="pt-2">
+          <label className="text-xs font-bold uppercase tracking-wider text-slate-500 block mb-2">
+            Select Rental Package Option
           </label>
 
-          <div className="mt-3 grid grid-cols-1 gap-3 md:grid-cols-2">
+          <div className="grid grid-cols-1 gap-3 md:grid-cols-2">
 
             {rentalPackages.length === 0 ? (
-              <p className="text-sm text-muted-foreground">
+              <p className="text-sm text-slate-500">
                 No rental packages available.
               </p>
             ) : (
@@ -861,24 +1154,24 @@ export default function BookingForm({
                         item.id
                       )
                     }
-                    className={`rounded-xl border p-4 text-left transition ${
+                    className={`rounded-2xl border p-4 text-left transition-all ${
                       isSelected
-                        ? "border-black bg-black text-white ring-1 ring-black"
-                        : "bg-background hover:bg-muted"
+                        ? "border-blue-600 bg-blue-50/90 ring-2 ring-blue-600/30 text-slate-900 shadow-sm"
+                        : "border-slate-200 bg-white hover:border-slate-300 hover:bg-slate-50 text-slate-800"
                     } disabled:cursor-not-allowed disabled:opacity-60`}
                   >
                     <div className="flex items-start justify-between gap-3">
 
                       <div className="min-w-0">
-                        <p className="font-semibold">
+                        <p className="font-bold text-sm text-slate-900">
                           {item.name}
                         </p>
 
                         <p
-                          className={`mt-1 text-sm ${
+                          className={`mt-0.5 text-xs font-medium ${
                             isSelected
-                              ? "text-white/70"
-                              : "text-muted-foreground"
+                              ? "text-blue-700"
+                              : "text-slate-500"
                           }`}
                         >
                           {item.duration}{" "}
@@ -890,7 +1183,7 @@ export default function BookingForm({
                         </p>
                       </div>
 
-                      <p className="shrink-0 font-bold">
+                      <p className="shrink-0 font-extrabold text-blue-600 text-sm">
                         ₹
                         {Number(
                           item.price
@@ -903,10 +1196,10 @@ export default function BookingForm({
 
                     {item.description && (
                       <p
-                        className={`mt-3 text-sm ${
+                        className={`mt-2 text-xs leading-relaxed ${
                           isSelected
-                            ? "text-white/70"
-                            : "text-muted-foreground"
+                            ? "text-slate-700 font-medium"
+                            : "text-slate-500"
                         }`}
                       >
                         {item.description}
@@ -927,15 +1220,15 @@ export default function BookingForm({
       ===================================== */}
 
       {bookingType === "MONTHLY" && (
-        <div>
-          <label className="text-sm font-medium">
-            Monthly Plan
+        <div className="pt-2">
+          <label className="text-xs font-bold uppercase tracking-wider text-slate-500 block mb-2">
+            Select Monthly Plan Option
           </label>
 
-          <div className="mt-3 grid grid-cols-1 gap-3 md:grid-cols-2">
+          <div className="grid grid-cols-1 gap-3 md:grid-cols-2">
 
             {monthlyPlans.length === 0 ? (
-              <p className="text-sm text-muted-foreground">
+              <p className="text-sm text-slate-500">
                 No monthly plans available.
               </p>
             ) : (
@@ -954,24 +1247,24 @@ export default function BookingForm({
                         item.id
                       )
                     }
-                    className={`rounded-xl border p-4 text-left transition ${
+                    className={`rounded-2xl border p-4 text-left transition-all ${
                       isSelected
-                        ? "border-black bg-black text-white ring-1 ring-black"
-                        : "bg-background hover:bg-muted"
+                        ? "border-blue-600 bg-blue-50/90 ring-2 ring-blue-600/30 text-slate-900 shadow-sm"
+                        : "border-slate-200 bg-white hover:border-slate-300 hover:bg-slate-50 text-slate-800"
                     } disabled:cursor-not-allowed disabled:opacity-60`}
                   >
                     <div className="flex items-start justify-between gap-3">
 
                       <div className="min-w-0">
-                        <p className="font-semibold">
+                        <p className="font-bold text-sm text-slate-900">
                           {item.name}
                         </p>
 
                         <p
-                          className={`mt-1 text-sm ${
+                          className={`mt-0.5 text-xs font-medium ${
                             isSelected
-                              ? "text-white/70"
-                              : "text-muted-foreground"
+                              ? "text-blue-700"
+                              : "text-slate-500"
                           }`}
                         >
                           {item.months}{" "}
@@ -983,7 +1276,7 @@ export default function BookingForm({
                         </p>
                       </div>
 
-                      <p className="shrink-0 font-bold">
+                      <p className="shrink-0 font-extrabold text-blue-600 text-sm">
                         ₹
                         {Number(
                           item.price
@@ -1006,9 +1299,9 @@ export default function BookingForm({
           Rental Dates
       ===================================== */}
 
-      <div>
-        <h2 className="text-lg font-semibold">
-          Rental Dates
+      <div className="pt-2">
+        <h2 className="text-base font-bold uppercase tracking-wider text-slate-900">
+          2. Select Schedule
         </h2>
 
         <div className="mt-3 grid grid-cols-1 gap-4 sm:grid-cols-2">
@@ -1018,9 +1311,9 @@ export default function BookingForm({
           <div>
             <label
               htmlFor="startDate"
-              className="text-sm font-medium"
+              className="text-xs font-semibold text-slate-700 uppercase tracking-wider"
             >
-              Start Date
+              Start Date & Time
             </label>
 
             <input
@@ -1035,7 +1328,7 @@ export default function BookingForm({
               }
               disabled={loading}
               required
-              className="mt-2 h-11 w-full rounded-lg border bg-background px-3 text-sm outline-none focus:ring-2 focus:ring-ring disabled:cursor-not-allowed disabled:opacity-60"
+              className="mt-1.5 h-11 w-full rounded-xl border border-slate-300 bg-white px-3.5 text-sm font-medium text-slate-800 shadow-sm transition-all focus:border-blue-600 focus:outline-none focus:ring-2 focus:ring-blue-600/20 disabled:cursor-not-allowed disabled:opacity-60"
             />
           </div>
 
@@ -1044,9 +1337,9 @@ export default function BookingForm({
           <div>
             <label
               htmlFor="endDate"
-              className="text-sm font-medium"
+              className="text-xs font-semibold text-slate-700 uppercase tracking-wider"
             >
-              End Date
+              End Date & Time
             </label>
 
             <input
@@ -1072,17 +1365,17 @@ export default function BookingForm({
                   ? "Select end date"
                   : "Automatically calculated"
               }
-              className={`mt-2 h-11 w-full rounded-lg border px-3 text-sm outline-none focus:ring-2 focus:ring-ring disabled:cursor-not-allowed disabled:opacity-60 ${
+              className={`mt-1.5 h-11 w-full rounded-xl border px-3.5 text-sm font-medium text-slate-800 shadow-sm transition-all focus:border-blue-600 focus:outline-none focus:ring-2 focus:ring-blue-600/20 disabled:cursor-not-allowed disabled:opacity-60 ${
                 bookingType === "NORMAL"
-                  ? "bg-background"
-                  : "bg-muted"
+                  ? "border-slate-300 bg-white"
+                  : "border-slate-200 bg-slate-100 text-slate-500"
               }`}
             />
 
-            <p className="mt-1 text-xs text-muted-foreground">
+            <p className="mt-1 text-xs text-slate-500 font-medium">
               {bookingType === "NORMAL"
                 ? "Select your preferred start and end dates."
-                : "End date is automatically calculated based on your selected package or plan."}
+                : "End date is automatically calculated based on your package choice."}
             </p>
           </div>
 
@@ -1093,16 +1386,16 @@ export default function BookingForm({
           Pickup Location
       ===================================== */}
 
-      <div>
+      <div className="pt-2">
         <label
           htmlFor="pickupLocation"
-          className="text-sm font-medium"
+          className="text-xs font-bold uppercase tracking-wider text-slate-900 block"
         >
-          Pickup Location
+          3. Pickup Location
         </label>
 
         {locations.length === 0 ? (
-          <div className="mt-2 rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">
+          <div className="mt-2 rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700 font-medium">
             No pickup locations available.
           </div>
         ) : (
@@ -1115,7 +1408,7 @@ export default function BookingForm({
             }
             disabled={loading}
             required
-            className="mt-2 h-11 w-full rounded-lg border bg-background px-3 text-sm outline-none focus:ring-2 focus:ring-ring disabled:cursor-not-allowed disabled:opacity-60"
+            className="mt-2 h-11 w-full rounded-xl border border-slate-300 bg-white px-3.5 text-sm font-medium text-slate-800 shadow-sm transition-all focus:border-blue-600 focus:outline-none focus:ring-2 focus:ring-blue-600/20 disabled:cursor-not-allowed disabled:opacity-60"
           >
             <option value="" disabled>
               Select location
@@ -1143,12 +1436,12 @@ export default function BookingForm({
       ===================================== */}
 
       {pickupOptions.length > 0 && (
-        <div>
+        <div className="pt-2">
           <label
             htmlFor="pickupOption"
-            className="text-sm font-medium"
+            className="text-xs font-bold uppercase tracking-wider text-slate-900 block"
           >
-            Pickup Option
+            4. Pickup Option
           </label>
 
           <select
@@ -1160,7 +1453,7 @@ export default function BookingForm({
             }
             disabled={loading}
             required
-            className="mt-2 h-11 w-full rounded-lg border bg-background px-3 text-sm outline-none focus:ring-2 focus:ring-ring disabled:cursor-not-allowed disabled:opacity-60"
+            className="mt-2 h-11 w-full rounded-xl border border-slate-300 bg-white px-3.5 text-sm font-medium text-slate-800 shadow-sm transition-all focus:border-blue-600 focus:outline-none focus:ring-2 focus:ring-blue-600/20 disabled:cursor-not-allowed disabled:opacity-60"
           >
             <option value="">
               Select pickup option
@@ -1179,17 +1472,83 @@ export default function BookingForm({
           </select>
         </div>
       )}
+      {/* =====================================
+          Apply Coupon Code
+      ===================================== */}
+
+      <div className="pt-2">
+        <label
+          htmlFor="couponCode"
+          className="text-xs font-bold uppercase tracking-wider text-slate-900 block"
+        >
+          5. Apply Discount Coupon
+        </label>
+
+        {appliedCoupon ? (
+          <div className="mt-2 flex items-center justify-between rounded-xl border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm text-emerald-900 shadow-sm">
+            <div className="flex items-center gap-2">
+              <span className="font-extrabold bg-emerald-600 text-white px-2 py-0.5 rounded text-xs tracking-wider">
+                {appliedCoupon.code}
+              </span>
+              <span className="text-xs font-semibold text-emerald-800">
+                ({appliedCoupon.discountType === "PERCENTAGE" ? `${appliedCoupon.discountValue}% OFF` : `₹${appliedCoupon.discountValue} OFF`} — Saving ₹{appliedCoupon.discountAmount.toLocaleString("en-IN")})
+              </span>
+            </div>
+            <button
+              type="button"
+              onClick={handleRemoveCoupon}
+              disabled={loading}
+              className="text-xs font-bold text-emerald-700 hover:text-emerald-900 hover:underline"
+            >
+              Remove
+            </button>
+          </div>
+        ) : (
+          <div className="mt-2 space-y-2">
+            <div className="flex gap-2">
+              <input
+                id="couponCode"
+                type="text"
+                value={couponCodeInput}
+                onChange={(e) => setCouponCodeInput(e.target.value.toUpperCase())}
+                placeholder="Enter promo code (e.g. PRIME10)"
+                disabled={loading || couponLoading}
+                className="h-11 flex-1 rounded-xl border border-slate-300 bg-white px-3.5 text-sm font-bold uppercase tracking-wider text-slate-800 shadow-sm transition-all focus:border-blue-600 focus:outline-none focus:ring-2 focus:ring-blue-600/20 placeholder:normal-case placeholder:font-normal"
+              />
+              <button
+                type="button"
+                onClick={handleApplyCoupon}
+                disabled={loading || couponLoading || !couponCodeInput.trim()}
+                className="h-11 px-5 rounded-xl bg-slate-900 text-white text-xs font-bold shadow hover:bg-blue-600 transition-all disabled:opacity-50"
+              >
+                {couponLoading ? "Applying..." : "Apply Code"}
+              </button>
+            </div>
+
+            {couponError && (
+              <p className="text-xs font-semibold text-rose-600">
+                {couponError}
+              </p>
+            )}
+            {couponSuccess && (
+              <p className="text-xs font-semibold text-emerald-600">
+                {couponSuccess}
+              </p>
+            )}
+          </div>
+        )}
+      </div>
 
       {/* =====================================
-          Error
+          Error State
       ===================================== */}
 
       {error && (
         <div
           role="alert"
-          className="rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700"
+          className="rounded-2xl border border-red-200 bg-red-50 p-4 text-sm text-red-700 font-medium flex items-center gap-2"
         >
-          {error}
+          <span className="font-bold text-red-800">Error:</span> {error}
         </div>
       )}
 
@@ -1197,133 +1556,138 @@ export default function BookingForm({
           Booking Summary
       ===================================== */}
 
-      <div className="rounded-xl border bg-muted/30 p-5">
+      <div className="rounded-3xl border border-slate-800 bg-slate-900 p-6 sm:p-7 text-white shadow-xl bg-navy-gradient">
 
-        <h2 className="font-semibold">
-          Booking Summary
+        <h2 className="text-base font-extrabold tracking-wide uppercase text-blue-400">
+          Booking Cost Summary
         </h2>
 
-        {/* Rental Amount */}
+        <div className="mt-4 space-y-3 divide-y divide-slate-800/80">
+          {/* Rental Amount */}
 
-        <div className="mt-4 flex items-center justify-between gap-4">
-          <span className="text-sm text-muted-foreground">
-            Rental Amount
-          </span>
-
-          <span className="font-semibold">
-            {rentalAmount > 0
-              ? `₹${rentalAmount.toLocaleString(
-                  "en-IN"
-                )}`
-              : "—"}
-          </span>
-        </div>
-
-        {/* Normal Days */}
-
-        {bookingType === "NORMAL" &&
-          normalRentalDays > 0 && (
-            <div className="mt-1 flex items-center justify-between gap-4">
-              <span className="text-xs text-muted-foreground">
-                {normalRentalDays} rental day
-                {normalRentalDays !== 1
-                  ? "s"
-                  : ""}{" "}
-                × ₹
-                {Number(
-                  basePrice
-                ).toLocaleString(
-                  "en-IN"
-                )}
-              </span>
-            </div>
-          )}
-
-        {/* Delivery Charge */}
-
-        <div className="mt-2 flex items-center justify-between gap-4">
-          <span className="text-sm text-muted-foreground">
-            Delivery Charge
-          </span>
-
-          <span>
-            ₹
-            {deliveryCharge.toLocaleString(
-              "en-IN"
-            )}
-          </span>
-        </div>
-
-        {/* Tax */}
-
-      <div className="mt-2 flex items-center justify-between gap-4">
-        <span className="text-sm text-muted-foreground">
-          Tax ({Number(taxRate)}%)
-        </span>
-
-        <span>
-          ₹
-          {taxAmount.toLocaleString(
-            "en-IN",
-            {
-              maximumFractionDigits: 2,
-            }
-          )}
-        </span>
-      </div>
-
-        {/* Discount */}
-
-        <div className="mt-2 flex items-center justify-between gap-4">
-          <span className="text-sm text-muted-foreground">
-            Discount
-          </span>
-
-          <span>
-            ₹
-            {discountAmount.toLocaleString(
-              "en-IN"
-            )}
-          </span>
-        </div>
-
-        {/* Total */}
-
-        <div className="mt-4 border-t pt-4">
-          <div className="flex items-center justify-between gap-4">
-
-            <span className="font-semibold">
-              Total
+          <div className="flex items-center justify-between gap-4 pt-2">
+            <span className="text-sm text-slate-300 font-medium">
+              Rental Base Amount
             </span>
 
-            <span className="text-xl font-bold">
+            <span className="font-bold text-white text-base">
               {rentalAmount > 0
-                ? `₹${totalAmount.toLocaleString(
+                ? `₹${rentalAmount.toLocaleString(
                     "en-IN"
                   )}`
                 : "—"}
             </span>
+          </div>
 
+          {/* Normal Days Breakdown */}
+
+          {bookingType === "NORMAL" &&
+            normalRentalDays > 0 && (
+              <div className="flex items-center justify-between gap-4 pt-2">
+                <span className="text-xs text-slate-400 font-medium">
+                  {normalRentalDays} rental day
+                  {normalRentalDays !== 1
+                    ? "s"
+                    : ""}{" "}
+                  × ₹
+                  {Number(
+                    basePrice
+                  ).toLocaleString(
+                    "en-IN"
+                  )}
+                </span>
+              </div>
+            )}
+
+          {/* Delivery Charge */}
+
+          <div className="flex items-center justify-between gap-4 pt-2">
+            <span className="text-sm text-slate-300 font-medium">
+              Delivery Charge
+            </span>
+
+            <span className="font-semibold text-slate-200">
+              ₹
+              {deliveryCharge.toLocaleString(
+                "en-IN"
+              )}
+            </span>
+          </div>
+
+          {/* Tax */}
+
+          <div className="flex items-center justify-between gap-4 pt-2">
+            <span className="text-sm text-slate-300 font-medium">
+              Applicable Tax ({Number(taxRate)}%)
+            </span>
+
+            <span className="font-semibold text-slate-200">
+              ₹
+              {taxAmount.toLocaleString(
+                "en-IN",
+                {
+                  maximumFractionDigits: 2,
+                }
+              )}
+            </span>
+          </div>
+
+          {/* Discount */}
+
+          <div className="flex items-center justify-between gap-4 pt-2">
+            <span className="text-sm text-slate-300 font-medium">
+              Discount Applied
+            </span>
+
+            <span className="font-semibold text-emerald-400">
+              ₹
+              {discountAmount.toLocaleString(
+                "en-IN"
+              )}
+            </span>
+          </div>
+
+          {/* Total Payable */}
+
+          <div className="pt-4 border-t border-slate-700">
+            <div className="flex items-center justify-between gap-4">
+
+              <span className="font-bold text-white text-lg">
+                Total Amount Payable
+              </span>
+
+              <span className="text-2xl font-black text-blue-400">
+                {rentalAmount > 0
+                  ? `₹${totalAmount.toLocaleString(
+                      "en-IN"
+                    )}`
+                  : "—"}
+              </span>
+
+            </div>
           </div>
         </div>
 
       </div>
 
       {/* =====================================
-          Confirm Booking
+          Confirm Booking Button
       ===================================== */}
 
       <button
         type="submit"
         disabled={
           loading ||
-          locations.length === 0
+          locations.length === 0 ||
+          !isBookable
         }
-        className="h-12 w-full rounded-xl bg-black px-6 font-medium text-white transition hover:bg-zinc-800 disabled:cursor-not-allowed disabled:opacity-50"
+        className="h-13 w-full rounded-2xl bg-gradient-to-r from-blue-600 via-blue-700 to-indigo-700 px-6 font-extrabold text-white text-base shadow-lg shadow-blue-600/25 transition-all hover:brightness-110 hover:shadow-xl active:scale-[0.99] disabled:cursor-not-allowed disabled:opacity-50 disabled:hover:brightness-100"
       >
         {loading
-          ? "Creating Booking..."
-          : "Confirm Booking"}
+          ? "Processing Order..."
+          : !isBookable
+          ? "Vehicle Currently Unavailable"
+          : "Proceed to Payment"}
       </button>
 
     </form>

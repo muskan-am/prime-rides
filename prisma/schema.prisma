@@ -65,6 +65,13 @@ enum AuditAction {
   LOGOUT
 }
 
+enum PackageType {
+  WEEKLY
+  MONTHLY
+  YEARLY
+}
+
+
 
 
 model User {
@@ -198,6 +205,7 @@ model Vehicle {
   specifications       VehicleSpecification[]
   rentalPackages       RentalPackage[]
   monthlyPlans         MonthlyPlan[]
+  packages             Package[]
   bookings             Booking[]
   reviews              Review[]
   enquiries            Enquiry[]
@@ -278,6 +286,28 @@ model MonthlyPlan {
   updatedAt DateTime @updatedAt
 }
 
+model Package {
+  id               String      @id @default(cuid())
+  name             String
+  slug             String      @unique
+  type             PackageType
+  shortDescription String?
+  description      String?
+  duration         Int
+  price            Decimal
+  image            String?
+  features         String[]
+  terms            String?
+  isActive         Boolean     @default(true)
+  sortOrder        Int         @default(0)
+
+  vehicles         Vehicle[]
+  bookings         Booking[]
+
+  createdAt        DateTime    @default(now())
+  updatedAt        DateTime    @updatedAt
+}
+
 model TaxConfiguration {
   id       String  @id @default(cuid())
   name     String
@@ -340,6 +370,7 @@ model Booking {
 
   rentalPackageId String?
   monthlyPlanId   String?
+  packageId       String?
   pickupOptionId  String?
 
   locationId String
@@ -355,10 +386,16 @@ model Booking {
   discountAmount Decimal @default(0)
   totalAmount    Decimal
 
+  razorpayOrderId   String?
+  razorpayPaymentId String?
+  paymentStatus     PaymentStatus @default(PENDING)
+  paidAt            DateTime?
+
   user          User           @relation(fields: [userId], references: [id])
   vehicle       Vehicle        @relation(fields: [vehicleId], references: [id])
   rentalPackage RentalPackage? @relation(fields: [rentalPackageId], references: [id])
   monthlyPlan   MonthlyPlan?   @relation(fields: [monthlyPlanId], references: [id])
+  package       Package?       @relation(fields: [packageId], references: [id])
   pickupOption  PickupOption?  @relation(fields: [pickupOptionId], references: [id])
   location      Location       @relation(fields: [locationId], references: [id])
 

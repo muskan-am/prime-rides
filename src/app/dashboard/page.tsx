@@ -7,10 +7,19 @@ import { Car, Calendar, ShieldCheck, Clock, MapPin, CheckCircle2, AlertCircle, X
 import Navbar from "@/components/customer/Navbar";
 import Footer from "@/components/customer/Footer";
 import LogoutButton from "@/components/auth/LogoutButton";
+import PayNowButton from "@/components/booking/PayNowButton";
 import { prisma } from "@/lib/prisma";
 
-export default async function DashboardPage() {
+type DashboardPageProps = {
+  searchParams?: Promise<{
+    booking?: string;
+    payment?: string;
+  }>;
+};
+
+export default async function DashboardPage({ searchParams }: DashboardPageProps) {
   const session = await getServerSession(authOptions);
+  const search = searchParams ? await searchParams : {};
 
   if (!session?.user) {
     redirect("/login");
@@ -112,6 +121,19 @@ export default async function DashboardPage() {
         </section>
 
         <div className="mx-auto max-w-7xl px-4 pt-10 sm:px-6 lg:px-8 space-y-10">
+
+          {/* Payment Success Alert */}
+          {search.payment === "success" && (
+            <div className="rounded-2xl border border-emerald-200 bg-emerald-50 p-5 text-emerald-900 flex items-center gap-3">
+              <CheckCircle2 className="h-6 w-6 text-emerald-600 shrink-0" />
+              <div>
+                <p className="font-bold text-sm">Payment Successful & Booking Confirmed!</p>
+                <p className="text-xs text-emerald-700 mt-0.5">
+                  Your Razorpay payment was verified. Your booking is now CONFIRMED.
+                </p>
+              </div>
+            </div>
+          )}
 
           {/* Metric Stats Overview */}
           <div className="grid gap-6 sm:grid-cols-3">
@@ -260,11 +282,33 @@ export default async function DashboardPage() {
                             <span className="text-slate-400 mx-2">|</span>
                             <span className="text-slate-500">Tax ({formattedTaxRate}%): </span>
                             <span className="font-bold text-slate-800">₹{taxAmount.toLocaleString("en-IN")}</span>
+                            {booking.paymentStatus && (
+                              <>
+                                <span className="text-slate-400 mx-2">|</span>
+                                <span className="text-slate-500">Payment: </span>
+                                <span className={`font-bold ${booking.paymentStatus === "SUCCESS" ? "text-emerald-600" : "text-amber-600"}`}>
+                                  {booking.paymentStatus === "SUCCESS" ? "PAID" : booking.paymentStatus}
+                                </span>
+                              </>
+                            )}
                           </div>
 
-                          <div>
-                            <span className="text-slate-500">Total Paid: </span>
-                            <span className="text-base font-black text-slate-900">₹{Number(booking.totalAmount).toLocaleString("en-IN")}</span>
+                          <div className="flex items-center gap-4">
+                            <div>
+                              <span className="text-slate-500">Total Amount: </span>
+                              <span className="text-base font-black text-slate-900">₹{Number(booking.totalAmount).toLocaleString("en-IN")}</span>
+                            </div>
+
+                            {(booking.status === "PENDING" || booking.paymentStatus !== "SUCCESS") && (
+                              <PayNowButton
+                                bookingId={booking.id}
+                                totalAmount={Number(booking.totalAmount)}
+                                vehicleBrand={booking.vehicle.brand}
+                                vehicleModel={booking.vehicle.model}
+                                userName={session.user.name || undefined}
+                                userEmail={session.user.email || undefined}
+                              />
+                            )}
                           </div>
                         </div>
 

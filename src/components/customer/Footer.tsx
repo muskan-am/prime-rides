@@ -56,9 +56,9 @@ export default function Footer() {
                 </Link>
               </li>
               <li>
-                <Link href="/#monthly-plans" className="transition-colors hover:text-white flex items-center gap-1.5">
+                <Link href="/packages/monthly" className="transition-colors hover:text-white flex items-center gap-1.5">
                   <ArrowRight className="h-3.5 w-3.5 text-blue-500" />
-                  <span>Monthly Subscriptions</span>
+                  <span>Monthly Packages</span>
                 </Link>
               </li>
             </ul>
