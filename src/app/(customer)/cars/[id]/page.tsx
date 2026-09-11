@@ -125,6 +125,7 @@ export default async function CarDetailPage({
     fuelType: formatFuelType(vehicle.fuelType),
     transmission: formatTransmission(vehicle.transmission),
     seatingCapacity: vehicle.seatingCapacity || 5,
+    hasAirConditioning: vehicle.hasAirConditioning !== false,
     basePrice: Number(vehicle.basePrice),
     deposit: Number(vehicle.deposit),
     speedLimit: vehicle.speedLimit,

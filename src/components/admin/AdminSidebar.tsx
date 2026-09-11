@@ -3,7 +3,7 @@
 import Link from "next/link";
 import Image from "next/image";
 import { usePathname } from "next/navigation";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { signOut } from "next-auth/react";
 
 interface AdminSidebarProps {
@@ -112,6 +112,15 @@ export default function AdminSidebar({ user }: AdminSidebarProps) {
       ),
     },
     {
+      label: "FAQs",
+      href: "/admin/faqs",
+      icon: (
+        <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8.228 9c.549-1.165 2.03-2 3.772-2 2.21 0 4 1.343 4 3 0 1.4-1.278 2.575-3.006 2.907-.542.104-.994.54-.994 1.093m0 3h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+        </svg>
+      ),
+    },
+    {
       label: "Reports",
       href: "/admin/reports",
       icon: (
@@ -122,10 +131,31 @@ export default function AdminSidebar({ user }: AdminSidebarProps) {
     },
   ];
 
+  useEffect(() => {
+    if (mobileOpen) {
+      document.body.style.overflow = "hidden";
+    } else {
+      document.body.style.overflow = "";
+    }
+    return () => {
+      document.body.style.overflow = "";
+    };
+  }, [mobileOpen]);
+
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === "Escape" && mobileOpen) {
+        setMobileOpen(false);
+      }
+    };
+    window.addEventListener("keydown", handleKeyDown);
+    return () => window.removeEventListener("keydown", handleKeyDown);
+  }, [mobileOpen]);
+
   return (
     <>
-      {/* Mobile Top Bar */}
-      <div className="lg:hidden flex items-center justify-between px-4 py-3 bg-[#0A1128] text-white border-b border-slate-800">
+      {/* Mobile Top Bar Header */}
+      <header className="lg:hidden sticky top-0 z-30 w-full shrink-0 flex items-center justify-between px-4 py-3 bg-[#0A1128] text-white border-b border-slate-800 shadow-md">
         <Link href="/admin" className="flex items-center gap-2">
           <div className="relative h-8 w-[59px] overflow-hidden rounded-xl border border-white/10 shadow-sm">
             <Image
@@ -136,43 +166,47 @@ export default function AdminSidebar({ user }: AdminSidebarProps) {
               className="object-cover rounded-xl"
             />
           </div>
-          <span className="text-xs px-2 py-0.5 rounded bg-blue-600/30 text-blue-400 font-semibold border border-blue-500/30">
-            ADMIN
+          <span className="text-[10px] px-2 py-0.5 rounded bg-blue-600/30 text-blue-400 font-extrabold border border-blue-500/30 uppercase tracking-wider">
+            Admin Panel
           </span>
         </Link>
-        <button
-          onClick={() => setMobileOpen(!mobileOpen)}
-          className="p-2 rounded-lg bg-slate-800 text-slate-200 hover:text-white"
-          aria-label="Toggle Navigation Menu"
-        >
-          <svg className="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-            {mobileOpen ? (
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-            ) : (
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 12h16M4 18h16" />
-            )}
-          </svg>
-        </button>
-      </div>
 
-      {/* Sidebar Overlay for Mobile */}
-      {mobileOpen && (
-        <div
-          className="fixed inset-0 z-40 bg-black/60 backdrop-blur-sm lg:hidden"
-          onClick={() => setMobileOpen(false)}
-        />
-      )}
+        <div className="flex items-center gap-2">
+          <button
+            onClick={() => setMobileOpen(!mobileOpen)}
+            className="p-2 rounded-xl bg-slate-800/80 text-slate-200 hover:text-white hover:bg-slate-700 transition-colors focus:outline-none focus:ring-2 focus:ring-blue-500"
+            aria-label="Toggle Navigation Menu"
+          >
+            <svg className="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              {mobileOpen ? (
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+              ) : (
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 12h16M4 18h16" />
+              )}
+            </svg>
+          </button>
+        </div>
+      </header>
 
-      {/* Main Sidebar */}
+      {/* Sidebar Overlay for Mobile Drawer */}
+      <div
+        className={`fixed inset-0 z-40 bg-slate-950/70 backdrop-blur-sm lg:hidden transition-opacity duration-300 ease-in-out ${
+          mobileOpen ? "opacity-100 pointer-events-auto" : "opacity-0 pointer-events-none"
+        }`}
+        onClick={() => setMobileOpen(false)}
+        aria-hidden="true"
+      />
+
+      {/* Main Sidebar Drawer */}
       <aside
-        className={`fixed top-0 bottom-0 left-0 z-50 w-64 bg-[#0A1128] border-r border-slate-800 flex flex-col justify-between transition-transform duration-300 ease-in-out lg:translate-x-0 ${
-          mobileOpen ? "translate-x-0" : "-translate-x-full"
+        className={`fixed inset-y-0 left-0 z-50 w-64 max-w-[80vw] bg-[#0A1128] border-r border-slate-800 flex flex-col justify-between transition-transform duration-300 ease-in-out lg:translate-x-0 ${
+          mobileOpen ? "translate-x-0 shadow-2xl" : "-translate-x-full"
         }`}
       >
-        <div>
+        <div className="flex flex-col h-full overflow-hidden">
           {/* Logo Header */}
-          <div className="p-6 border-b border-slate-800 flex items-center justify-between">
-            <Link href="/admin" className="flex items-center gap-3">
+          <div className="p-5 border-b border-slate-800 flex items-center justify-between shrink-0">
+            <Link href="/admin" onClick={() => setMobileOpen(false)} className="flex items-center gap-3">
               <div className="relative h-10 w-[73px] overflow-hidden rounded-xl border border-white/10 shadow-sm">
                 <Image
                   src="/prime-rides-logo.png"
@@ -184,10 +218,19 @@ export default function AdminSidebar({ user }: AdminSidebarProps) {
                 />
               </div>
             </Link>
+            <button
+              onClick={() => setMobileOpen(false)}
+              className="p-1.5 rounded-lg text-slate-400 hover:text-white hover:bg-slate-800 lg:hidden transition-colors"
+              aria-label="Close menu"
+            >
+              <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+              </svg>
+            </button>
           </div>
 
           {/* Navigation Links */}
-          <div className="px-3 py-6 space-y-1 overflow-y-auto max-h-[calc(100vh-200px)]">
+          <div className="px-3 py-5 space-y-1 overflow-y-auto flex-1 custom-scrollbar">
             <p className="px-3 text-[10px] font-bold uppercase tracking-wider text-slate-400 mb-2">
               Management Menu
             </p>
@@ -201,7 +244,7 @@ export default function AdminSidebar({ user }: AdminSidebarProps) {
                   key={item.href}
                   href={item.href}
                   onClick={() => setMobileOpen(false)}
-                  className={`flex items-center gap-3 px-3 py-2.5 rounded-xl font-medium text-sm transition-all duration-200 ${
+                  className={`flex items-center gap-3 px-3.5 py-2.5 rounded-xl font-medium text-sm transition-all duration-200 ${
                     isActive
                       ? "bg-blue-600 text-white shadow-lg shadow-blue-600/20 font-semibold"
                       : "text-slate-300 hover:bg-slate-800/80 hover:text-white"
@@ -215,43 +258,43 @@ export default function AdminSidebar({ user }: AdminSidebarProps) {
               );
             })}
           </div>
-        </div>
 
-        {/* Footer Admin User Card */}
-        <div className="p-4 border-t border-slate-800 bg-slate-900/60">
-          <div className="flex items-center gap-3 mb-3">
-            <div className="w-9 h-9 rounded-full bg-blue-600/30 border border-blue-500/30 flex items-center justify-center text-blue-400 font-bold text-sm">
-              {user.name ? user.name.charAt(0).toUpperCase() : "A"}
+          {/* Footer Admin User Card */}
+          <div className="p-4 border-t border-slate-800 bg-slate-900/60 shrink-0">
+            <div className="flex items-center gap-3 mb-3">
+              <div className="w-9 h-9 rounded-full bg-blue-600/30 border border-blue-500/30 flex items-center justify-center text-blue-400 font-bold text-sm shrink-0">
+                {user.name ? user.name.charAt(0).toUpperCase() : "A"}
+              </div>
+              <div className="flex-1 min-w-0">
+                <p className="text-sm font-semibold text-white truncate">
+                  {user.name || "Administrator"}
+                </p>
+                <p className="text-xs text-slate-400 truncate">
+                  {user.email || "admin@primerides.com"}
+                </p>
+              </div>
             </div>
-            <div className="flex-1 min-w-0">
-              <p className="text-sm font-semibold text-white truncate">
-                {user.name || "Administrator"}
-              </p>
-              <p className="text-xs text-slate-400 truncate">
-                {user.email || "admin@primerides.com"}
-              </p>
-            </div>
-          </div>
 
-          <div className="grid grid-cols-2 gap-2 pt-2 border-t border-slate-800/60">
-            <Link
-              href="/"
-              className="flex items-center justify-center gap-1 py-1.5 px-2 text-xs font-medium text-slate-300 rounded-lg bg-slate-800 hover:bg-slate-700 hover:text-white transition-colors"
-            >
-              <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 19l-7-7m0 0l7-7m-7 7h18" />
-              </svg>
-              Customer Site
-            </Link>
-            <button
-              onClick={() => signOut({ callbackUrl: "/" })}
-              className="flex items-center justify-center gap-1 py-1.5 px-2 text-xs font-medium text-rose-400 rounded-lg bg-rose-950/40 hover:bg-rose-900/60 border border-rose-800/30 hover:text-rose-200 transition-colors"
-            >
-              <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" />
-              </svg>
-              Logout
-            </button>
+            <div className="grid grid-cols-2 gap-2 pt-2 border-t border-slate-800/60">
+              <Link
+                href="/"
+                className="flex items-center justify-center gap-1 py-1.5 px-2 text-xs font-medium text-slate-300 rounded-lg bg-slate-800 hover:bg-slate-700 hover:text-white transition-colors"
+              >
+                <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 19l-7-7m0 0l7-7m-7 7h18" />
+                </svg>
+                Site
+              </Link>
+              <button
+                onClick={() => signOut({ callbackUrl: "/admin/login" })}
+                className="flex items-center justify-center gap-1 py-1.5 px-2 text-xs font-medium text-rose-400 rounded-lg bg-rose-950/40 hover:bg-rose-900/60 border border-rose-800/30 hover:text-rose-200 transition-colors"
+              >
+                <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" />
+                </svg>
+                Logout
+              </button>
+            </div>
           </div>
         </div>
       </aside>

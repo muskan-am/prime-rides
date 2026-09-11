@@ -126,42 +126,42 @@ export default function AdminPackagesClient({
     <div className="space-y-6">
       {/* Stats Cards */}
       <div className="grid gap-4 grid-cols-2 lg:grid-cols-5">
-        <div className="p-4 sm:p-5 rounded-2xl bg-slate-900/80 border border-slate-800">
-          <p className="text-xs font-semibold text-slate-400 uppercase tracking-wider">Total Packages</p>
-          <p className="text-2xl sm:text-3xl font-extrabold text-white mt-1">{totalCount}</p>
+        <div className="p-4 sm:p-5 rounded-2xl bg-white border border-slate-200/80 shadow-sm">
+          <p className="text-xs font-semibold text-slate-500 uppercase tracking-wider">Total Packages</p>
+          <p className="text-2xl sm:text-3xl font-extrabold text-[#0A1128] mt-1">{totalCount}</p>
         </div>
-        <div className="p-4 sm:p-5 rounded-2xl bg-slate-900/80 border border-slate-800">
-          <p className="text-xs font-semibold text-emerald-400 uppercase tracking-wider">Active</p>
-          <p className="text-2xl sm:text-3xl font-extrabold text-emerald-300 mt-1">{activeCount}</p>
+        <div className="p-4 sm:p-5 rounded-2xl bg-white border border-slate-200/80 shadow-sm">
+          <p className="text-xs font-semibold text-emerald-600 uppercase tracking-wider">Active</p>
+          <p className="text-2xl sm:text-3xl font-extrabold text-emerald-700 mt-1">{activeCount}</p>
         </div>
-        <div className="p-4 sm:p-5 rounded-2xl bg-slate-900/80 border border-slate-800">
-          <p className="text-xs font-semibold text-blue-400 uppercase tracking-wider">Weekly</p>
-          <p className="text-2xl sm:text-3xl font-extrabold text-blue-300 mt-1">{weeklyCount}</p>
+        <div className="p-4 sm:p-5 rounded-2xl bg-white border border-slate-200/80 shadow-sm">
+          <p className="text-xs font-semibold text-blue-600 uppercase tracking-wider">Weekly</p>
+          <p className="text-2xl sm:text-3xl font-extrabold text-blue-700 mt-1">{weeklyCount}</p>
         </div>
-        <div className="p-4 sm:p-5 rounded-2xl bg-slate-900/80 border border-slate-800">
-          <p className="text-xs font-semibold text-purple-400 uppercase tracking-wider">Monthly</p>
-          <p className="text-2xl sm:text-3xl font-extrabold text-purple-300 mt-1">{monthlyCount}</p>
+        <div className="p-4 sm:p-5 rounded-2xl bg-white border border-slate-200/80 shadow-sm">
+          <p className="text-xs font-semibold text-purple-600 uppercase tracking-wider">Monthly</p>
+          <p className="text-2xl sm:text-3xl font-extrabold text-purple-700 mt-1">{monthlyCount}</p>
         </div>
-        <div className="p-4 sm:p-5 rounded-2xl bg-slate-900/80 border border-slate-800">
-          <p className="text-xs font-semibold text-amber-400 uppercase tracking-wider">Yearly</p>
-          <p className="text-2xl sm:text-3xl font-extrabold text-amber-300 mt-1">{yearlyCount}</p>
+        <div className="p-4 sm:p-5 rounded-2xl bg-white border border-slate-200/80 shadow-sm">
+          <p className="text-xs font-semibold text-amber-600 uppercase tracking-wider">Yearly</p>
+          <p className="text-2xl sm:text-3xl font-extrabold text-amber-700 mt-1">{yearlyCount}</p>
         </div>
       </div>
 
       {/* Error & Success Messages */}
       {errorMsg && (
-        <div className="p-4 rounded-xl border border-rose-500/30 bg-rose-950/40 text-rose-300 text-sm font-medium">
+        <div className="p-4 rounded-xl border border-rose-200 bg-rose-50 text-rose-700 text-sm font-medium">
           {errorMsg}
         </div>
       )}
       {successMsg && (
-        <div className="p-4 rounded-xl border border-emerald-500/30 bg-emerald-950/40 text-emerald-300 text-sm font-medium">
+        <div className="p-4 rounded-xl border border-emerald-200 bg-emerald-50 text-emerald-800 text-sm font-medium">
           {successMsg}
         </div>
       )}
 
       {/* Filter and Search Bar */}
-      <div className="flex flex-col sm:flex-row items-center justify-between gap-4 p-4 rounded-2xl bg-slate-900/80 border border-slate-800">
+      <div className="flex flex-col sm:flex-row items-center justify-between gap-4 p-4 rounded-2xl bg-white border border-slate-200/80 shadow-sm">
         <div className="flex flex-wrap gap-2 w-full sm:w-auto">
           {["ALL", "WEEKLY", "MONTHLY", "YEARLY"].map((type) => (
             <button
@@ -169,8 +169,8 @@ export default function AdminPackagesClient({
               onClick={() => setSelectedType(type)}
               className={`px-4 py-2 rounded-xl text-xs font-bold transition-all ${
                 selectedType === type
-                  ? "bg-blue-600 text-white shadow-md shadow-blue-600/30"
-                  : "bg-slate-800/80 text-slate-300 hover:bg-slate-700 hover:text-white"
+                  ? "bg-blue-600 text-white shadow-sm shadow-blue-600/30"
+                  : "bg-slate-100 text-slate-700 hover:bg-slate-200"
               }`}
             >
               {type === "ALL" ? "All Categories" : `${type}`}
@@ -184,24 +184,24 @@ export default function AdminPackagesClient({
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
             placeholder="Search packages..."
-            className="w-full px-4 py-2 rounded-xl bg-slate-950 border border-slate-800 text-slate-200 placeholder-slate-500 text-sm focus:outline-none focus:border-blue-500"
+            className="w-full px-4 py-2 rounded-xl bg-slate-50 border border-slate-200 text-slate-900 placeholder-slate-400 text-sm focus:outline-none focus:border-blue-600 focus:bg-white"
           />
         </div>
       </div>
 
       {/* Package List / Grid */}
       {filteredPackages.length === 0 ? (
-        <div className="p-12 text-center rounded-2xl bg-slate-900/60 border border-dashed border-slate-800">
-          <p className="text-slate-400 text-sm font-medium">No packages found.</p>
-          <p className="text-slate-500 text-xs mt-1">Try adjusting your filter or create a new package.</p>
+        <div className="p-12 text-center rounded-2xl bg-white border border-dashed border-slate-300">
+          <p className="text-slate-600 text-sm font-medium">No packages found.</p>
+          <p className="text-slate-400 text-xs mt-1">Try adjusting your filter or create a new package.</p>
         </div>
       ) : (
         <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
           {filteredPackages.map((pkg) => (
             <div
               key={pkg.id}
-              className={`flex flex-col justify-between rounded-2xl border p-5 transition-all bg-slate-900/80 ${
-                pkg.isActive ? "border-slate-800" : "border-slate-800/50 opacity-75"
+              className={`flex flex-col justify-between rounded-2xl border p-5 transition-all bg-white shadow-sm hover:shadow-md ${
+                pkg.isActive ? "border-slate-200" : "border-slate-200 opacity-75 bg-slate-50/50"
               }`}
             >
               <div>
@@ -210,10 +210,10 @@ export default function AdminPackagesClient({
                   <span
                     className={`px-2.5 py-1 rounded-lg text-[10px] font-extrabold uppercase tracking-wider ${
                       pkg.type === "WEEKLY"
-                        ? "bg-blue-950 text-blue-400 border border-blue-800/40"
+                        ? "bg-blue-50 text-blue-700 border border-blue-200"
                         : pkg.type === "MONTHLY"
-                        ? "bg-purple-950 text-purple-400 border border-purple-800/40"
-                        : "bg-amber-950 text-amber-400 border border-amber-800/40"
+                        ? "bg-blue-100/70 text-blue-800 border border-blue-300"
+                        : "bg-amber-50 text-amber-700 border border-amber-200"
                     }`}
                   >
                     {pkg.type} PACKAGE
@@ -224,8 +224,8 @@ export default function AdminPackagesClient({
                     disabled={loadingId === pkg.id}
                     className={`px-2.5 py-1 rounded-lg text-xs font-bold transition-all ${
                       pkg.isActive
-                        ? "bg-emerald-950/60 text-emerald-400 border border-emerald-800/40 hover:bg-emerald-900/50"
-                        : "bg-rose-950/60 text-rose-400 border border-rose-800/40 hover:bg-rose-900/50"
+                        ? "bg-emerald-50 text-emerald-700 border border-emerald-200 hover:bg-emerald-100"
+                        : "bg-slate-100 text-slate-600 border border-slate-200 hover:bg-slate-200"
                     }`}
                   >
                     {loadingId === pkg.id ? "Updating..." : pkg.isActive ? "Active" : "Inactive"}
@@ -233,16 +233,16 @@ export default function AdminPackagesClient({
                 </div>
 
                 {/* Package Name & Price */}
-                <h3 className="text-lg font-bold text-white leading-snug">{pkg.name}</h3>
-                <p className="text-xs text-slate-400 mt-0.5">Slug: <code className="text-blue-300">/packages/{pkg.slug}</code></p>
+                <h3 className="text-lg font-bold text-[#0A1128] leading-snug">{pkg.name}</h3>
+                <p className="text-xs text-slate-500 mt-0.5">Slug: <code className="text-blue-600 font-semibold">/packages/{pkg.slug}</code></p>
 
                 <div className="my-4 flex items-baseline gap-2">
-                  <span className="text-2xl font-black text-white">₹{pkg.price.toLocaleString("en-IN")}</span>
-                  <span className="text-xs text-slate-400 font-medium">/ {pkg.duration} days</span>
+                  <span className="text-2xl font-black text-[#0A1128]">₹{pkg.price.toLocaleString("en-IN")}</span>
+                  <span className="text-xs text-slate-500 font-medium">/ {pkg.duration} days</span>
                 </div>
 
                 {pkg.shortDescription && (
-                  <p className="text-xs text-slate-300 line-clamp-2 leading-relaxed mb-3">
+                  <p className="text-xs text-slate-600 line-clamp-2 leading-relaxed mb-3">
                     {pkg.shortDescription}
                   </p>
                 )}
@@ -251,12 +251,12 @@ export default function AdminPackagesClient({
                 {pkg.features.length > 0 && (
                   <div className="mb-4 flex flex-wrap gap-1">
                     {pkg.features.slice(0, 3).map((f, i) => (
-                      <span key={i} className="px-2 py-0.5 rounded bg-slate-800 text-[11px] text-slate-300">
+                      <span key={i} className="px-2 py-0.5 rounded bg-slate-100 text-[11px] font-semibold text-slate-700 border border-slate-200/60">
                         ✓ {f}
                       </span>
                     ))}
                     {pkg.features.length > 3 && (
-                      <span className="px-2 py-0.5 rounded bg-slate-800 text-[11px] text-slate-400">
+                      <span className="px-2 py-0.5 rounded bg-slate-100 text-[11px] font-semibold text-slate-500 border border-slate-200/60">
                         +{pkg.features.length - 3} more
                       </span>
                     )}
@@ -264,18 +264,18 @@ export default function AdminPackagesClient({
                 )}
 
                 {/* Vehicles Count */}
-                <div className="pt-3 border-t border-slate-800 flex items-center justify-between text-xs text-slate-400">
-                  <span>Eligible Vehicles: <strong className="text-slate-200">{pkg.vehicles.length}</strong></span>
-                  <span>Bookings: <strong className="text-slate-200">{pkg.bookingCount}</strong></span>
+                <div className="pt-3 border-t border-slate-100 flex items-center justify-between text-xs text-slate-500">
+                  <span>Eligible Vehicles: <strong className="text-slate-800">{pkg.vehicles.length}</strong></span>
+                  <span>Bookings: <strong className="text-slate-800">{pkg.bookingCount}</strong></span>
                 </div>
               </div>
 
               {/* Action Buttons */}
-              <div className="mt-5 pt-3 border-t border-slate-800 flex items-center justify-between gap-2">
+              <div className="mt-5 pt-3 border-t border-slate-100 flex items-center justify-between gap-2">
                 <Link
                   href={`/packages/${pkg.slug}`}
                   target="_blank"
-                  className="px-3 py-1.5 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-300 text-xs font-semibold transition-colors"
+                  className="px-3 py-1.5 rounded-lg bg-slate-100 hover:bg-slate-200 text-slate-700 border border-slate-200 text-xs font-semibold transition-colors"
                 >
                   Preview
                 </Link>
@@ -283,7 +283,7 @@ export default function AdminPackagesClient({
                 <div className="flex items-center gap-2">
                   <Link
                     href={`/admin/packages/${pkg.id}/edit`}
-                    className="px-3 py-1.5 rounded-lg bg-blue-600/20 hover:bg-blue-600/40 text-blue-300 border border-blue-500/30 text-xs font-semibold transition-colors"
+                    className="px-3 py-1.5 rounded-lg bg-blue-50 hover:bg-blue-100 text-blue-700 border border-blue-200 text-xs font-semibold transition-colors"
                   >
                     Edit
                   </Link>
@@ -291,7 +291,7 @@ export default function AdminPackagesClient({
                   <button
                     onClick={() => handleDelete(pkg)}
                     disabled={loadingId === pkg.id}
-                    className="px-3 py-1.5 rounded-lg bg-rose-950/40 hover:bg-rose-900/60 text-rose-400 border border-rose-800/30 text-xs font-semibold transition-colors disabled:opacity-50"
+                    className="px-3 py-1.5 rounded-lg bg-rose-50 hover:bg-rose-100 text-rose-700 border border-rose-200 text-xs font-semibold transition-colors disabled:opacity-50"
                   >
                     Delete
                   </button>

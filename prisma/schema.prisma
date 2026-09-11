@@ -188,6 +188,7 @@ model Vehicle {
   fuelType             String?
   transmission         String?
   seatingCapacity      Int?
+  hasAirConditioning   Boolean @default(true)
 
   basePrice            Decimal
   deposit              Decimal @default(0)
@@ -563,4 +564,15 @@ model AuditLog {
   user User? @relation(fields: [userId], references: [id], onDelete: SetNull)
 
   createdAt DateTime @default(now())
+}
+
+model Faq {
+  id        String   @id @default(cuid())
+  question  String
+  answer    String
+  sortOrder Int      @default(0)
+  isActive  Boolean  @default(true)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 }

@@ -72,7 +72,7 @@ export default function BookingStatusSelect({
         value={status}
         onChange={handleChange}
         disabled={loading}
-        className="rounded-xl border border-slate-700 bg-slate-950 px-3 py-1.5 text-xs font-semibold text-white focus:border-blue-500 focus:outline-none disabled:opacity-50"
+        className="rounded-xl border border-slate-300 bg-white px-3 py-1.5 text-xs font-semibold text-slate-800 outline-none focus:border-blue-600 focus:ring-2 focus:ring-blue-600/20 disabled:opacity-50 shadow-xs"
       >
         <option value="PENDING">Pending Review</option>
         <option value="CONFIRMED">Confirmed</option>
@@ -80,7 +80,7 @@ export default function BookingStatusSelect({
         <option value="CANCELLED">Cancelled</option>
       </select>
       {loading && (
-        <span className="text-[11px] text-blue-400 animate-pulse">Updating...</span>
+        <span className="text-[11px] font-semibold text-blue-600 animate-pulse">Updating...</span>
       )}
     </div>
   );

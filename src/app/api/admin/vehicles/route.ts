@@ -34,6 +34,7 @@ export async function POST(request: Request) {
       fuelType,
       transmission,
       seatingCapacity,
+      hasAirConditioning,
       basePrice,
       deposit,
       speedLimit,
@@ -188,6 +189,11 @@ export async function POST(request: Request) {
             : null,
 
         seatingCapacity: parsedSeatingCapacity,
+
+        hasAirConditioning:
+          hasAirConditioning !== undefined
+            ? Boolean(hasAirConditioning)
+            : true,
 
         basePrice: parsedBasePrice,
 

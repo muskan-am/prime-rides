@@ -97,7 +97,7 @@ export default async function DashboardPage({ searchParams }: DashboardPageProps
 
       <main className="pb-24">
         {/* Banner Header */}
-        <section className="bg-slate-950 px-4 py-12 text-white sm:px-6 lg:px-8 border-b border-slate-800">
+        <section className="bg-[#0A1128] px-4 py-12 text-white sm:px-6 lg:px-8 border-b border-slate-800">
           <div className="mx-auto max-w-7xl flex flex-col sm:flex-row sm:items-center justify-between gap-6">
             <div>
               <p className="text-xs font-bold uppercase tracking-widest text-blue-400">Customer Portal</p>
@@ -187,7 +187,7 @@ export default async function DashboardPage({ searchParams }: DashboardPageProps
                 <p className="text-xs text-slate-500 mt-1">Your upcoming self-drive rentals will be listed here after booking.</p>
                 <Link
                   href="/cars"
-                  className="mt-5 inline-flex items-center gap-2 rounded-xl bg-slate-950 px-5 py-2.5 text-xs font-bold text-white shadow-md hover:bg-blue-600"
+                  className="mt-5 inline-flex items-center gap-2 rounded-xl bg-[#0A1128] px-5 py-2.5 text-xs font-bold text-white shadow-md hover:bg-blue-600"
                 >
                   Explore Cars Catalog →
                 </Link>
@@ -206,7 +206,7 @@ export default async function DashboardPage({ searchParams }: DashboardPageProps
                       className="overflow-hidden rounded-2xl border border-slate-200/80 bg-white shadow-sm transition-all hover:border-blue-300"
                     >
                       {/* Booking Bar Header */}
-                      <div className="flex flex-col gap-3 border-b border-slate-100 bg-slate-950 p-5 text-white sm:flex-row sm:items-center sm:justify-between">
+                      <div className="flex flex-col gap-3 border-b border-slate-100 bg-[#0A1128] p-5 text-white sm:flex-row sm:items-center sm:justify-between">
                         <div>
                           <p className="text-xs uppercase tracking-widest text-slate-400 font-bold">Booking ID</p>
                           <p className="mt-0.5 font-mono text-sm font-bold text-white">{booking.id}</p>
@@ -230,12 +230,12 @@ export default async function DashboardPage({ searchParams }: DashboardPageProps
                       {/* Content */}
                       <div className="p-6">
                         <div className="grid gap-6 md:grid-cols-[180px_1fr] items-center">
-                          <div className="h-32 overflow-hidden rounded-2xl bg-slate-900">
+                          <div className="h-32 overflow-hidden rounded-2xl bg-[#0A1128] flex items-center justify-center p-2">
                             {booking.vehicle.primaryImage ? (
                               <img
                                 src={booking.vehicle.primaryImage}
                                 alt={`${booking.vehicle.brand} ${booking.vehicle.model}`}
-                                className="h-full w-full object-cover"
+                                className="h-full w-full object-contain"
                               />
                             ) : (
                               <div className="flex h-full items-center justify-center text-xs text-slate-400">No Image</div>

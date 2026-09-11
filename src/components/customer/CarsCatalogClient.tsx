@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import Link from "next/link";
-import { Fuel, Gauge, Users, MapPin, Filter, CheckCircle2, XCircle, ArrowRight, CalendarDays } from "lucide-react";
+import { Fuel, Gauge, Users, MapPin, Filter, CheckCircle2, XCircle, ArrowRight, CalendarDays, Wind } from "lucide-react";
 import Navbar from "@/components/customer/Navbar";
 import Footer from "@/components/customer/Footer";
 
@@ -15,6 +15,7 @@ export type FormattedVehicle = {
   fuel: string;
   transmission: string;
   seats: number;
+  hasAirConditioning?: boolean;
   price: number;
   deposit: number;
   location: string;
@@ -239,52 +240,47 @@ export default function CarsCatalogClient({
 
                       <div className="absolute inset-0 bg-gradient-to-t from-slate-950/60 via-transparent to-transparent" />
 
-                      {car.badge && (
-                        <div className="absolute top-4 left-4">
-                          <span className="rounded-full bg-slate-950/80 backdrop-blur-md px-3.5 py-1 text-xs font-bold text-white border border-white/20">
-                            {car.badge}
-                          </span>
-                        </div>
-                      )}
 
-                      <div className="absolute bottom-4 left-4 right-4 flex items-center justify-between text-white">
-                        <div>
-                          <p className="text-xs font-medium text-slate-300 uppercase tracking-widest">
-                            {car.brand}
-                          </p>
-                          <h3 className="text-xl font-bold tracking-tight text-white">
-                            {car.name}
-                          </h3>
-                        </div>
 
-                        <span className="inline-flex items-center gap-1 rounded-xl bg-blue-600 px-3 py-1 text-xs font-extrabold uppercase">
-                          <MapPin className="h-3 w-3" /> {car.location}
-                        </span>
+                      <div className="absolute bottom-4 left-4 right-4 text-white">
+                        <p className="text-xs font-medium text-slate-300 uppercase tracking-widest">
+                          {car.brand}
+                        </p>
+                        <h3 className="text-xl font-bold tracking-tight text-white">
+                          {car.name}
+                        </h3>
                       </div>
                     </div>
 
                     {/* Content & Specs */}
                     <div className="p-6">
                       {/* Specification Matrix */}
-                      <div className="grid grid-cols-3 gap-2 rounded-2xl bg-slate-50 p-3 text-center border border-slate-100 mb-6">
+                      <div className="grid grid-cols-4 gap-1.5 rounded-2xl bg-slate-50 p-2.5 text-center border border-slate-100 mb-6">
                         <div className="flex flex-col items-center gap-1">
                           <Fuel className="h-4 w-4 text-blue-600" />
-                          <span className="text-xs font-bold text-slate-700">
+                          <span className="text-[11px] font-bold text-slate-700">
                             {car.fuel}
                           </span>
                         </div>
 
-                        <div className="flex flex-col items-center gap-1 border-x border-slate-200">
+                        <div className="flex flex-col items-center gap-1 border-l border-slate-200">
                           <Gauge className="h-4 w-4 text-blue-600" />
-                          <span className="text-xs font-bold text-slate-700">
+                          <span className="text-[11px] font-bold text-slate-700">
                             {car.transmission}
                           </span>
                         </div>
 
-                        <div className="flex flex-col items-center gap-1">
+                        <div className="flex flex-col items-center gap-1 border-l border-slate-200">
                           <Users className="h-4 w-4 text-blue-600" />
-                          <span className="text-xs font-bold text-slate-700">
+                          <span className="text-[11px] font-bold text-slate-700">
                             {car.seats} Seats
+                          </span>
+                        </div>
+
+                        <div className="flex flex-col items-center gap-1 border-l border-slate-200">
+                          <Wind className="h-4 w-4 text-blue-600" />
+                          <span className="text-[11px] font-bold text-slate-700">
+                            {car.hasAirConditioning !== false ? "AC" : "Non-AC"}
                           </span>
                         </div>
                       </div>

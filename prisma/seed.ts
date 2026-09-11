@@ -118,10 +118,10 @@ async function main() {
     update: {
       password: adminPassword,
       role: "ADMIN",
-      name: "Prime Rides Admin",
+      name: "Rides Admin",
     },
     create: {
-      name: "Prime Rides Admin",
+      name: "Rides Admin",
       email: "admin@primerides.com",
       password: adminPassword,
       role: "ADMIN",

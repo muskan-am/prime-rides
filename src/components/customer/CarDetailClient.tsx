@@ -17,9 +17,12 @@ import {
   XCircle,
   Package,
   CalendarCheck,
+  Wind,
 } from "lucide-react";
 import Navbar from "@/components/customer/Navbar";
 import Footer from "@/components/customer/Footer";
+import CarDetailFAQ from "@/components/customer/CarDetailFAQ";
+
 
 export type ImageItem = {
   id: string;
@@ -68,6 +71,7 @@ export type DetailVehicle = {
   fuelType: string;
   transmission: string;
   seatingCapacity: number;
+  hasAirConditioning?: boolean;
   basePrice: number;
   deposit: number;
   speedLimit: number | null;
@@ -133,8 +137,48 @@ export default function CarDetailClient({
     searchParamsState.monthlyPlanId || null
   );
 
+  // 1. Short-Term Special Rental Packages (< 30 days)
+  const shortTermPackages = vehicle.rentalPackages.filter(
+    (p) => p.duration < 30 && !p.name.toLowerCase().includes("month")
+  );
+
+  // 2. Long-Term Monthly Packages & Plans (>= 30 days or monthly subscriptions)
+  const monthlyPackages = [
+    ...vehicle.rentalPackages.filter(
+      (p) => p.duration >= 30 || p.name.toLowerCase().includes("month")
+    ),
+  ];
+
+  if (vehicle.monthlyPlans && vehicle.monthlyPlans.length > 0) {
+    vehicle.monthlyPlans.forEach((plan) => {
+      if (!monthlyPackages.some((p) => p.id === plan.id)) {
+        monthlyPackages.push({
+          id: plan.id,
+          name: plan.name || `${plan.months} Month Subscription`,
+          description: `Discounted long-term monthly rental (${plan.months} Month/s)`,
+          duration: plan.months * 30,
+          price: plan.price,
+        });
+      }
+    });
+  }
+
+  // Ensure every vehicle has a Monthly Package option if missing
+  if (monthlyPackages.length === 0) {
+    const monthlyRate = Math.round(vehicle.basePrice * 30 * 0.70);
+    monthlyPackages.push({
+      id: `monthly-30-${vehicle.id}`,
+      name: "1 Month (30 Days Package)",
+      description: "Discounted monthly self-drive rental plan with full flexibility",
+      duration: 30,
+      price: monthlyRate,
+    });
+  }
+
+  const displayPackages = [...shortTermPackages, ...monthlyPackages];
+
   // Active pricing calculation based on selected package/plan
-  const selectedPackage = vehicle.rentalPackages.find(
+  const selectedPackage = displayPackages.find(
     (p) => p.id === selectedPackageId
   );
   const selectedPlan = vehicle.monthlyPlans.find(
@@ -146,7 +190,9 @@ export default function CarDetailClient({
 
   if (selectedPackage) {
     activePrice = selectedPackage.price;
-    activePriceLabel = ` / ${selectedPackage.duration} days pkg`;
+    activePriceLabel = selectedPackage.duration >= 30
+      ? ` / 30 days pkg`
+      : ` / ${selectedPackage.duration} days pkg`;
   } else if (selectedPlan) {
     activePrice = selectedPlan.price;
     activePriceLabel = ` / month`;
@@ -234,22 +280,15 @@ export default function CarDetailClient({
         <div className="mx-auto max-w-7xl px-4 pt-10 sm:px-6 lg:px-8">
           {/* Hero Section */}
           <div className="grid gap-10 lg:grid-cols-12 items-start">
-            {/* Left: Image Gallery & Specs */}
+            {/* Left: Image Gallery & Included Features */}
             <div className="lg:col-span-7 space-y-8">
               {/* Image Preview */}
-              <div className="relative overflow-hidden rounded-3xl border border-slate-200/80 bg-slate-900 shadow-xl group">
+              <div className="relative overflow-hidden rounded-3xl border border-slate-200/80 bg-[#0A1128] shadow-xl group flex items-center justify-center p-2 sm:p-4">
                 <img
                   src={selectedImage}
                   alt={fullName}
-                  className="h-[400px] sm:h-[480px] w-full object-cover transition-transform duration-700 group-hover:scale-105"
+                  className="h-[360px] sm:h-[480px] w-full object-contain transition-transform duration-500 group-hover:scale-[1.02]"
                 />
-
-                {/* Location Badge (Top Left) */}
-                <div className="absolute top-4 left-4 z-10">
-                  <span className="rounded-full bg-slate-950/80 backdrop-blur-md px-3.5 py-1.5 text-xs font-bold text-white border border-white/20">
-                    📍 {vehicle.primaryLocation} Hub
-                  </span>
-                </div>
 
                 {/* Image Counter Badge (Top Right) */}
                 {galleryImages.length > 1 && (
@@ -311,64 +350,109 @@ export default function CarDetailClient({
                 </div>
               )}
 
-              {/* Specification Grid Pills */}
-              <div className="grid grid-cols-2 gap-4 sm:grid-cols-4">
-                <div className="rounded-2xl border border-slate-200 bg-white p-4 text-center shadow-sm">
-                  <Fuel className="mx-auto h-5 w-5 text-blue-600 mb-1" />
-                  <p className="text-xs font-semibold text-slate-500">
-                    Fuel Type
-                  </p>
-                  <p className="mt-1 text-sm font-extrabold text-slate-900">
-                    {vehicle.fuelType}
-                  </p>
-                </div>
+              {/* Vehicle Included Features */}
+              {vehicle.features.length > 0 && (
+                <div className="rounded-3xl border border-slate-200/80 bg-white p-8 shadow-sm">
+                  <h3 className="text-xl font-extrabold text-slate-900 flex items-center gap-2">
+                    <Check className="h-5 w-5 text-blue-600" />
+                    <span>Vehicle Features & Equipment</span>
+                  </h3>
 
-                <div className="rounded-2xl border border-slate-200 bg-white p-4 text-center shadow-sm">
-                  <Gauge className="mx-auto h-5 w-5 text-blue-600 mb-1" />
-                  <p className="text-xs font-semibold text-slate-500">
-                    Transmission
-                  </p>
-                  <p className="mt-1 text-sm font-extrabold text-slate-900">
-                    {vehicle.transmission}
-                  </p>
+                  <div className="mt-6 grid gap-3 sm:grid-cols-2">
+                    {vehicle.features.map((feature) => (
+                      <div
+                        key={feature.id}
+                        className="flex items-center gap-2.5 rounded-xl bg-slate-50 px-3.5 py-2.5 border border-slate-100"
+                      >
+                        <span className="flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-blue-600 text-xs text-white">
+                          ✓
+                        </span>
+                        <span className="text-xs font-bold text-slate-700">
+                          {feature.name}
+                        </span>
+                      </div>
+                    ))}
+                  </div>
                 </div>
+              )}
 
-                <div className="rounded-2xl border border-slate-200 bg-white p-4 text-center shadow-sm">
-                  <Users className="mx-auto h-5 w-5 text-blue-600 mb-1" />
-                  <p className="text-xs font-semibold text-slate-500">
-                    Seating
-                  </p>
-                  <p className="mt-1 text-sm font-extrabold text-slate-900">
-                    {vehicle.seatingCapacity} People
-                  </p>
-                </div>
+              {/* Documents & Verification */}
+              <div className="rounded-3xl border border-slate-200/80 bg-white p-6 sm:p-8 shadow-sm">
+                <h3 className="text-xl font-extrabold text-slate-900 flex items-center gap-2 mb-4">
+                  <FileText className="h-5 w-5 text-blue-600" />
+                  <span>Required Verification Documents</span>
+                </h3>
 
-                <div className="rounded-2xl border border-slate-200 bg-white p-4 text-center shadow-sm">
-                  <ShieldCheck className="mx-auto h-5 w-5 text-blue-600 mb-1" />
-                  <p className="text-xs font-semibold text-slate-500">
-                    Speed Limit
-                  </p>
-                  <p className="mt-1 text-sm font-extrabold text-slate-900">
-                    {vehicle.speedLimit ? `${vehicle.speedLimit} km/h` : "120 km/h"}
-                  </p>
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                  {documentsList.map((doc) => (
+                    <div key={doc} className="flex items-center gap-3 p-3 rounded-2xl bg-blue-50/60 border border-blue-100">
+                      <span className="h-2.5 w-2.5 rounded-full bg-blue-600 shrink-0" />
+                      <span className="text-xs font-bold text-slate-800">{doc}</span>
+                    </div>
+                  ))}
                 </div>
               </div>
             </div>
 
-            {/* Right: Booking Summary Sticky Card */}
+            {/* Right: Booking Summary Sticky Sidebar */}
             <div className="lg:col-span-5">
-              <div className="sticky top-28 rounded-3xl border border-slate-200 bg-white p-8 shadow-2xl space-y-6">
+              <div className="sticky top-28 rounded-3xl border border-slate-200 bg-white p-6 sm:p-8 shadow-2xl space-y-6">
                 <div>
-                  <span className="text-xs font-extrabold uppercase tracking-widest text-blue-600">
-                    {variantText}
-                  </span>
-                  <h1 className="text-3xl font-black text-slate-900 mt-1">
+                  <div className="mb-1">
+                    <span className="text-xs font-extrabold uppercase tracking-widest text-blue-600">
+                      {variantText}
+                    </span>
+                  </div>
+                  <h1 className="text-3xl font-black text-slate-900">
                     {fullName}
                   </h1>
                 </div>
 
+                {/* 5 Key Specification Cards (Fuel, Transmission, Seating, AC, Speed Limit) */}
+                <div className="grid grid-cols-3 gap-2.5 pt-1">
+                  <div className="rounded-2xl border border-slate-200/80 bg-white p-3 text-center shadow-xs transition-all hover:border-blue-300 hover:shadow-md">
+                    <Fuel className="mx-auto h-5 w-5 text-blue-600 mb-1" />
+                    <p className="text-[11px] font-semibold text-slate-500">Fuel Type</p>
+                    <p className="mt-0.5 text-xs font-extrabold text-slate-900 truncate">
+                      {vehicle.fuelType}
+                    </p>
+                  </div>
+
+                  <div className="rounded-2xl border border-slate-200/80 bg-white p-3 text-center shadow-xs transition-all hover:border-blue-300 hover:shadow-md">
+                    <Gauge className="mx-auto h-5 w-5 text-blue-600 mb-1" />
+                    <p className="text-[11px] font-semibold text-slate-500">Transmission</p>
+                    <p className="mt-0.5 text-xs font-extrabold text-slate-900 truncate">
+                      {vehicle.transmission}
+                    </p>
+                  </div>
+
+                  <div className="rounded-2xl border border-slate-200/80 bg-white p-3 text-center shadow-xs transition-all hover:border-blue-300 hover:shadow-md">
+                    <Users className="mx-auto h-5 w-5 text-blue-600 mb-1" />
+                    <p className="text-[11px] font-semibold text-slate-500">Seating</p>
+                    <p className="mt-0.5 text-xs font-extrabold text-slate-900 truncate">
+                      {vehicle.seatingCapacity} People
+                    </p>
+                  </div>
+
+                  <div className="rounded-2xl border border-slate-200/80 bg-white p-3 text-center shadow-xs transition-all hover:border-blue-300 hover:shadow-md">
+                    <Wind className="mx-auto h-5 w-5 text-blue-600 mb-1" />
+                    <p className="text-[11px] font-semibold text-slate-500">Air Conditioning</p>
+                    <p className="mt-0.5 text-xs font-extrabold text-slate-900 truncate">
+                      {vehicle.hasAirConditioning !== false ? "Air Conditioned" : "Non-AC"}
+                    </p>
+                  </div>
+
+                  <div className="rounded-2xl border border-slate-200/80 bg-white p-3 text-center shadow-xs transition-all hover:border-blue-300 hover:shadow-md col-span-2">
+                    <ShieldCheck className="mx-auto h-5 w-5 text-blue-600 mb-1" />
+                    <p className="text-[11px] font-semibold text-slate-500">Speed Limit</p>
+                    <p className="mt-0.5 text-xs font-extrabold text-slate-900 truncate">
+                      {vehicle.speedLimit ? `${vehicle.speedLimit} km/h` : "120 km/h"}
+                    </p>
+                  </div>
+                </div>
+
                 {/* Price Display */}
-                <div className="rounded-2xl bg-slate-900 p-5 text-white flex items-center justify-between">
+                <div className="rounded-2xl bg-slate-900 p-5 text-white flex items-center justify-between shadow-md">
                   <div>
                     <span className="text-xs font-semibold text-slate-400 block uppercase tracking-wider">
                       {selectedPackage
@@ -397,20 +481,8 @@ export default function CarDetailClient({
                   </div>
                 </div>
 
-                {/* Status Callout */}
-                {vehicle.isAvailable ? (
-                  <div className="rounded-2xl bg-emerald-50 border border-emerald-200/80 p-4 flex items-center gap-3">
-                    <div className="h-3 w-3 rounded-full bg-emerald-500 animate-pulse" />
-                    <div>
-                      <p className="text-xs font-extrabold text-emerald-900">
-                        Available for Immediate Self-Drive Booking
-                      </p>
-                      <p className="text-xs font-semibold text-emerald-700">
-                        Instant confirmation in {vehicle.primaryLocation}
-                      </p>
-                    </div>
-                  </div>
-                ) : (
+                {/* Status Callout (Only if Unavailable) */}
+                {!vehicle.isAvailable && (
                   <div className="rounded-2xl bg-rose-50 border border-rose-200/80 p-4 flex items-center gap-3">
                     <XCircle className="h-5 w-5 text-rose-600 shrink-0" />
                     <div>
@@ -442,119 +514,14 @@ export default function CarDetailClient({
                   </button>
                 )}
 
-                <p className="text-center text-xs font-semibold text-slate-500">
+                {/* <p className="text-center text-xs font-semibold text-slate-500">
                   🔒 Free cancellation up to 24h before pickup
-                </p>
+                </p> */}
               </div>
             </div>
           </div>
 
-          {/* Rental Packages & Monthly Plans Sections */}
-          {(vehicle.rentalPackages.length > 0 || vehicle.monthlyPlans.length > 0) && (
-            <div className="mt-12 grid gap-8 md:grid-cols-2">
-              {vehicle.rentalPackages.length > 0 && (
-                <div className="rounded-3xl border border-slate-200/80 bg-white p-8 shadow-sm space-y-4">
-                  <h3 className="text-xl font-extrabold text-slate-900 flex items-center gap-2">
-                    <Package className="h-5 w-5 text-blue-600" />
-                    <span>Special Rental Packages</span>
-                  </h3>
-
-                  <div className="grid gap-3">
-                    {vehicle.rentalPackages.map((pkg) => {
-                      const isSelected = selectedPackageId === pkg.id;
-                      return (
-                        <div
-                          key={pkg.id}
-                          onClick={() => {
-                            setSelectedPackageId(isSelected ? null : pkg.id);
-                            setSelectedPlanId(null);
-                          }}
-                          className={`flex cursor-pointer items-center justify-between rounded-2xl p-4 transition-all border ${
-                            isSelected
-                              ? "bg-blue-50/80 border-blue-500 ring-2 ring-blue-400/40"
-                              : "bg-slate-50 border-slate-100 hover:border-slate-300"
-                          }`}
-                        >
-                          <div>
-                            <p className="text-sm font-bold text-slate-900">
-                              {pkg.name}
-                            </p>
-                            {pkg.description && (
-                              <p className="text-xs text-slate-500 mt-0.5">
-                                {pkg.description}
-                              </p>
-                            )}
-                            <span className="inline-block mt-1 text-xs font-bold text-blue-600">
-                              {pkg.duration} Day(s) Package
-                            </span>
-                          </div>
-                          <div className="text-right">
-                            <span className="text-lg font-black text-slate-900">
-                              ₹{pkg.price.toLocaleString("en-IN")}
-                            </span>
-                            <span className="block text-[10px] font-bold uppercase text-blue-600">
-                              {isSelected ? "Selected ✓" : "Click to select"}
-                            </span>
-                          </div>
-                        </div>
-                      );
-                    })}
-                  </div>
-                </div>
-              )}
-
-              {vehicle.monthlyPlans.length > 0 && (
-                <div className="rounded-3xl border border-slate-200/80 bg-white p-8 shadow-sm space-y-4">
-                  <h3 className="text-xl font-extrabold text-slate-900 flex items-center gap-2">
-                    <CalendarCheck className="h-5 w-5 text-blue-600" />
-                    <span>Monthly Subscription Plans</span>
-                  </h3>
-
-                  <div className="grid gap-3">
-                    {vehicle.monthlyPlans.map((plan) => {
-                      const isSelected = selectedPlanId === plan.id;
-                      return (
-                        <div
-                          key={plan.id}
-                          onClick={() => {
-                            setSelectedPlanId(isSelected ? null : plan.id);
-                            setSelectedPackageId(null);
-                          }}
-                          className={`flex cursor-pointer items-center justify-between rounded-2xl p-4 transition-all border ${
-                            isSelected
-                              ? "bg-blue-50/80 border-blue-500 ring-2 ring-blue-400/40"
-                              : "bg-slate-50 border-slate-100 hover:border-slate-300"
-                          }`}
-                        >
-                          <div>
-                            <p className="text-sm font-bold text-slate-900">
-                              {plan.name}
-                            </p>
-                            <span className="inline-block mt-1 text-xs font-bold text-blue-600">
-                              {plan.months} Month(s) Duration
-                            </span>
-                          </div>
-                          <div className="text-right">
-                            <span className="text-lg font-black text-slate-900">
-                              ₹{plan.price.toLocaleString("en-IN")}
-                            </span>
-                            <span className="text-xs text-slate-500 block">
-                              / month
-                            </span>
-                            <span className="block text-[10px] font-bold uppercase text-blue-600 mt-0.5">
-                              {isSelected ? "Selected ✓" : "Click to select"}
-                            </span>
-                          </div>
-                        </div>
-                      );
-                    })}
-                  </div>
-                </div>
-              )}
-            </div>
-          )}
-
-          {/* Specifications Matrix if specifications exist in DB */}
+           {/* Specifications Matrix if specifications exist in DB */}
           {vehicle.specifications.length > 0 && (
             <div className="mt-12 rounded-3xl border border-slate-200/80 bg-white p-8 shadow-sm">
               <h3 className="text-xl font-extrabold text-slate-900 mb-6">
@@ -578,66 +545,122 @@ export default function CarDetailClient({
             </div>
           )}
 
-          {/* Bottom Grid: Features & Documents */}
-          <div className="mt-16 grid gap-10 md:grid-cols-2">
-            {/* Included Features */}
-            <div className="rounded-3xl border border-slate-200/80 bg-white p-8 shadow-sm">
-              <h3 className="text-xl font-extrabold text-slate-900 flex items-center gap-2">
-                <Check className="h-5 w-5 text-blue-600" />
-                <span>Vehicle Features & Equipment</span>
-              </h3>
-
-              <div className="mt-6 grid gap-3 sm:grid-cols-2">
-                {vehicle.features.map((feature) => (
-                  <div
-                    key={feature.id}
-                    className="flex items-center gap-2.5 rounded-xl bg-slate-50 px-3.5 py-2.5 border border-slate-100"
-                  >
-                    <span className="flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-blue-600 text-xs text-white">
-                      ✓
-                    </span>
-                    <span className="text-xs font-bold text-slate-700">
-                      {feature.name}
-                    </span>
+          {/* Packages Side-By-Side Grid: Left (Rental Packages) & Right (Monthly Plans) */}
+          {(shortTermPackages.length > 0 || monthlyPackages.length > 0) && (
+            <div className="mt-12 grid gap-8 md:grid-cols-2 items-start">
+              {/* Left Column: Special Rental Packages */}
+              {shortTermPackages.length > 0 && (
+                <div className="rounded-3xl border border-slate-200/80 bg-white p-6 sm:p-8 shadow-sm space-y-4 h-full">
+                  <div>
+                    <h3 className="text-xl font-extrabold text-slate-900 flex items-center gap-2">
+                      <Package className="h-5 w-5 text-blue-600" />
+                      <span>Special Rental Packages</span>
+                    </h3>
+                    <p className="text-xs font-bold text-slate-400 mt-1">
+                      Short-term discounted daily rental packages
+                    </p>
                   </div>
-                ))}
-              </div>
+
+                  <div className="grid gap-3">
+                    {shortTermPackages.map((pkg) => {
+                      const isSelected = selectedPackageId === pkg.id;
+                      return (
+                        <div
+                          key={pkg.id}
+                          onClick={() => {
+                            setSelectedPackageId(isSelected ? null : pkg.id);
+                            setSelectedPlanId(null);
+                          }}
+                          className={`flex cursor-pointer items-center justify-between rounded-2xl p-4 transition-all border ${
+                            isSelected
+                              ? "bg-blue-50/80 border-blue-500 ring-2 ring-blue-400/40 shadow-sm"
+                              : "bg-slate-50 border-slate-100 hover:border-slate-300"
+                          }`}
+                        >
+                          <div className="space-y-1">
+                            <p className="text-sm font-bold text-slate-900">
+                              {pkg.name}
+                            </p>
+                            <span className="inline-block text-xs font-bold text-blue-600">
+                              {pkg.duration} Day(s) Package
+                            </span>
+                          </div>
+                          <div className="text-right shrink-0 ml-3">
+                            <span className="text-lg font-black text-slate-900">
+                              ₹{pkg.price.toLocaleString("en-IN")}
+                            </span>
+                            <span className="block text-[10px] font-bold uppercase text-blue-600">
+                              {isSelected ? "Selected ✓" : "Click to select"}
+                            </span>
+                          </div>
+                        </div>
+                      );
+                    })}
+                  </div>
+                </div>
+              )}
+
+              {/* Right Column: Monthly Subscription Plans */}
+              {monthlyPackages.length > 0 && (
+                <div className="rounded-3xl border border-slate-200/80 bg-white p-6 sm:p-8 shadow-sm space-y-4 h-full">
+                  <div>
+                    <h3 className="text-xl font-extrabold text-slate-900 flex items-center gap-2">
+                      <CalendarCheck className="h-5 w-5 text-blue-600" />
+                      <span>Monthly Subscription Plans</span>
+                    </h3>
+                    <p className="text-xs font-bold text-slate-400 mt-1">
+                      Long-term discounted monthly subscription options
+                    </p>
+                  </div>
+
+                  <div className="grid gap-3">
+                    {monthlyPackages.map((pkg) => {
+                      const isSelected = selectedPackageId === pkg.id;
+                      return (
+                        <div
+                          key={pkg.id}
+                          onClick={() => {
+                            setSelectedPackageId(isSelected ? null : pkg.id);
+                            setSelectedPlanId(null);
+                          }}
+                          className={`flex cursor-pointer items-center justify-between rounded-2xl p-4 transition-all border ${
+                            isSelected
+                              ? "bg-blue-50/80 border-blue-500 ring-2 ring-blue-400/40 shadow-sm"
+                              : "bg-slate-50 border-slate-100 hover:border-slate-300"
+                          }`}
+                        >
+                          <div className="space-y-1">
+                            <p className="text-sm font-bold text-slate-900">
+                              {pkg.name}
+                            </p>
+                            <span className="inline-block text-xs font-bold text-blue-600">
+                              {pkg.duration} Day(s) Package
+                            </span>
+                          </div>
+                          <div className="text-right shrink-0 ml-3">
+                            <span className="text-lg font-black text-slate-900">
+                              ₹{pkg.price.toLocaleString("en-IN")}
+                            </span>
+                            <span className="block text-[10px] font-bold uppercase text-blue-600">
+                              {isSelected ? "Selected ✓" : "Click to select"}
+                            </span>
+                          </div>
+                        </div>
+                      );
+                    })}
+                  </div>
+                </div>
+              )}
             </div>
+          )}
 
-            {/* Documents & Rules */}
-            <div className="rounded-3xl border border-slate-200/80 bg-white p-8 shadow-sm space-y-6">
-              <div>
-                <h3 className="text-xl font-extrabold text-slate-900 flex items-center gap-2">
-                  <FileText className="h-5 w-5 text-blue-600" />
-                  <span>Required Verification Documents</span>
-                </h3>
+         
 
-                <ul className="mt-4 space-y-2.5 text-xs font-bold text-slate-700">
-                  {documentsList.map((doc) => (
-                    <li key={doc} className="flex items-center gap-2">
-                      <span className="h-2 w-2 rounded-full bg-blue-600" />
-                      <span>{doc}</span>
-                    </li>
-                  ))}
-                </ul>
-              </div>
 
-              <div className="border-t border-slate-100 pt-5">
-                <h4 className="text-sm font-bold text-slate-900">
-                  Rental Terms
-                </h4>
-                <ul className="mt-2 space-y-1.5 text-xs text-slate-600">
-                  {rentalTermsList.map((rule, idx) => (
-                    <li key={idx}>• {rule}</li>
-                  ))}
-                </ul>
-              </div>
-            </div>
-          </div>
 
-          {/* Real Customer Reviews Section if present in DB */}
+          {/* Real Customer Reviews Section */}
           {vehicle.reviews.length > 0 && (
-            <div className="mt-16 rounded-3xl border border-slate-200/80 bg-white p-8 shadow-sm">
+            <div className="mt-12 rounded-3xl border border-slate-200/80 bg-white p-8 shadow-sm">
               <h3 className="text-xl font-extrabold text-slate-900 mb-6 flex items-center gap-2">
                 <Star className="h-5 w-5 text-amber-500 fill-amber-500" />
                 <span>Customer Reviews ({vehicle.reviewCount})</span>
@@ -668,6 +691,9 @@ export default function CarDetailClient({
               </div>
             </div>
           )}
+
+          {/* Car Details FAQ Accordion */}
+          <CarDetailFAQ />
         </div>
       </main>
 

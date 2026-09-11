@@ -37,7 +37,17 @@ export default function LoginPage() {
         return;
       }
 
-      window.location.href = "/";
+      // Fetch active session to determine role and redirect
+      const res = await fetch("/api/auth/session");
+      const session = await res.json();
+
+      if (session?.user?.role === "ADMIN") {
+        window.location.href = "/admin";
+      } else {
+        const searchParams = new URLSearchParams(window.location.search);
+        const callbackUrl = searchParams.get("callbackUrl") || "/dashboard";
+        window.location.href = callbackUrl;
+      }
     } catch (err) {
       console.error("Login error:", err);
       setError("Something went wrong. Please try again.");

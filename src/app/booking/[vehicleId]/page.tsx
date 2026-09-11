@@ -300,6 +300,18 @@ export default async function BookingPage({
                     </p>
                   </div>
 
+                  {/* Air Conditioning */}
+
+                  <div>
+                    <p className="text-xs font-medium text-slate-400 uppercase tracking-wider">
+                      Air Conditioning
+                    </p>
+
+                    <p className="mt-0.5 text-sm font-bold text-slate-800">
+                      {vehicle.hasAirConditioning !== false ? "Air Conditioned (AC)" : "Non-AC"}
+                    </p>
+                  </div>
+
                   {/* Base Price */}
 
                   <div>

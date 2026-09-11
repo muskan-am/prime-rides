@@ -5,7 +5,6 @@ import Footer from "@/components/customer/Footer";
 import SearchBox, { SearchLocationItem } from "@/components/customer/SearchBox";
 import FeaturedCars, { FeaturedVehicleItem } from "@/components/customer/FeaturedCars";
 import PopularLocations from "@/components/customer/PopularLocations";
-import MonthlyRentalPlans from "@/components/customer/MonthlyRentalPlans";
 import OffersSection from "@/components/customer/OffersSection";
 import WhyChooseUs from "@/components/customer/WhyChooseUs";
 import FAQSection from "@/components/customer/FAQSection";
@@ -17,9 +16,17 @@ export const revalidate = 0;
 export default async function Home() {
   let featuredVehicles: FeaturedVehicleItem[] = [];
   let locations: SearchLocationItem[] = [];
+  let coupons: {
+    id: string;
+    code: string;
+    discountType: "PERCENTAGE" | "FIXED";
+    discountValue: number;
+    minBookingValue: number | null;
+    maxDiscount: number | null;
+  }[] = [];
 
   try {
-    const [dbVehicles, dbLocations] = await Promise.all([
+    const [dbVehicles, dbLocations, dbCoupons] = await Promise.all([
       prisma.vehicle.findMany({
         where: {
           availabilityStatus: "AVAILABLE",
@@ -29,17 +36,34 @@ export default async function Home() {
           images: { orderBy: { sortOrder: "asc" } },
         },
         orderBy: [{ searchPriority: "desc" }, { createdAt: "desc" }],
-        take: 6,
+        take: 20,
       }),
       prisma.location.findMany({
         where: { isActive: true },
         orderBy: { name: "asc" },
+      }),
+      prisma.coupon.findMany({
+        where: {
+          isActive: true,
+          validUntil: { gte: new Date() },
+        },
+        orderBy: { createdAt: "desc" },
+        take: 6,
       }),
     ]);
 
     locations = dbLocations.map((loc) => ({
       id: loc.id,
       name: loc.name,
+    }));
+
+    coupons = dbCoupons.map((c) => ({
+      id: c.id,
+      code: c.code,
+      discountType: c.discountType,
+      discountValue: Number(c.discountValue),
+      minBookingValue: c.minBookingValue ? Number(c.minBookingValue) : null,
+      maxDiscount: c.maxDiscount ? Number(c.maxDiscount) : null,
     }));
 
     featuredVehicles = dbVehicles.map((v) => {
@@ -74,6 +98,7 @@ export default async function Home() {
         fuel,
         transmission,
         seats: v.seatingCapacity || 5,
+        hasAirConditioning: v.hasAirConditioning !== false,
         price: Number(v.basePrice),
         image: primaryImg,
         badge: v.variant || (v.searchPriority > 0 ? "Popular" : "Verified"),
@@ -182,11 +207,8 @@ export default async function Home() {
         {/* Popular Locations */}
         <PopularLocations />
 
-        {/* Monthly Subscription Plans */}
-        <MonthlyRentalPlans />
-
         {/* Exclusive Offers */}
-        <OffersSection />
+        <OffersSection coupons={coupons} />
 
         {/* Why Choose Prime Rides */}
         <WhyChooseUs />

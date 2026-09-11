@@ -150,6 +150,7 @@ export default async function CarsPage({ searchParams }: CarsPageProps) {
         fuel: formatFuelType(v.fuelType),
         transmission: formatTransmission(v.transmission),
         seats: v.seatingCapacity || 5,
+        hasAirConditioning: v.hasAirConditioning !== false,
         price: Number(v.basePrice),
         deposit: Number(v.deposit),
         location: primaryLocation,

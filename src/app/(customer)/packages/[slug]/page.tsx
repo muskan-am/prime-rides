@@ -4,6 +4,7 @@ import Image from "next/image";
 import { Check, Calendar, Car, ShieldCheck, FileText, ArrowRight, ChevronRight } from "lucide-react";
 import Navbar from "@/components/customer/Navbar";
 import Footer from "@/components/customer/Footer";
+
 import { prisma } from "@/lib/prisma";
 
 export const revalidate = 0;
@@ -147,18 +148,7 @@ export default async function PackageDetailPage({
                 </div>
               )}
 
-              {/* Terms and Conditions */}
-              {pkg.terms && (
-                <div className="rounded-3xl border border-amber-200/80 bg-amber-50/60 p-6 sm:p-8 shadow-sm">
-                  <h3 className="text-base font-bold text-amber-900 mb-2 flex items-center gap-2">
-                    <FileText className="h-4 w-4 text-amber-700" />
-                    <span>Terms & Conditions</span>
-                  </h3>
-                  <p className="text-xs sm:text-sm text-amber-800 leading-relaxed whitespace-pre-line">
-                    {pkg.terms}
-                  </p>
-                </div>
-              )}
+
             </div>
 
             {/* Right Column: Key Details Card */}
@@ -259,19 +249,19 @@ export default async function PackageDetailPage({
                     >
                       <div>
                         {/* Vehicle Image */}
-                        <div className="relative h-48 w-full overflow-hidden bg-slate-900">
+                        <div className="relative h-48 w-full overflow-hidden bg-[#0A1128] flex items-center justify-center p-2">
                           <Image
                             src={carImage}
                             alt={`${v.brand} ${v.model}`}
                             fill
                             sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
-                            className="object-cover transition-transform duration-500 group-hover:scale-105"
+                            className="object-contain p-2 transition-transform duration-500 group-hover:scale-105"
                           />
-                          <div className="absolute inset-0 bg-gradient-to-t from-slate-950/70 via-transparent to-transparent" />
+                          <div className="absolute inset-0 bg-gradient-to-t from-[#0A1128]/80 via-transparent to-transparent pointer-events-none" />
 
                           <div className="absolute bottom-3 left-3">
                             <span className="rounded-lg bg-white/90 backdrop-blur-md px-2.5 py-1 text-xs font-bold text-slate-900 shadow-sm">
-                              {v.fuelType || "Petrol"} • {v.transmission || "Automatic"}
+                              {v.fuelType || "Petrol"} • {v.transmission || "Automatic"} • {v.hasAirConditioning !== false ? "AC" : "Non-AC"}
                             </span>
                           </div>
                         </div>

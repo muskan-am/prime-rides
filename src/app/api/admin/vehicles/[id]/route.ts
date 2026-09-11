@@ -126,6 +126,7 @@ export async function PUT(
       fuelType,
       transmission,
       seatingCapacity,
+      hasAirConditioning,
       basePrice,
       deposit,
       speedLimit,
@@ -255,6 +256,11 @@ export async function PUT(
           seatingCapacity !== ""
             ? Number(seatingCapacity)
             : null,
+
+        hasAirConditioning:
+          hasAirConditioning !== undefined
+            ? Boolean(hasAirConditioning)
+            : true,
 
         basePrice: new Prisma.Decimal(Number(basePrice)),
 
