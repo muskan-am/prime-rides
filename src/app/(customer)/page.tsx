@@ -9,6 +9,7 @@ import PlatformStats from "@/components/customer/PlatformStats";
 import PopularLocations from "@/components/customer/PopularLocations";
 import OffersSection from "@/components/customer/OffersSection";
 import WhyChooseUs from "@/components/customer/WhyChooseUs";
+import HowToBookRide from "@/components/customer/HowToBookRide";
 import FAQSection from "@/components/customer/FAQSection";
 import ContactSection from "@/components/customer/ContactSection";
 import ExploringCities, { ExploringCityItem } from "@/components/customer/ExploringCities";
@@ -257,6 +258,9 @@ export default async function Home() {
 
         {/* Why Choose Prime Rides */}
         <WhyChooseUs />
+
+        {/* How to Book a Ride? */}
+        <HowToBookRide />
 
          {/* Cities to Explore in India Carousel */}
         <ExploringCities cities={exploringCities} />

@@ -36,15 +36,17 @@ export default function WhyChooseUs() {
       <div className="mx-auto max-w-7xl">
 
         {/* Heading */}
-        <div className="mx-auto max-w-3xl text-center">
+        <div className="mx-auto max-w-3xl text-center space-y-2">
+          <p className="text-xs font-bold uppercase tracking-[0.2em] text-blue-600">
+            WHY CHOOSE US
+          </p>
 
-
-          <h2 className="mt-4 text-3xl font-extrabold tracking-tight text-slate-900 sm:text-5xl">
+          <h2 className="text-3xl sm:text-4xl font-extrabold tracking-tight text-[#0A1128]">
             Why Drive With Prime Rides?
           </h2>
 
-          <p className="mt-4 text-base text-slate-600 leading-relaxed">
-            We eliminate traditional rental hassles with digital key verification, zero paperwork delays, and transparent pricing.
+          <p className="mx-auto max-w-2xl text-sm sm:text-base text-slate-500 font-medium pt-1">
+            We eliminate traditional rental hassles with digital verification, zero paperwork delays, and transparent pricing.
           </p>
         </div>
 

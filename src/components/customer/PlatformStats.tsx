@@ -141,16 +141,18 @@ export default function PlatformStats({ stats }: PlatformStatsProps) {
 
       <div className="relative z-10 mx-auto max-w-7xl">
         <div className="flex flex-col md:flex-row md:items-end justify-between mb-12 gap-4 border-b border-slate-800/80 pb-8">
-          <div>
-            
-            <h2 className="text-3xl sm:text-4xl lg:text-5xl font-black text-white tracking-tight leading-none">
-              India's #1{" "}
+          <div className="space-y-2">
+            <p className="text-xs font-bold uppercase tracking-[0.2em] text-blue-400">
+              OUR IMPACT
+            </p>
+            <h2 className="text-3xl sm:text-4xl font-extrabold text-white tracking-tight leading-none">
+              India&apos;s #1{" "}
               <span className="bg-gradient-to-r from-blue-400 via-cyan-300 to-white bg-clip-text text-transparent">
                 Car Rental Platform
               </span>
             </h2>
           </div>
-          <p className="text-sm sm:text-base text-slate-300 max-w-md font-normal leading-relaxed">
+          <p className="text-sm sm:text-base text-slate-300 max-w-md font-medium leading-relaxed">
             Empowering millions of travelers across India with seamless, self-drive freedom and verified hosts.
           </p>
         </div>

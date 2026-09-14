@@ -94,14 +94,14 @@ export default function ExploringCities({ cities }: ExploringCitiesProps) {
       <div className="mx-auto max-w-7xl">
 
         {/* Section Header matching benchmark screenshot */}
-        <div className="text-center max-w-2xl mx-auto mb-12">
-          <span className="text-xs font-bold uppercase tracking-widest text-slate-400 block mb-2">
+        <div className="text-center max-w-2xl mx-auto space-y-2 mb-12">
+          <p className="text-xs font-bold uppercase tracking-[0.2em] text-blue-600">
             DISCOVER
-          </span>
-          <h2 className="text-3xl sm:text-4xl font-extrabold text-slate-900 tracking-tight">
+          </p>
+          <h2 className="text-3xl sm:text-4xl font-extrabold text-[#0A1128] tracking-tight">
             Cities to Explore in India
           </h2>
-          <p className="text-sm sm:text-base text-slate-500 font-medium mt-2">
+          <p className="text-sm sm:text-base text-slate-500 font-medium pt-1">
             Choose a city and find the best self-drive cars near you
           </p>
         </div>

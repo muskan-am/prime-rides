@@ -31,14 +31,16 @@ export default function PopularLocations() {
       <div className="mx-auto max-w-7xl">
 
         {/* Heading */}
-        <div className="text-center">
+        <div className="mx-auto max-w-3xl text-center space-y-2">
+          <p className="text-xs font-bold uppercase tracking-[0.2em] text-blue-600">
+            SERVICE HUBS
+          </p>
 
-
-          <h2 className="mt-4 text-3xl font-extrabold tracking-tight text-slate-900 sm:text-5xl">
-            Popular Prime Locations
+          <h2 className="text-3xl sm:text-4xl font-extrabold tracking-tight text-[#0A1128]">
+            Popular Rental Locations
           </h2>
 
-          <p className="mx-auto mt-4 max-w-2xl text-base text-slate-600">
+          <p className="mx-auto max-w-2xl text-sm sm:text-base text-slate-500 font-medium pt-1">
             Pick up your favorite self-drive ride right at airport terminals or doorstep delivery points across key metros.
           </p>
         </div>

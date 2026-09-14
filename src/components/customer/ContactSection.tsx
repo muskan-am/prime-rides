@@ -18,18 +18,17 @@ export default function ContactSection() {
       <div className="mx-auto max-w-6xl">
 
         {/* Heading */}
-        <div className="text-center">
-          <p className="text-sm font-medium uppercase tracking-[0.2em] text-muted-foreground">
-            Contact Us
+        <div className="mx-auto max-w-3xl text-center space-y-2">
+          <p className="text-xs font-bold uppercase tracking-[0.2em] text-blue-600">
+            CONTACT US
           </p>
 
-          <h2 className="mt-2 text-3xl font-bold tracking-tight sm:text-4xl">
-            Let&apos;s Talk
+          <h2 className="text-3xl sm:text-4xl font-extrabold tracking-tight text-[#0A1128]">
+            Contact & Support
           </h2>
 
-          <p className="mx-auto mt-3 max-w-2xl text-muted-foreground">
-            Have a question about our cars, bookings or rental plans?
-            Our team is here to help.
+          <p className="mx-auto max-w-2xl text-sm sm:text-base text-slate-500 font-medium pt-1">
+            Have a question about our cars, bookings or rental plans? Our team is here to help.
           </p>
         </div>
 

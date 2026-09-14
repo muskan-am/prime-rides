@@ -35,19 +35,21 @@ export default function FeaturedCars({ vehicles = [] }: FeaturedCarsProps) {
       <div className="mx-auto max-w-7xl">
         {/* Header */}
         <div className="flex flex-col justify-between gap-6 md:flex-row md:items-end">
-          <div className="space-y-3">
-            <h2 className="text-3xl font-extrabold tracking-tight text-slate-900 sm:text-5xl">
+          <div className="space-y-2">
+            <p className="text-xs font-bold uppercase tracking-[0.2em] text-blue-600">
+              OUR FLEET
+            </p>
+            <h2 className="text-3xl sm:text-4xl font-extrabold tracking-tight text-[#0A1128]">
               Explore Our Fleet
             </h2>
-
-            {/* <p className="max-w-2xl text-base text-slate-600">
-              From compact city hatchbacks to executive sedans and rugged 4x4 SUVs — all sanitized, insured, and ready for your adventure.
-            </p> */}
+            <p className="text-sm sm:text-base text-slate-500 font-medium">
+              Handpicked self-drive vehicles, sanitized and insured for your journey.
+            </p>
           </div>
 
           <Link
             href="/cars"
-            className="group inline-flex items-center gap-2 rounded-xl bg-[#0A1128] px-5 py-3 text-sm font-bold text-white shadow-md transition-all hover:bg-blue-600 hover:shadow-lg"
+            className="group inline-flex items-center gap-2 rounded-xl bg-[#0A1128] px-5 py-3 text-sm font-bold text-white shadow-md transition-all hover:bg-blue-600 hover:shadow-lg shrink-0"
           >
             <span>View Complete Fleet</span>
             <ArrowRight className="h-4 w-4 transition-transform group-hover:translate-x-1" />
