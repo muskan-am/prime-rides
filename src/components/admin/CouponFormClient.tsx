@@ -8,6 +8,8 @@ import { DiscountType } from "@prisma/client";
 export type CouponFormData = {
   id?: string;
   code: string;
+  title?: string | null;
+  description?: string | null;
   discountType: DiscountType;
   discountValue: number | string;
   minBookingValue?: number | string | null;
@@ -32,6 +34,8 @@ export default function CouponFormClient({
   const [errorMsg, setErrorMsg] = useState("");
 
   const [code, setCode] = useState(initialData?.code || "");
+  const [title, setTitle] = useState(initialData?.title || "");
+  const [description, setDescription] = useState(initialData?.description || "");
   const [discountType, setDiscountType] = useState<DiscountType>(
     initialData?.discountType || "PERCENTAGE"
   );
@@ -85,10 +89,27 @@ export default function CouponFormClient({
     setErrorMsg("");
 
     const uppercaseCode = code.trim().toUpperCase();
+    const trimmedTitle = title.trim();
+    const trimmedDescription = description.trim();
     const parsedDiscountValue = Number(discountValue);
 
     if (!uppercaseCode) {
       setErrorMsg("Coupon code is required.");
+      return;
+    }
+
+    if (!trimmedTitle) {
+      setErrorMsg("Coupon title is required.");
+      return;
+    }
+
+    if (trimmedTitle.length > 100) {
+      setErrorMsg("Coupon title cannot exceed 100 characters.");
+      return;
+    }
+
+    if (trimmedDescription.length > 300) {
+      setErrorMsg("Coupon description cannot exceed 300 characters.");
       return;
     }
 
@@ -128,6 +149,8 @@ export default function CouponFormClient({
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           code: uppercaseCode,
+          title: trimmedTitle || null,
+          description: trimmedDescription || null,
           discountType,
           discountValue: parsedDiscountValue,
           minBookingValue: minBookingValue ? Number(minBookingValue) : null,
@@ -182,6 +205,45 @@ export default function CouponFormClient({
           />
           <p className="mt-1 text-xs text-slate-500 font-medium">
             Codes will automatically format as uppercase without spaces.
+          </p>
+        </div>
+
+        {/* Coupon Title */}
+        <div>
+          <label htmlFor="title" className="text-xs font-bold uppercase tracking-wider text-slate-700 block mb-1.5">
+            Coupon Title <span className="text-rose-500">*</span>
+          </label>
+          <input
+            id="title"
+            type="text"
+            required
+            maxLength={100}
+            value={title}
+            onChange={(e) => setTitle(e.target.value)}
+            placeholder="e.g. Weekend Getaway"
+            className="h-12 w-full rounded-xl border border-slate-300 bg-white px-4 text-sm font-bold text-slate-900 outline-none focus:border-blue-600 focus:ring-2 focus:ring-blue-600/20"
+          />
+          <p className="mt-1 text-xs text-slate-500 font-medium">
+            Headline displayed on the public Deals & Coupons card (Max 100 characters).
+          </p>
+        </div>
+
+        {/* Coupon Description */}
+        <div>
+          <label htmlFor="description" className="text-xs font-bold uppercase tracking-wider text-slate-700 block mb-1.5">
+            Coupon Description <span className="text-slate-400 font-normal">(Recommended)</span>
+          </label>
+          <textarea
+            id="description"
+            rows={3}
+            maxLength={300}
+            value={description}
+            onChange={(e) => setDescription(e.target.value)}
+            placeholder="e.g. Save 15% on your next Prime Rides weekend booking."
+            className="w-full rounded-xl border border-slate-300 bg-white p-3 text-sm font-medium text-slate-900 outline-none focus:border-blue-600 focus:ring-2 focus:ring-blue-600/20"
+          />
+          <p className="mt-1 text-xs text-slate-500 font-medium">
+            Detailed text or terms displayed on the offer card (Max 300 characters).
           </p>
         </div>
 

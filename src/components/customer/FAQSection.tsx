@@ -49,10 +49,7 @@ export default function FAQSection() {
 
         {/* Heading */}
         <div className="text-center">
-          <div className="mx-auto inline-flex items-center gap-2 rounded-full border border-blue-200 bg-blue-50 px-3.5 py-1 text-xs font-bold uppercase tracking-wider text-blue-700">
-            <HelpCircle className="h-3.5 w-3.5 text-blue-600" />
-            <span>Got Questions?</span>
-          </div>
+          
 
           <h2 className="mt-4 text-3xl font-extrabold tracking-tight text-slate-900 sm:text-5xl">
             Frequently Asked Questions

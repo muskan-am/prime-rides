@@ -78,6 +78,7 @@ type BookingFormProps = {
     monthlyPlanId?: string;
     packageId?: string;
     type?: string;
+    coupon?: string;
   };
   basePrice: string | number;
   taxRate: string | number;
@@ -422,7 +423,9 @@ export default function BookingForm({
      Coupon State & Handlers
   ========================================= */
 
-  const [couponCodeInput, setCouponCodeInput] = useState<string>("");
+  const [couponCodeInput, setCouponCodeInput] = useState<string>(
+    initialSearchParams?.coupon ? initialSearchParams.coupon.toUpperCase() : ""
+  );
   const [appliedCoupon, setAppliedCoupon] = useState<{
     code: string;
     discountType: string;

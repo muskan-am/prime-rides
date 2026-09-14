@@ -413,6 +413,9 @@ model Coupon {
   id              String       @id @default(cuid())
   code            String       @unique
 
+  title           String?
+  description     String?
+
   discountType    DiscountType
   discountValue   Decimal
 
@@ -575,4 +578,38 @@ model Faq {
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
+}
+
+model PlatformStat {
+  id          String   @id @default(cuid())
+  label       String
+  valueNumber Float
+  prefix      String   @default("")
+  suffix      String   @default("+")
+  sortOrder   Int      @default(0)
+  isActive    Boolean  @default(true)
+
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+}
+
+model SystemSetting {
+  id        String   @id @default(cuid())
+  key       String   @unique
+  value     String
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model ExploringCity {
+  id            String   @id @default(cuid())
+  name          String
+  subtitle      String?
+  image         String
+  locationQuery String?
+  sortOrder     Int      @default(0)
+  isActive      Boolean  @default(true)
+
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
 }

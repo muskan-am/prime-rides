@@ -54,7 +54,20 @@ export async function middleware(req: NextRequest) {
     return NextResponse.next();
   }
 
-  // CASE 3: Customer authentication pages (/login, /signup) for already logged-in users
+  // CASE 3: Protected Customer authenticated routes (/dashboard, /account, /my-bookings)
+  if (
+    pathname.startsWith("/dashboard") ||
+    pathname.startsWith("/account") ||
+    pathname.startsWith("/my-bookings")
+  ) {
+    if (!isAuthenticated) {
+      return NextResponse.redirect(new URL("/login", req.url));
+    }
+    // Both CUSTOMER and ADMIN are allowed access when authenticated
+    return NextResponse.next();
+  }
+
+  // CASE 4: Customer authentication pages (/login, /signup) for logged-in users
   if (pathname === "/login" || pathname === "/signup") {
     if (isAdmin) {
       return NextResponse.redirect(new URL("/admin", req.url));
@@ -64,7 +77,7 @@ export async function middleware(req: NextRequest) {
     }
   }
 
-  // Allow normal public/customer routes
+  // Allow normal public/customer routes (/, /cars, /cars/[id], /packages, /locations, /contact, etc.)
   return NextResponse.next();
 }
 
@@ -73,3 +86,5 @@ export const config = {
     "/((?!api|_next/static|_next/image|favicon.ico).*)",
   ],
 };
+
+

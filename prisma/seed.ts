@@ -128,6 +128,50 @@ async function main() {
     },
   });
 
+  // =========================
+  // Platform Stats
+  // =========================
+  const existingStats = await prisma.platformStat.count();
+  if (existingStats === 0) {
+    await prisma.platformStat.createMany({
+      data: [
+        {
+          valueNumber: 100,
+          prefix: "",
+          suffix: "+",
+          label: "Major cities in India with reliable self drive car rental options.",
+          sortOrder: 1,
+          isActive: true,
+        },
+        {
+          valueNumber: 25,
+          prefix: "",
+          suffix: "M+",
+          label: "Users trust Prime Rides for easy and affordable car rentals.",
+          sortOrder: 2,
+          isActive: true,
+        },
+        {
+          valueNumber: 40,
+          prefix: "",
+          suffix: "K+",
+          label: "Self-drive cars available across various categories to suit every travel need.",
+          sortOrder: 3,
+          isActive: true,
+        },
+        {
+          valueNumber: 20,
+          prefix: "",
+          suffix: "K+",
+          label: "Hosts offering a wide range of self drive cars.",
+          sortOrder: 4,
+          isActive: true,
+        },
+      ],
+    });
+    console.log("✅ Default platform stats seeded!");
+  }
+
   console.log("✅ Roles created:", adminRole.name, customerRole.name);
   console.log(`✅ Permissions created: ${createdPermissions.length}`);
   console.log(`✅ Admin user created: ${adminUser.email}`);

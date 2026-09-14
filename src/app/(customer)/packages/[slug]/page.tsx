@@ -121,7 +121,7 @@ export default async function PackageDetailPage({
                 </h2>
 
                 {pkg.features.length === 0 ? (
-                  <p className="text-sm text-slate-500 italic">No specific features listed for this package.</p>
+                  <p className="text-sm text-slate-500 font-normal">No specific features listed for this package.</p>
                 ) : (
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                     {pkg.features.map((feature, idx) => (

@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { getServerSession } from "next-auth";
+import { revalidatePath } from "next/cache";
 import { authOptions } from "@/auth";
 import { prisma } from "@/lib/prisma";
 import { DiscountType } from "@prisma/client";
@@ -27,6 +28,8 @@ export async function GET() {
     const formattedCoupons = coupons.map((c) => ({
       id: c.id,
       code: c.code,
+      title: c.title,
+      description: c.description,
       discountType: c.discountType,
       discountValue: Number(c.discountValue),
       minBookingValue: c.minBookingValue ? Number(c.minBookingValue) : null,
@@ -64,6 +67,9 @@ export async function POST(request: Request) {
     const body = await request.json();
 
     const codeInput = body.code?.toString().trim().toUpperCase();
+    const titleInput = body.title?.toString().trim() || null;
+    const descriptionInput = body.description?.toString().trim() || null;
+
     const discountType = body.discountType as DiscountType;
     const discountValue = Number(body.discountValue);
     const minBookingValue =
@@ -85,6 +91,14 @@ export async function POST(request: Request) {
     /* Validation */
     if (!codeInput) {
       return NextResponse.json({ error: "Coupon code is required." }, { status: 400 });
+    }
+
+    if (titleInput && titleInput.length > 100) {
+      return NextResponse.json({ error: "Coupon title cannot exceed 100 characters." }, { status: 400 });
+    }
+
+    if (descriptionInput && descriptionInput.length > 300) {
+      return NextResponse.json({ error: "Coupon description cannot exceed 300 characters." }, { status: 400 });
     }
 
     if (!Object.values(DiscountType).includes(discountType)) {
@@ -166,6 +180,8 @@ export async function POST(request: Request) {
     const newCoupon = await prisma.coupon.create({
       data: {
         code: codeInput,
+        title: titleInput,
+        description: descriptionInput,
         discountType,
         discountValue,
         minBookingValue,
@@ -177,12 +193,22 @@ export async function POST(request: Request) {
       },
     });
 
+    try {
+      revalidatePath("/");
+      revalidatePath("/(customer)", "page");
+      revalidatePath("/admin/coupons");
+    } catch (e) {
+      console.warn("revalidatePath warning:", e);
+    }
+
     return NextResponse.json(
       {
         message: "Coupon created successfully.",
         coupon: {
           id: newCoupon.id,
           code: newCoupon.code,
+          title: newCoupon.title,
+          description: newCoupon.description,
           discountType: newCoupon.discountType,
           discountValue: Number(newCoupon.discountValue),
           minBookingValue: newCoupon.minBookingValue ? Number(newCoupon.minBookingValue) : null,

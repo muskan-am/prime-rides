@@ -18,6 +18,7 @@ type PageProps = {
     monthlyPlanId?: string;
     packageId?: string;
     type?: string;
+    coupon?: string;
   }>;
 };
 

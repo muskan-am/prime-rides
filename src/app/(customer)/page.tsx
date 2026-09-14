@@ -1,14 +1,17 @@
 import Link from "next/link";
 import { Car, ShieldCheck, Tag, Headphones, Compass, KeyRound } from "lucide-react";
 import Navbar from "@/components/customer/Navbar";
+import CouponTicker from "@/components/customer/CouponTicker";
 import Footer from "@/components/customer/Footer";
 import SearchBox, { SearchLocationItem } from "@/components/customer/SearchBox";
 import FeaturedCars, { FeaturedVehicleItem } from "@/components/customer/FeaturedCars";
+import PlatformStats from "@/components/customer/PlatformStats";
 import PopularLocations from "@/components/customer/PopularLocations";
 import OffersSection from "@/components/customer/OffersSection";
 import WhyChooseUs from "@/components/customer/WhyChooseUs";
 import FAQSection from "@/components/customer/FAQSection";
 import ContactSection from "@/components/customer/ContactSection";
+import ExploringCities, { ExploringCityItem } from "@/components/customer/ExploringCities";
 import { prisma } from "@/lib/prisma";
 
 export const revalidate = 0;
@@ -23,10 +26,21 @@ export default async function Home() {
     discountValue: number;
     minBookingValue: number | null;
     maxDiscount: number | null;
+    validUntil: Date;
   }[] = [];
+  let platformStats: {
+    id: string;
+    label: string;
+    valueNumber: number;
+    prefix: string;
+    suffix: string;
+  }[] = [];
+  let exploringCities: ExploringCityItem[] = [];
+
+  let isTickerEnabled = true;
 
   try {
-    const [dbVehicles, dbLocations, dbCoupons] = await Promise.all([
+    const [dbVehicles, dbLocations, dbCoupons, dbStats, dbTickerSetting, dbExploringCities] = await Promise.all([
       prisma.vehicle.findMany({
         where: {
           availabilityStatus: "AVAILABLE",
@@ -45,12 +59,26 @@ export default async function Home() {
       prisma.coupon.findMany({
         where: {
           isActive: true,
+          validFrom: { lte: new Date() },
           validUntil: { gte: new Date() },
         },
         orderBy: { createdAt: "desc" },
         take: 6,
       }),
+      prisma.platformStat.findMany({
+        where: { isActive: true },
+        orderBy: [{ sortOrder: "asc" }, { createdAt: "asc" }],
+      }),
+      prisma.systemSetting.findUnique({
+        where: { key: "coupon_ticker_enabled" },
+      }),
+      prisma.exploringCity.findMany({
+        where: { isActive: true },
+        orderBy: [{ sortOrder: "asc" }, { createdAt: "asc" }],
+      }),
     ]);
+
+    isTickerEnabled = dbTickerSetting ? dbTickerSetting.value === "true" : true;
 
     locations = dbLocations.map((loc) => ({
       id: loc.id,
@@ -60,10 +88,29 @@ export default async function Home() {
     coupons = dbCoupons.map((c) => ({
       id: c.id,
       code: c.code,
+      title: c.title,
+      description: c.description,
       discountType: c.discountType,
       discountValue: Number(c.discountValue),
       minBookingValue: c.minBookingValue ? Number(c.minBookingValue) : null,
       maxDiscount: c.maxDiscount ? Number(c.maxDiscount) : null,
+      validUntil: c.validUntil,
+    }));
+
+    platformStats = dbStats.map((s) => ({
+      id: s.id,
+      label: s.label,
+      valueNumber: s.valueNumber,
+      prefix: s.prefix,
+      suffix: s.suffix,
+    }));
+
+    exploringCities = dbExploringCities.map((ec) => ({
+      id: ec.id,
+      name: ec.name,
+      subtitle: ec.subtitle,
+      image: ec.image,
+      locationQuery: ec.locationQuery,
     }));
 
     featuredVehicles = dbVehicles.map((v) => {
@@ -111,6 +158,7 @@ export default async function Home() {
   return (
     <div className="min-h-screen bg-slate-50">
       <Navbar />
+      <CouponTicker coupons={isTickerEnabled ? coupons : []} />
 
       <main>
         {/* Energetic Automotive Hero Section with Background Video */}
@@ -204,20 +252,29 @@ export default async function Home() {
         {/* Fleet Discovery Section */}
         <FeaturedCars vehicles={featuredVehicles} />
 
-        {/* Popular Locations */}
-        <PopularLocations />
-
-        {/* Exclusive Offers */}
-        <OffersSection coupons={coupons} />
+        {/* Platform Stats Section */}
+        <PlatformStats stats={platformStats} />
 
         {/* Why Choose Prime Rides */}
         <WhyChooseUs />
+
+         {/* Cities to Explore in India Carousel */}
+        <ExploringCities cities={exploringCities} />
+
+        
+
+       
+        {/* Exclusive Offers */}
+        <OffersSection coupons={coupons} />
+
+        
 
         {/* FAQ Section */}
         <FAQSection />
 
         {/* Contact & Enquiry */}
         <ContactSection />
+
       </main>
 
       <Footer />

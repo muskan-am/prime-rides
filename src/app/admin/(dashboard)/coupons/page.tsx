@@ -14,14 +14,21 @@ export default async function AdminCouponsPage() {
     redirect("/login");
   }
 
-  const coupons = await prisma.coupon.findMany({
-    orderBy: { createdAt: "desc" },
-    include: {
-      _count: {
-        select: { usages: true },
+  const [coupons, tickerSetting] = await Promise.all([
+    prisma.coupon.findMany({
+      orderBy: { createdAt: "desc" },
+      include: {
+        _count: {
+          select: { usages: true },
+        },
       },
-    },
-  });
+    }),
+    prisma.systemSetting.findUnique({
+      where: { key: "coupon_ticker_enabled" },
+    }),
+  ]);
+
+  const initialTickerEnabled = tickerSetting ? tickerSetting.value === "true" : true;
 
   const formattedCoupons = coupons.map((c) => ({
     id: c.id,
@@ -64,7 +71,10 @@ export default async function AdminCouponsPage() {
       </div>
 
       {/* Client List Component */}
-      <AdminCouponsClient initialCoupons={formattedCoupons} />
+      <AdminCouponsClient
+        initialCoupons={formattedCoupons}
+        initialTickerEnabled={initialTickerEnabled}
+      />
     </div>
   );
 }

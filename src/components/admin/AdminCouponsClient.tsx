@@ -7,6 +7,8 @@ import { DiscountType } from "@prisma/client";
 export type AdminCouponItem = {
   id: string;
   code: string;
+  title?: string | null;
+  description?: string | null;
   discountType: DiscountType;
   discountValue: number;
   minBookingValue: number | null;
@@ -22,16 +24,53 @@ export type AdminCouponItem = {
 
 export default function AdminCouponsClient({
   initialCoupons,
+  initialTickerEnabled = true,
 }: {
   initialCoupons: AdminCouponItem[];
+  initialTickerEnabled?: boolean;
 }) {
   const [coupons, setCoupons] = useState<AdminCouponItem[]>(initialCoupons);
+  const [tickerEnabled, setTickerEnabled] = useState<boolean>(initialTickerEnabled);
+  const [tickerLoading, setTickerLoading] = useState<boolean>(false);
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedType, setSelectedType] = useState<string>("ALL");
   const [selectedStatus, setSelectedStatus] = useState<string>("ALL");
   const [loadingId, setLoadingId] = useState<string | null>(null);
   const [errorMsg, setErrorMsg] = useState("");
   const [successMsg, setSuccessMsg] = useState("");
+
+  const handleToggleTicker = async () => {
+    setTickerLoading(true);
+    setErrorMsg("");
+    setSuccessMsg("");
+
+    const nextState = !tickerEnabled;
+
+    try {
+      const res = await fetch("/api/admin/settings/coupon-ticker", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ enabled: nextState }),
+      });
+
+      const data = await res.json();
+
+      if (!res.ok) {
+        throw new Error(data.error || "Failed to update banner setting.");
+      }
+
+      setTickerEnabled(nextState);
+      setSuccessMsg(
+        `Promotional Coupon Ticker Banner is now ${
+          nextState ? "ENABLED (Visible on Website)" : "DISABLED (Hidden from Website)"
+        }.`
+      );
+    } catch (err) {
+      setErrorMsg(err instanceof Error ? err.message : "Failed to update ticker setting.");
+    } finally {
+      setTickerLoading(false);
+    }
+  };
 
   const getComputedStatus = (coupon: AdminCouponItem) => {
     if (!coupon.isActive) return "INACTIVE";
@@ -53,7 +92,8 @@ export default function AdminCouponsClient({
     const matchesStatus = selectedStatus === "ALL" || computedStatus === selectedStatus;
     const matchesSearch =
       searchQuery === "" ||
-      coupon.code.toLowerCase().includes(searchQuery.toLowerCase());
+      coupon.code.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      (coupon.title && coupon.title.toLowerCase().includes(searchQuery.toLowerCase()));
 
     return matchesType && matchesStatus && matchesSearch;
   });
@@ -173,13 +213,60 @@ export default function AdminCouponsClient({
         </div>
       )}
 
+      {/* Promotional Ticker Banner Management Card */}
+      <div className="rounded-2xl border border-slate-200 bg-gradient-to-r from-[#0A1128] via-slate-900 to-[#0A1128] p-5 text-white shadow-md flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+        <div className="space-y-1">
+          <div className="flex items-center gap-2">
+            <span className="text-lg">📢</span>
+            <h3 className="text-base font-extrabold text-white">
+              Public Website Scrolling Coupon Ticker Banner
+            </h3>
+            <span
+              className={`px-2.5 py-0.5 rounded-full text-xs font-black uppercase tracking-wider ${
+                tickerEnabled
+                  ? "bg-emerald-500/20 text-emerald-300 border border-emerald-500/40"
+                  : "bg-rose-500/20 text-rose-300 border border-rose-500/40"
+              }`}
+            >
+              {tickerEnabled ? "● Banner Enabled" : "○ Banner Hidden"}
+            </span>
+          </div>
+          <p className="text-xs text-slate-300">
+            Control whether the thin scrolling coupon ticker appears below the main website Navbar for customers.
+          </p>
+        </div>
+
+        <button
+          type="button"
+          onClick={handleToggleTicker}
+          disabled={tickerLoading}
+          className={`shrink-0 inline-flex items-center gap-2 px-5 py-2.5 rounded-xl font-bold text-xs shadow-md transition-all ${
+            tickerEnabled
+              ? "bg-rose-600 hover:bg-rose-700 text-white shadow-rose-600/20"
+              : "bg-emerald-600 hover:bg-emerald-700 text-white shadow-emerald-600/20"
+          } disabled:opacity-50`}
+        >
+          {tickerLoading ? (
+            <span>Updating...</span>
+          ) : tickerEnabled ? (
+            <>
+              <span>Hide Ticker Banner</span>
+            </>
+          ) : (
+            <>
+              <span>Enable Ticker Banner</span>
+            </>
+          )}
+        </button>
+      </div>
+
       {/* Filter & Search Bar */}
       <div className="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm flex flex-col md:flex-row md:items-center justify-between gap-4">
         <div className="flex flex-1 items-center gap-3 max-w-md">
           <div className="relative w-full">
             <input
               type="text"
-              placeholder="Search coupon code..."
+              placeholder="Search coupon code or title..."
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
               className="h-10 w-full rounded-xl border border-slate-300 bg-slate-50 pl-9 pr-4 text-sm font-medium text-slate-800 outline-none focus:bg-white focus:border-blue-600 focus:ring-2 focus:ring-blue-600/20"
@@ -236,7 +323,7 @@ export default function AdminCouponsClient({
             <table className="w-full text-left text-sm text-slate-700">
               <thead className="bg-slate-50 text-xs font-bold uppercase tracking-wider text-slate-500 border-b border-slate-200">
                 <tr>
-                  <th className="px-6 py-4">Coupon Code</th>
+                  <th className="px-6 py-4">Coupon Code & Title</th>
                   <th className="px-6 py-4">Discount</th>
                   <th className="px-6 py-4">Min. Booking</th>
                   <th className="px-6 py-4">Max. Discount</th>
@@ -253,11 +340,16 @@ export default function AdminCouponsClient({
 
                   return (
                     <tr key={coupon.id} className="hover:bg-slate-50/70 transition-colors">
-                      {/* Code */}
+                      {/* Code & Title */}
                       <td className="px-6 py-4">
-                        <span className="font-extrabold text-slate-900 bg-slate-100 border border-slate-200 rounded-lg px-2.5 py-1 tracking-wider text-xs">
+                        <div className="font-extrabold text-slate-900 bg-slate-100 border border-slate-200 rounded-lg px-2.5 py-1 tracking-wider text-xs inline-block">
                           {coupon.code}
-                        </span>
+                        </div>
+                        {coupon.title && (
+                          <div className="mt-1 text-xs text-slate-600 font-semibold truncate max-w-[200px]">
+                            {coupon.title}
+                          </div>
+                        )}
                       </td>
 
                       {/* Discount Value */}

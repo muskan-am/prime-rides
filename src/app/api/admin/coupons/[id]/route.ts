@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { getServerSession } from "next-auth";
+import { revalidatePath } from "next/cache";
 import { authOptions } from "@/auth";
 import { prisma } from "@/lib/prisma";
 import { DiscountType } from "@prisma/client";
@@ -61,6 +62,8 @@ export async function GET(_request: Request, { params }: RouteParams) {
       coupon: {
         id: coupon.id,
         code: coupon.code,
+        title: coupon.title,
+        description: coupon.description,
         discountType: coupon.discountType,
         discountValue: Number(coupon.discountValue),
         minBookingValue: coupon.minBookingValue ? Number(coupon.minBookingValue) : null,
@@ -128,6 +131,22 @@ export async function PATCH(request: Request, { params }: RouteParams) {
         }
       }
       updateData.code = codeInput;
+    }
+
+    if (body.title !== undefined) {
+      const titleInput = body.title !== null ? body.title.toString().trim() : null;
+      if (titleInput && titleInput.length > 100) {
+        return NextResponse.json({ error: "Coupon title cannot exceed 100 characters." }, { status: 400 });
+      }
+      updateData.title = titleInput || null;
+    }
+
+    if (body.description !== undefined) {
+      const descInput = body.description !== null ? body.description.toString().trim() : null;
+      if (descInput && descInput.length > 300) {
+        return NextResponse.json({ error: "Coupon description cannot exceed 300 characters." }, { status: 400 });
+      }
+      updateData.description = descInput || null;
     }
 
     if (body.discountType !== undefined) {
@@ -221,11 +240,21 @@ export async function PATCH(request: Request, { params }: RouteParams) {
       data: updateData,
     });
 
+    try {
+      revalidatePath("/");
+      revalidatePath("/(customer)", "page");
+      revalidatePath("/admin/coupons");
+    } catch (e) {
+      console.warn("revalidatePath warning:", e);
+    }
+
     return NextResponse.json({
       message: "Coupon updated successfully.",
       coupon: {
         id: updatedCoupon.id,
         code: updatedCoupon.code,
+        title: updatedCoupon.title,
+        description: updatedCoupon.description,
         discountType: updatedCoupon.discountType,
         discountValue: Number(updatedCoupon.discountValue),
         minBookingValue: updatedCoupon.minBookingValue ? Number(updatedCoupon.minBookingValue) : null,
@@ -285,6 +314,14 @@ export async function DELETE(_request: Request, { params }: RouteParams) {
     await prisma.coupon.delete({
       where: { id },
     });
+
+    try {
+      revalidatePath("/");
+      revalidatePath("/(customer)", "page");
+      revalidatePath("/admin/coupons");
+    } catch (e) {
+      console.warn("revalidatePath warning:", e);
+    }
 
     return NextResponse.json({
       message: `Coupon "${coupon.code}" was deleted successfully.`,

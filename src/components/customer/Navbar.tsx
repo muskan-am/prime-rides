@@ -41,7 +41,9 @@ export default function Navbar() {
 
   const isLoggedIn = status === "authenticated" && Boolean(session?.user);
   const isAdmin = session?.user?.role === "ADMIN";
-  const displayName = session?.user?.name || session?.user?.email?.split("@")[0] || "Account";
+  const displayName = isAdmin
+    ? (session?.user?.name || "Prime Rides Admin")
+    : (session?.user?.name || session?.user?.email?.split("@")[0] || "Account");
 
   return (
     <header className="sticky top-0 z-50 w-full border-b border-slate-200/80 bg-white/95 backdrop-blur-md transition-all shadow-sm">
@@ -147,96 +149,86 @@ export default function Navbar() {
         {/* Desktop Actions */}
         <div className="hidden items-center gap-3 lg:flex">
           {isLoggedIn ? (
-            <>
-              {isAdmin && (
-                <Link
-                  href="/admin"
-                  className="inline-flex h-10 items-center gap-2 rounded-xl border border-[#2563EB]/30 bg-[#0A1128] px-3.5 text-xs font-extrabold text-white transition-all hover:bg-[#111B3A]"
-                >
-                  <Shield className="h-4 w-4 text-[#2563EB]" />
-                  <span>Admin Panel</span>
-                </Link>
-              )}
+            /* User / Admin Dropdown */
+            <div className="relative">
+              <button
+                type="button"
+                onClick={() => setIsUserMenuOpen(!isUserMenuOpen)}
+                className="inline-flex h-10 items-center gap-2 rounded-xl border border-slate-200 px-3 sm:px-4 text-sm font-bold text-slate-800 transition-all hover:bg-slate-50 focus:outline-none"
+              >
+                <div className="h-6 w-6 rounded-full bg-blue-600 text-white text-xs font-black flex items-center justify-center shrink-0">
+                  {displayName.charAt(0).toUpperCase()}
+                </div>
+                <span className="max-w-[140px] truncate text-xs sm:text-sm">{displayName}</span>
+                <ChevronDown className={`h-4 w-4 text-slate-500 transition-transform ${isUserMenuOpen ? "rotate-180" : ""}`} />
+              </button>
 
-              {/* User Dropdown */}
-              <div className="relative">
-                <button
-                  type="button"
-                  onClick={() => setIsUserMenuOpen(!isUserMenuOpen)}
-                  className="inline-flex h-10 items-center gap-2 rounded-xl border border-slate-200 px-3 sm:px-4 text-sm font-bold text-slate-800 transition-all hover:bg-slate-50 focus:outline-none"
-                >
-                  <div className="h-6 w-6 rounded-full bg-blue-600 text-white text-xs font-black flex items-center justify-center shrink-0">
-                    {displayName.charAt(0).toUpperCase()}
-                  </div>
-                  <span className="max-w-[90px] sm:max-w-[140px] truncate text-xs sm:text-sm">{displayName}</span>
-                  <ChevronDown className={`h-4 w-4 text-slate-500 transition-transform ${isUserMenuOpen ? "rotate-180" : ""}`} />
-                </button>
-
-                {isUserMenuOpen && (
-                  <>
-                    <div
-                      className="fixed inset-0 z-40 bg-transparent"
-                      onClick={() => setIsUserMenuOpen(false)}
-                      aria-hidden="true"
-                    />
-                    <div className="absolute right-0 top-full pt-2 w-60 max-w-[calc(100vw-2rem)] z-50 animate-in fade-in-50 slide-in-from-top-2 duration-150">
-                      <div className="rounded-2xl border border-slate-200/80 bg-white p-2.5 shadow-xl ring-1 ring-slate-900/5 backdrop-blur-xl">
-                        <div className="px-3 py-2 border-b border-slate-100 mb-1 min-w-0">
-                          <p className="text-xs font-bold text-slate-900 truncate">{session?.user?.name || "Logged In"}</p>
-                          <p className="text-[11px] text-slate-500 truncate">{session?.user?.email}</p>
-                          {isAdmin && (
-                            <span className="mt-1 inline-block rounded bg-[#0A1128] px-1.5 py-0.5 text-[10px] font-black uppercase text-blue-400">
-                              Administrator
-                            </span>
-                          )}
-                        </div>
-
-                        <Link
-                          href="/dashboard"
-                          onClick={() => setIsUserMenuOpen(false)}
-                          className="flex items-center gap-2 rounded-xl px-3 py-2 text-xs font-semibold text-slate-700 hover:bg-blue-50 hover:text-blue-600 transition-colors"
-                        >
-                          <Calendar className="h-4 w-4 text-blue-600 shrink-0" />
-                          <span>My Bookings</span>
-                        </Link>
-
+              {isUserMenuOpen && (
+                <>
+                  <div
+                    className="fixed inset-0 z-40 bg-transparent"
+                    onClick={() => setIsUserMenuOpen(false)}
+                    aria-hidden="true"
+                  />
+                  <div className="absolute right-0 top-full pt-2 w-60 max-w-[calc(100vw-2rem)] z-50 animate-in fade-in-50 slide-in-from-top-2 duration-150">
+                    <div className="rounded-2xl border border-slate-200/80 bg-white p-2.5 shadow-xl ring-1 ring-slate-900/5 backdrop-blur-xl">
+                      <div className="px-3 py-2 border-b border-slate-100 mb-1 min-w-0">
+                        <p className="text-xs font-bold text-slate-900 truncate">
+                          {isAdmin ? "Prime Rides Admin" : (session?.user?.name || "Logged In")}
+                        </p>
+                        <p className="text-[11px] text-slate-500 truncate">{session?.user?.email}</p>
                         {isAdmin && (
-                          <Link
-                            href="/admin"
-                            onClick={() => setIsUserMenuOpen(false)}
-                            className="flex items-center gap-2 rounded-xl px-3 py-2 text-xs font-semibold text-slate-700 hover:bg-slate-100 hover:text-[#0A1128] transition-colors"
-                          >
-                            <Shield className="h-4 w-4 text-blue-600 shrink-0" />
-                            <span>Admin Control Panel</span>
-                          </Link>
+                          <span className="mt-1 inline-block rounded bg-[#0A1128] px-1.5 py-0.5 text-[10px] font-black uppercase text-blue-400">
+                            Administrator
+                          </span>
                         )}
-
-                        <div className="my-1 border-t border-slate-100" />
-
-                        <button
-                          type="button"
-                          onClick={() => {
-                            setIsUserMenuOpen(false);
-                            signOut({ callbackUrl: "/" });
-                          }}
-                          className="flex w-full items-center gap-2 rounded-xl px-3 py-2 text-xs font-semibold text-rose-600 hover:bg-rose-50 transition-colors"
-                        >
-                          <LogOut className="h-4 w-4 text-rose-600 shrink-0" />
-                          <span>Sign Out</span>
-                        </button>
                       </div>
+
+                      <Link
+                        href="/dashboard"
+                        onClick={() => setIsUserMenuOpen(false)}
+                        className="flex items-center gap-2 rounded-xl px-3 py-2 text-xs font-semibold text-slate-700 hover:bg-blue-50 hover:text-blue-600 transition-colors"
+                      >
+                        <Calendar className="h-4 w-4 text-blue-600 shrink-0" />
+                        <span>My Bookings</span>
+                      </Link>
+
+                      {isAdmin && (
+                        <Link
+                          href="/admin"
+                          onClick={() => setIsUserMenuOpen(false)}
+                          className="flex items-center gap-2 rounded-xl px-3 py-2 text-xs font-semibold text-slate-700 hover:bg-slate-100 hover:text-[#0A1128] transition-colors"
+                        >
+                          <Shield className="h-4 w-4 text-blue-600 shrink-0" />
+                          <span>Administrator</span>
+                        </Link>
+                      )}
+
+                      <div className="my-1 border-t border-slate-100" />
+
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setIsUserMenuOpen(false);
+                          signOut({ callbackUrl: "/" });
+                        }}
+                        className="flex w-full items-center gap-2 rounded-xl px-3 py-2 text-xs font-semibold text-rose-600 hover:bg-rose-50 transition-colors"
+                      >
+                        <LogOut className="h-4 w-4 text-rose-600 shrink-0" />
+                        <span>Sign Out</span>
+                      </button>
                     </div>
-                  </>
-                )}
-              </div>
-            </>
+                  </div>
+                </>
+              )}
+            </div>
           ) : (
             <Link
               href="/login"
               className="inline-flex h-10 items-center gap-2 rounded-xl border border-slate-200 px-4 text-sm font-semibold text-slate-700 transition-all hover:bg-slate-50"
             >
               <User className="h-4 w-4 text-slate-500" />
-              <span>Login / Signup</span>
+              <span>Sign In</span>
             </Link>
           )}
 
@@ -342,7 +334,7 @@ export default function Navbar() {
                     <p className="text-sm font-bold text-slate-900 truncate">{displayName}</p>
                     {isAdmin && (
                       <span className="mt-1 inline-block rounded bg-[#0A1128] px-2 py-0.5 text-[10px] font-black uppercase text-blue-400">
-                        Admin Account
+                        Administrator
                       </span>
                     )}
                   </div>
@@ -363,7 +355,7 @@ export default function Navbar() {
                       className="flex h-11 items-center justify-center gap-2 rounded-xl border border-[#2563EB]/30 bg-[#0A1128] text-sm font-bold text-white shadow-sm"
                     >
                       <Shield className="h-4 w-4 text-blue-400" />
-                      <span>Admin Control Panel</span>
+                      <span>Administrator</span>
                     </Link>
                   )}
 
@@ -386,7 +378,7 @@ export default function Navbar() {
                   className="flex h-11 items-center justify-center gap-2 rounded-xl border border-slate-200 text-sm font-semibold text-slate-700"
                 >
                   <User className="h-4 w-4 text-slate-500" />
-                  <span>Login / Signup</span>
+                  <span>Sign In</span>
                 </Link>
               )}
 
