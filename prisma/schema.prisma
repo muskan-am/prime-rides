@@ -46,6 +46,7 @@ enum RefundStatus {
 
 
 enum EnquiryStatus {
+  NEW
   OPEN
   IN_PROGRESS
   RESOLVED
@@ -545,20 +546,27 @@ model NotificationPreference {
 model Enquiry {
   id String @id @default(cuid())
 
-  userId    String
+  name      String?
+  mobile    String?
+  email     String?
+
+  userId    String?
   vehicleId String?
 
-  subject String
-  message String
-  status  EnquiryStatus @default(OPEN)
+  subject   String?
+  message   String
+  status    EnquiryStatus @default(NEW)
 
-  user    User     @relation(fields: [userId], references: [id])
-  vehicle Vehicle? @relation(fields: [vehicleId], references: [id])
+  user      User?    @relation(fields: [userId], references: [id], onDelete: SetNull)
+  vehicle   Vehicle? @relation(fields: [vehicleId], references: [id], onDelete: SetNull)
 
   followUps EnquiryFollowUp[]
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
+
+  @@index([status])
+  @@index([createdAt])
 }
 
 model EnquiryFollowUp {
@@ -635,4 +643,36 @@ model ExploringCity {
 
   createdAt     DateTime @default(now())
   updatedAt     DateTime @updatedAt
+}
+
+model ContactSettings {
+  id                String   @id @default("singleton")
+  eyebrow           String   @default("WE'RE HERE TO HELP")
+  heading           String   @default("Contact & Support")
+  description       String   @default("Have a question about our cars, bookings or rental plans? Our team is here to help. Get in touch with us through any of the options below or send us a message.")
+  phone             String   @default("+91 98765 43210")
+  email             String   @default("support@primerides.com")
+  locationsText     String   @default("Delhi · Goa · Bangalore")
+  responseTimeText  String   @default("We usually respond within 24 hours")
+
+  // Support Highlights
+  highlight1Title   String   @default("Quick Support")
+  highlight1Desc    String   @default("We respond fast")
+  highlight1Icon    String   @default("Zap")
+
+  highlight2Title   String   @default("Reliable Assistance")
+  highlight2Desc    String   @default("Your travel partner")
+  highlight2Icon    String   @default("ShieldCheck")
+
+  highlight3Title   String   @default("Customer First")
+  highlight3Desc    String   @default("Always here for you")
+  highlight3Icon    String   @default("HeartHandshake")
+
+  // Hero Content
+  heroHeading       String   @default("Contact & Support")
+  heroDescription   String   @default("Have a question about our cars, bookings or rental plans? Our team is here to help. Get in touch with us through any of the options below or send us a message.")
+  heroImage         String?
+
+  createdAt         DateTime @default(now())
+  updatedAt         DateTime @updatedAt
 }

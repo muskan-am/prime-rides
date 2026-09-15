@@ -140,7 +140,7 @@ export default function Navbar() {
             Why Us
           </Link>
           <Link
-            href="/#contact"
+            href="/contact"
             className="text-sm font-semibold text-slate-700 transition-colors hover:text-blue-600 active:text-blue-700"
           >
             Contact
@@ -331,7 +331,7 @@ export default function Navbar() {
               Why Us
             </Link>
             <Link
-              href="/#contact"
+              href="/contact"
               onClick={() => setIsMenuOpen(false)}
               className="rounded-xl px-4 py-2.5 text-base font-semibold text-slate-700 hover:bg-blue-50 hover:text-blue-600"
             >
