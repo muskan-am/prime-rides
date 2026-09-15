@@ -3,6 +3,8 @@ import { getServerSession } from "next-auth";
 import crypto from "crypto";
 import { authOptions } from "@/auth";
 import { prisma } from "@/lib/prisma";
+import { createNotification, notifyAdmins } from "@/lib/notifications";
+import { buildAdminPaymentReceivedContent } from "@/lib/admin-notification-context";
 
 type VerifyPaymentRequest = {
   bookingId?: string;
@@ -68,6 +70,17 @@ export async function POST(request: Request) {
     ----------------------------------------- */
     const booking = await prisma.booking.findUnique({
       where: { id: bookingId },
+      include: {
+        vehicle: true,
+        user: {
+          select: {
+            id: true,
+            name: true,
+            email: true,
+          },
+        },
+        location: true,
+      },
     });
 
     if (!booking) {
@@ -239,6 +252,34 @@ export async function POST(request: Request) {
     }
 
     await prisma.$transaction(transactionOperations);
+
+    /* -----------------------------------------
+       Trigger Automatic Notifications
+    ----------------------------------------- */
+    await createNotification({
+      userId: dbUser.id,
+      type: "PAYMENT_SUCCESS",
+      title: "Payment Successful",
+      message: "Your payment for the Prime Rides booking was successful.",
+      link: `/dashboard?bookingId=${booking.id}`,
+    });
+
+    await createNotification({
+      userId: dbUser.id,
+      type: "BOOKING_CONFIRMED",
+      title: "Booking Confirmed",
+      message: "Your Prime Rides booking has been confirmed. Get ready for your ride!",
+      link: `/dashboard?bookingId=${booking.id}`,
+    });
+
+    const adminPaymentContent = buildAdminPaymentReceivedContent(booking);
+
+    await notifyAdmins({
+      type: "ADMIN_PAYMENT_RECEIVED",
+      title: adminPaymentContent.title,
+      message: adminPaymentContent.message,
+      link: adminPaymentContent.link,
+    });
 
     return NextResponse.json({
       message: "Payment verified successfully and booking confirmed.",

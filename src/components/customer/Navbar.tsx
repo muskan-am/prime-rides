@@ -2,9 +2,10 @@
 
 import Link from "next/link";
 import Image from "next/image";
-import { Menu, X, Car, User, Calendar, ChevronDown, LogOut, Shield, LayoutDashboard } from "lucide-react";
+import { Menu, X, Car, User, Calendar, ChevronDown, LogOut, Shield, LayoutDashboard, Settings } from "lucide-react";
 import { useState, useRef, useEffect } from "react";
 import { useSession, signOut } from "next-auth/react";
+import NotificationBell from "@/components/notifications/NotificationBell";
 
 const packageSubmenu = [
   { label: "Weekly Packages", href: "/packages/weekly", description: "Best for 7-day trips & getaways" },
@@ -148,6 +149,7 @@ export default function Navbar() {
 
         {/* Desktop Actions */}
         <div className="hidden items-center gap-3 lg:flex">
+          {isLoggedIn && <NotificationBell />}
           {isLoggedIn ? (
             /* User / Admin Dropdown */
             <div className="relative">
@@ -191,6 +193,15 @@ export default function Navbar() {
                       >
                         <Calendar className="h-4 w-4 text-blue-600 shrink-0" />
                         <span>My Bookings</span>
+                      </Link>
+
+                      <Link
+                        href="/notification-preferences"
+                        onClick={() => setIsUserMenuOpen(false)}
+                        className="flex items-center gap-2 rounded-xl px-3 py-2 text-xs font-semibold text-slate-700 hover:bg-blue-50 hover:text-blue-600 transition-colors"
+                      >
+                        <Settings className="h-4 w-4 text-blue-600 shrink-0" />
+                        <span>Notification Settings</span>
                       </Link>
 
                       {isAdmin && (
@@ -241,19 +252,22 @@ export default function Navbar() {
           </Link>
         </div>
 
-        {/* Mobile Menu Button */}
-        <button
-          type="button"
-          className="rounded-xl border border-slate-200 p-2.5 text-slate-700 hover:bg-slate-100 lg:hidden"
-          onClick={() => setIsMenuOpen(!isMenuOpen)}
-          aria-label="Toggle navigation menu"
-        >
-          {isMenuOpen ? (
-            <X className="h-6 w-6" />
-          ) : (
-            <Menu className="h-6 w-6" />
-          )}
-        </button>
+        {/* Mobile Actions & Menu Button */}
+        <div className="flex items-center gap-2 lg:hidden">
+          {isLoggedIn && <NotificationBell />}
+          <button
+            type="button"
+            className="rounded-xl border border-slate-200 p-2.5 text-slate-700 hover:bg-slate-100"
+            onClick={() => setIsMenuOpen(!isMenuOpen)}
+            aria-label="Toggle navigation menu"
+          >
+            {isMenuOpen ? (
+              <X className="h-6 w-6" />
+            ) : (
+              <Menu className="h-6 w-6" />
+            )}
+          </button>
+        </div>
       </div>
 
       {/* Mobile Navigation Drawer */}

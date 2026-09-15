@@ -3,6 +3,8 @@ import { getServerSession } from "next-auth";
 
 import { authOptions } from "@/auth";
 import { prisma } from "@/lib/prisma";
+import { createNotification, notifyAdmins } from "@/lib/notifications";
+import { buildAdminBookingCancelledContent } from "@/lib/admin-notification-context";
 
 const VALID_STATUSES = [
   "PENDING",
@@ -118,6 +120,23 @@ export async function PATCH(
         select: {
           id: true,
           status: true,
+          userId: true,
+          startDate: true,
+          endDate: true,
+          totalAmount: true,
+          user: {
+            select: {
+              name: true,
+              email: true,
+            },
+          },
+          vehicle: {
+            select: {
+              brand: true,
+              model: true,
+              variant: true,
+            },
+          },
         },
       });
 
@@ -148,6 +167,46 @@ export async function PATCH(
         updatedAt: true,
       },
     });
+
+    /* ----------------------------- */
+    /* Automatic Notification Triggers */
+    /* ----------------------------- */
+    if (existingBooking.status !== status) {
+      if (status === "CANCELLED") {
+        await createNotification({
+          userId: existingBooking.userId,
+          type: "BOOKING_CANCELLED",
+          title: "Booking Cancelled",
+          message: "Your Prime Rides booking has been cancelled.",
+          link: `/dashboard?bookingId=${booking.id}`,
+        });
+
+        const adminCancelContent = buildAdminBookingCancelledContent(existingBooking);
+
+        await notifyAdmins({
+          type: "ADMIN_BOOKING_CANCELLED",
+          title: adminCancelContent.title,
+          message: adminCancelContent.message,
+          link: adminCancelContent.link,
+        });
+      } else if (status === "COMPLETED") {
+        await createNotification({
+          userId: existingBooking.userId,
+          type: "BOOKING_COMPLETED",
+          title: "Booking Completed",
+          message: "Your Prime Rides rental has been completed. Thank you for riding with us!",
+          link: `/dashboard?bookingId=${booking.id}`,
+        });
+      } else if (status === "CONFIRMED") {
+        await createNotification({
+          userId: existingBooking.userId,
+          type: "BOOKING_CONFIRMED",
+          title: "Booking Confirmed",
+          message: "Your Prime Rides booking has been confirmed. Get ready for your ride!",
+          link: `/dashboard?bookingId=${booking.id}`,
+        });
+      }
+    }
 
     return NextResponse.json({
       success: true,

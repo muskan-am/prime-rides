@@ -260,6 +260,7 @@ export default async function AdminBookingsPage({
             return (
               <div
                 key={booking.id}
+                id={booking.id}
                 className="rounded-2xl border border-slate-200 bg-white overflow-hidden shadow-sm transition-all hover:shadow-md hover:border-slate-300"
               >
                 {/* Header with Booking Status & Payment Status */}

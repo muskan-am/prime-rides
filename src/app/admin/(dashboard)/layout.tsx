@@ -2,6 +2,7 @@ import { getServerSession } from "next-auth";
 import { authOptions } from "@/auth";
 import { redirect } from "next/navigation";
 import AdminSidebar from "@/components/admin/AdminSidebar";
+import NotificationBell from "@/components/notifications/NotificationBell";
 
 export default async function AdminDashboardLayout({
   children,
@@ -25,6 +26,29 @@ export default async function AdminDashboardLayout({
 
       {/* Light and Clean Main Content Area */}
       <div className="flex-1 lg:pl-64 flex flex-col min-w-0 bg-slate-50 w-full">
+        {/* Desktop Admin Header Bar */}
+        <header className="hidden lg:flex items-center justify-between h-16 px-8 border-b border-slate-200/80 bg-white/80 backdrop-blur-md sticky top-0 z-30 shadow-xs">
+          <div className="flex items-center gap-2">
+            <span className="h-2 w-2 rounded-full bg-emerald-500 animate-pulse" />
+            <h1 className="text-xs font-bold uppercase tracking-wider text-slate-500">
+              Prime Rides Admin Portal
+            </h1>
+          </div>
+
+          <div className="flex items-center gap-4">
+            <NotificationBell variant="admin" />
+            <div className="h-4 w-px bg-slate-200" />
+            <div className="flex items-center gap-2">
+              <div className="h-8 w-8 rounded-full bg-blue-600 text-white text-xs font-extrabold flex items-center justify-center">
+                {session.user.name ? session.user.name.charAt(0).toUpperCase() : "A"}
+              </div>
+              <span className="text-xs font-bold text-slate-800">
+                {session.user.name || "Administrator"}
+              </span>
+            </div>
+          </div>
+        </header>
+
         <main className="flex-1 p-4 sm:p-6 lg:p-8 max-w-7xl mx-auto w-full">
           {children}
         </main>
@@ -32,3 +56,4 @@ export default async function AdminDashboardLayout({
     </div>
   );
 }
+

@@ -43,12 +43,7 @@ enum RefundStatus {
   FAILED
 }
 
-enum NotificationType {
-  BOOKING
-  PAYMENT
-  ENQUIRY
-  SYSTEM
-}
+
 
 enum EnquiryStatus {
   OPEN
@@ -90,6 +85,7 @@ model User {
   couponUsages     CouponUsage[]
   reviews          Review[]
   notifications    Notification[]
+  notificationPreference NotificationPreference?
   enquiries        Enquiry[]
   enquiryFollowUps EnquiryFollowUp[]
   auditLogs        AuditLog[]
@@ -504,18 +500,45 @@ model Review {
 }
 
 model Notification {
-  id String @id @default(cuid())
+  id        String   @id @default(cuid())
 
-  userId String
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
 
-  type    NotificationType
-  title   String
-  message String
-  isRead  Boolean @default(false)
+  type      String
+  title     String
+  message   String
 
-  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+  link      String?
+
+  isRead    Boolean  @default(false)
 
   createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([userId, isRead])
+  @@index([userId, createdAt])
+}
+
+model NotificationPreference {
+  id        String   @id @default(cuid())
+
+  userId    String   @unique
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  bookingCreated       Boolean @default(true)
+  paymentPending       Boolean @default(true)
+  paymentSuccess       Boolean @default(true)
+  bookingConfirmed     Boolean @default(true)
+  bookingCancelled     Boolean @default(true)
+  bookingCompleted     Boolean @default(true)
+
+  adminNewBooking      Boolean @default(true)
+  adminPaymentReceived Boolean @default(true)
+  adminBookingCancelled Boolean @default(true)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 }
 
 

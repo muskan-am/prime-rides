@@ -5,6 +5,7 @@ import Image from "next/image";
 import { usePathname } from "next/navigation";
 import { useState, useEffect } from "react";
 import { signOut } from "next-auth/react";
+import NotificationBell from "@/components/notifications/NotificationBell";
 
 interface AdminSidebarProps {
   user: {
@@ -181,6 +182,7 @@ export default function AdminSidebar({ user }: AdminSidebarProps) {
         </Link>
 
         <div className="flex items-center gap-2">
+          <NotificationBell variant="admin-dark" />
           <button
             onClick={() => setMobileOpen(!mobileOpen)}
             className="p-2 rounded-xl bg-slate-800/80 text-slate-200 hover:text-white hover:bg-slate-700 transition-colors focus:outline-none focus:ring-2 focus:ring-blue-500"

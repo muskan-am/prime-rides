@@ -3,6 +3,8 @@ import { getServerSession } from "next-auth";
 import { Prisma } from "@prisma/client";
 import { authOptions } from "@/auth";
 import { prisma } from "@/lib/prisma";
+import { createNotification, notifyAdmins } from "@/lib/notifications";
+import { buildAdminNewBookingContent } from "@/lib/admin-notification-context";
 
 type BookingRequest = {
   vehicleId?: string;
@@ -823,6 +825,39 @@ export async function POST(
         },
       });
     }
+
+    /* -----------------------------------------
+       Trigger Automatic Notifications
+    ----------------------------------------- */
+    await createNotification({
+      userId,
+      type: "BOOKING_CREATED",
+      title: "Booking Received",
+      message: "Your Prime Rides booking request has been received successfully.",
+      link: `/dashboard?bookingId=${booking.id}`,
+    });
+
+    if (booking.status === "PENDING" || booking.paymentStatus === "PENDING") {
+      await createNotification({
+        userId,
+        type: "PAYMENT_PENDING",
+        title: "Payment Pending",
+        message: "Your Prime Rides booking is waiting for payment completion.",
+        link: `/dashboard?bookingId=${booking.id}`,
+      });
+    }
+
+    const adminContent = buildAdminNewBookingContent({
+      ...booking,
+      user: session.user,
+    });
+
+    await notifyAdmins({
+      type: "ADMIN_NEW_BOOKING",
+      title: adminContent.title,
+      message: adminContent.message,
+      link: adminContent.link,
+    });
 
     /* -----------------------------------------
        Success
