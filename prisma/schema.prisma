@@ -90,6 +90,7 @@ model User {
   enquiries        Enquiry[]
   enquiryFollowUps EnquiryFollowUp[]
   auditLogs        AuditLog[]
+  emailLogs        EmailLog[]
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
@@ -675,4 +676,25 @@ model ContactSettings {
 
   createdAt         DateTime @default(now())
   updatedAt         DateTime @updatedAt
+}
+
+model EmailLog {
+  id          String   @id @default(cuid())
+  userId      String?
+  bookingId   String?
+  enquiryId   String?
+  type        String
+  recipient   String
+  subject     String
+  status      String
+  providerId  String?
+  error       String?
+
+  user        User?    @relation(fields: [userId], references: [id], onDelete: SetNull)
+
+  createdAt   DateTime @default(now())
+
+  @@index([bookingId, type])
+  @@index([recipient, type])
+  @@index([createdAt])
 }

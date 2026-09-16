@@ -5,6 +5,7 @@ import { authOptions } from "@/auth";
 import { prisma } from "@/lib/prisma";
 import { createNotification, notifyAdmins } from "@/lib/notifications";
 import { buildAdminNewBookingContent } from "@/lib/admin-notification-context";
+import { sendBookingCreatedEmails, sendPaymentPendingEmail } from "@/lib/email-events";
 
 type BookingRequest = {
   vehicleId?: string;
@@ -858,6 +859,18 @@ export async function POST(
       message: adminContent.message,
       link: adminContent.link,
     });
+
+    /* -----------------------------------------
+       Trigger Transactional Email Notifications
+    ----------------------------------------- */
+    try {
+      await sendBookingCreatedEmails({ bookingId: booking.id });
+      if (booking.status === "PENDING" || booking.paymentStatus === "PENDING") {
+        await sendPaymentPendingEmail({ bookingId: booking.id });
+      }
+    } catch (emailErr) {
+      console.error("Booking transactional email dispatch error (isolated):", emailErr);
+    }
 
     /* -----------------------------------------
        Success

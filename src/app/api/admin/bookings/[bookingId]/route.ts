@@ -5,6 +5,11 @@ import { authOptions } from "@/auth";
 import { prisma } from "@/lib/prisma";
 import { createNotification, notifyAdmins } from "@/lib/notifications";
 import { buildAdminBookingCancelledContent } from "@/lib/admin-notification-context";
+import {
+  sendBookingConfirmedEmail,
+  sendBookingCancelledEmail,
+  sendBookingCompletedEmail,
+} from "@/lib/email-events";
 
 const VALID_STATUSES = [
   "PENDING",
@@ -189,6 +194,12 @@ export async function PATCH(
           message: adminCancelContent.message,
           link: adminCancelContent.link,
         });
+
+        try {
+          await sendBookingCancelledEmail({ bookingId: booking.id });
+        } catch (emailErr) {
+          console.error("Admin booking cancel email error (isolated):", emailErr);
+        }
       } else if (status === "COMPLETED") {
         await createNotification({
           userId: existingBooking.userId,
@@ -197,6 +208,12 @@ export async function PATCH(
           message: "Your Prime Rides rental has been completed. Thank you for riding with us!",
           link: `/dashboard?bookingId=${booking.id}`,
         });
+
+        try {
+          await sendBookingCompletedEmail({ bookingId: booking.id });
+        } catch (emailErr) {
+          console.error("Admin booking complete email error (isolated):", emailErr);
+        }
       } else if (status === "CONFIRMED") {
         await createNotification({
           userId: existingBooking.userId,
@@ -205,8 +222,15 @@ export async function PATCH(
           message: "Your Prime Rides booking has been confirmed. Get ready for your ride!",
           link: `/dashboard?bookingId=${booking.id}`,
         });
+
+        try {
+          await sendBookingConfirmedEmail({ bookingId: booking.id });
+        } catch (emailErr) {
+          console.error("Admin booking confirm email error (isolated):", emailErr);
+        }
       }
     }
+
 
     return NextResponse.json({
       success: true,

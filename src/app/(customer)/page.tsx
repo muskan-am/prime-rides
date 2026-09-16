@@ -271,13 +271,12 @@ export default async function Home() {
         {/* Exclusive Offers */}
         <OffersSection coupons={coupons} />
 
-        
-
-        {/* FAQ Section */}
-        <FAQSection />
 
         {/* Contact & Enquiry */}
         <ContactSection />
+
+        {/* FAQ Section */}
+        <FAQSection />
 
       </main>
 

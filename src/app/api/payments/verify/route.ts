@@ -5,6 +5,7 @@ import { authOptions } from "@/auth";
 import { prisma } from "@/lib/prisma";
 import { createNotification, notifyAdmins } from "@/lib/notifications";
 import { buildAdminPaymentReceivedContent } from "@/lib/admin-notification-context";
+import { sendPaymentSuccessEmails, sendBookingConfirmedEmail } from "@/lib/email-events";
 
 type VerifyPaymentRequest = {
   bookingId?: string;
@@ -280,6 +281,17 @@ export async function POST(request: Request) {
       message: adminPaymentContent.message,
       link: adminPaymentContent.link,
     });
+
+    /* -----------------------------------------
+       Trigger Transactional Email Notifications
+    ----------------------------------------- */
+    try {
+      await sendPaymentSuccessEmails({ bookingId: booking.id });
+      await sendBookingConfirmedEmail({ bookingId: booking.id });
+    } catch (emailErr) {
+      console.error("Payment verify email dispatch error (isolated):", emailErr);
+    }
+
 
     return NextResponse.json({
       message: "Payment verified successfully and booking confirmed.",
