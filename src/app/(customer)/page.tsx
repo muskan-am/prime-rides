@@ -137,6 +137,8 @@ export default async function Home() {
         v.images[0]?.url ||
         "https://images.unsplash.com/photo-1606664515524-ed2f786a0bd6?auto=format&fit=crop&w=900&q=80";
 
+      const allImages = v.images && v.images.length > 0 ? v.images.map((img) => img.url) : [primaryImg];
+
       return {
         id: v.id,
         brand: v.brand,
@@ -149,6 +151,7 @@ export default async function Home() {
         hasAirConditioning: v.hasAirConditioning !== false,
         price: Number(v.basePrice),
         image: primaryImg,
+        images: allImages,
         badge: v.variant || (v.searchPriority > 0 ? "Popular" : "Verified"),
       };
     });

@@ -135,6 +135,8 @@ export default async function CarsPage({ searchParams }: CarsPageProps) {
         v.images[0]?.url ||
         "https://images.unsplash.com/photo-1549317661-bd32c8ce0db2?auto=format&fit=crop&w=1000&q=80";
 
+      const allImages = v.images && v.images.length > 0 ? v.images.map((img) => img.url) : [primaryImage];
+
       const isAvailable =
         v.availabilityStatus === "AVAILABLE" && v.maintenanceStatus === "GOOD";
 
@@ -158,6 +160,7 @@ export default async function CarsPage({ searchParams }: CarsPageProps) {
         locationNames,
         isAvailable,
         image: primaryImage,
+        images: allImages,
         badge,
         searchPriority: v.searchPriority,
       };

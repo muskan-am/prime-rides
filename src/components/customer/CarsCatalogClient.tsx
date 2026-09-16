@@ -5,6 +5,7 @@ import Link from "next/link";
 import { Fuel, Gauge, Users, MapPin, Filter, CheckCircle2, XCircle, ArrowRight, CalendarDays, Wind } from "lucide-react";
 import Navbar from "@/components/customer/Navbar";
 import Footer from "@/components/customer/Footer";
+import CarImageSlider from "@/components/customer/CarImageSlider";
 
 export type FormattedVehicle = {
   id: string;
@@ -23,6 +24,7 @@ export type FormattedVehicle = {
   locationNames: string[];
   isAvailable: boolean;
   image: string;
+  images?: string[];
   badge: string;
   searchPriority: number;
 };
@@ -230,19 +232,19 @@ export default function CarsCatalogClient({
                     key={car.id}
                     className="group overflow-hidden rounded-3xl border border-slate-200/80 bg-white shadow-sm transition-all duration-300 hover:-translate-y-1.5 hover:shadow-2xl hover:border-blue-300"
                   >
-                    {/* Vehicle Image */}
+                    {/* Vehicle Image with Auto Slider */}
                     <div className="relative aspect-[16/10] overflow-hidden bg-slate-900">
-                      <img
-                        src={car.image}
+                      <CarImageSlider
+                        primaryImage={car.image}
+                        images={car.images}
                         alt={car.name}
-                        className="h-full w-full object-cover transition-transform duration-500 group-hover:scale-105"
+                        brand={car.brand}
+                        model={car.model}
                       />
 
-                      <div className="absolute inset-0 bg-gradient-to-t from-slate-950/60 via-transparent to-transparent" />
+                      <div className="absolute inset-0 bg-gradient-to-t from-slate-950/60 via-transparent to-transparent pointer-events-none z-20" />
 
-
-
-                      <div className="absolute bottom-4 left-4 right-4 text-white">
+                      <div className="absolute bottom-4 left-4 right-4 text-white z-20 pointer-events-none">
                         <p className="text-xs font-medium text-slate-300 uppercase tracking-widest">
                           {car.brand}
                         </p>

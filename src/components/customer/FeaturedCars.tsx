@@ -4,6 +4,8 @@ import { useState } from "react";
 import Link from "next/link";
 import { Fuel, Gauge, Users, ArrowRight, Wind } from "lucide-react";
 
+import CarImageSlider from "@/components/customer/CarImageSlider";
+
 export type FeaturedVehicleItem = {
   id: string;
   brand: string;
@@ -16,6 +18,7 @@ export type FeaturedVehicleItem = {
   hasAirConditioning?: boolean;
   price: number;
   image: string;
+  images?: string[];
   badge: string;
 };
 
@@ -75,17 +78,19 @@ export default function FeaturedCars({ vehicles = [] }: FeaturedCarsProps) {
                   key={car.id}
                   className="group overflow-hidden rounded-3xl border border-slate-200/80 bg-white shadow-sm transition-all duration-300 hover:-translate-y-1.5 hover:shadow-2xl hover:border-blue-200"
                 >
-                  {/* Image Container */}
+                  {/* Image Container with Auto Slider */}
                   <div className="relative aspect-[16/10] overflow-hidden bg-[#0A1128]">
-                    <img
-                      src={car.image}
+                    <CarImageSlider
+                      primaryImage={car.image}
+                      images={car.images}
                       alt={`${car.brand} ${car.model}`}
-                      className="h-full w-full object-cover transition-transform duration-500 group-hover:scale-105"
+                      brand={car.brand}
+                      model={car.model}
                     />
 
-                    <div className="absolute inset-0 bg-gradient-to-t from-[#0A1128]/80 via-transparent to-transparent" />
+                    <div className="absolute inset-0 bg-gradient-to-t from-[#0A1128]/80 via-transparent to-transparent pointer-events-none z-20" />
 
-                    <div className="absolute bottom-4 left-4 right-4 text-white">
+                    <div className="absolute bottom-4 left-4 right-4 text-white z-20 pointer-events-none">
                       <p className="text-xs font-medium text-slate-300 uppercase tracking-widest">
                         {car.brand}
                       </p>
