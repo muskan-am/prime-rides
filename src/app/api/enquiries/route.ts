@@ -3,8 +3,6 @@ import { getServerSession } from "next-auth";
 import { authOptions } from "@/auth";
 import { prisma } from "@/lib/prisma";
 import { notifyAdmins } from "@/lib/notifications";
-import { sendNewEnquiryEmail } from "@/lib/email-events";
-
 
 type CreateEnquiryRequest = {
   name?: string;
@@ -115,7 +113,6 @@ export async function POST(request: Request) {
         message: `${name} submitted an enquiry: "${shortMsg}"`,
         link: `/admin/enquiries#${enquiry.id}`,
       });
-      await sendNewEnquiryEmail({ enquiryId: enquiry.id });
     } catch (notifErr) {
       console.error("Failed to notify admins of enquiry:", notifErr);
     }

@@ -265,8 +265,6 @@ export default async function Home() {
          {/* Cities to Explore in India Carousel */}
         <ExploringCities cities={exploringCities} />
 
-        
-
        
         {/* Exclusive Offers */}
         <OffersSection coupons={coupons} />
