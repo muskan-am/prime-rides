@@ -5,7 +5,10 @@ import { authOptions } from "@/auth";
 import { prisma } from "@/lib/prisma";
 import { createNotification, notifyAdmins } from "@/lib/notifications";
 import { buildAdminPaymentReceivedContent } from "@/lib/admin-notification-context";
-
+import {
+  sendPaymentSuccessEmail,
+  sendBookingConfirmedEmail,
+} from "@/lib/email-events";
 
 type VerifyPaymentRequest = {
   bookingId?: string;
@@ -253,6 +256,15 @@ export async function POST(request: Request) {
     }
 
     await prisma.$transaction(transactionOperations);
+
+    // -----------------------------------------
+    // Transactional Emails
+    // -----------------------------------------
+    // Emails are triggered asynchronously only after the payment,
+    // booking and payment records are successfully
+    // committed to the database.
+    void sendPaymentSuccessEmail(booking.id);
+    void sendBookingConfirmedEmail(booking.id);
 
     /* -----------------------------------------
        Trigger Automatic Notifications

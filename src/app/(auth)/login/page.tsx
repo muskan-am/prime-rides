@@ -45,7 +45,7 @@ export default function LoginPage() {
         window.location.href = "/admin";
       } else {
         const searchParams = new URLSearchParams(window.location.search);
-        const callbackUrl = searchParams.get("callbackUrl") || "/dashboard";
+        const callbackUrl = searchParams.get("callbackUrl") || "/";
         window.location.href = callbackUrl;
       }
     } catch (err) {

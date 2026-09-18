@@ -5,7 +5,10 @@ import { authOptions } from "@/auth";
 import { prisma } from "@/lib/prisma";
 import { createNotification, notifyAdmins } from "@/lib/notifications";
 import { buildAdminNewBookingContent } from "@/lib/admin-notification-context";
-
+import {
+  sendBookingCreatedEmails,
+  sendPaymentPendingEmail,
+} from "@/lib/email-events";
 
 type BookingRequest = {
   vehicleId?: string;
@@ -770,6 +773,7 @@ export async function POST(
     ----------------------------------------- */
 
     let booking;
+    let isNewBooking = false;
 
     if (existingUserPendingBooking) {
       booking = await prisma.booking.update({
@@ -825,6 +829,7 @@ export async function POST(
           pickupOption: true,
         },
       });
+      isNewBooking = true;
     }
 
     /* -----------------------------------------
@@ -859,6 +864,20 @@ export async function POST(
       message: adminContent.message,
       link: adminContent.link,
     });
+
+    /* -----------------------------------------
+       Trigger Email Notifications (Asynchronous)
+    ----------------------------------------- */
+    if (isNewBooking) {
+      void sendBookingCreatedEmails(booking.id);
+
+      if (
+        booking.status === "PENDING" ||
+        booking.paymentStatus === "PENDING"
+      ) {
+        void sendPaymentPendingEmail(booking.id);
+      }
+    }
 
     /* -----------------------------------------
        Success

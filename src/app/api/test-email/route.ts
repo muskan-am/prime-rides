@@ -3,7 +3,7 @@ import { sendEmail } from "@/lib/email";
 
 export async function GET() {
   const result = await sendEmail({
-    to: "muskankesharwani63@gmail.com",
+    to: "Your email",
     subject: "Prime Rides Email Test",
     html: `
       <div style="font-family: Arial, sans-serif; padding: 30px;">
