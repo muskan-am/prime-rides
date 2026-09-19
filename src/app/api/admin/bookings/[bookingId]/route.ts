@@ -5,6 +5,10 @@ import { authOptions } from "@/auth";
 import { prisma } from "@/lib/prisma";
 import { createNotification, notifyAdmins } from "@/lib/notifications";
 import { buildAdminBookingCancelledContent } from "@/lib/admin-notification-context";
+import {
+  sendBookingCancelledEmail,
+  sendBookingCompletedEmail,
+} from "@/lib/email-events";
 
 
 const VALID_STATUSES = [
@@ -190,6 +194,11 @@ export async function PATCH(
           message: adminCancelContent.message,
           link: adminCancelContent.link,
         });
+
+        /* ----------------------------- */
+        /* Transactional Email Trigger */
+        /* ----------------------------- */
+        void sendBookingCancelledEmail(booking.id);
       } else if (status === "COMPLETED") {
         await createNotification({
           userId: existingBooking.userId,
@@ -198,6 +207,11 @@ export async function PATCH(
           message: "Your Prime Rides rental has been completed. Thank you for riding with us!",
           link: `/dashboard?bookingId=${booking.id}`,
         });
+
+        /* ----------------------------- */
+        /* Transactional Email Trigger */
+        /* ----------------------------- */
+        void sendBookingCompletedEmail(booking.id);
       } else if (status === "CONFIRMED") {
         await createNotification({
           userId: existingBooking.userId,
