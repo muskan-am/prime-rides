@@ -84,6 +84,13 @@ export default async function AdminBookingsPage({
           address: true,
         },
       },
+      createdBy: {
+        select: {
+          id: true,
+          name: true,
+          email: true,
+        },
+      },
     },
   });
 
@@ -118,6 +125,12 @@ export default async function AdminBookingsPage({
             Review bookings, verify payment status, inspect Razorpay transaction IDs, and update reservation status.
           </p>
         </div>
+        <a
+          href="/admin/bookings/new"
+          className="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl bg-blue-600 hover:bg-blue-500 text-white font-extrabold text-xs shadow-md transition-all shrink-0 self-start sm:self-auto"
+        >
+          <span>+ Create Booking</span>
+        </a>
       </div>
 
       {/* Summary Metrics Grid */}
@@ -275,6 +288,23 @@ export default async function AdminBookingsPage({
                       Status: {booking.status}
                     </span>
 
+                    {/* Booking Source Badge */}
+                    <span
+                      className={`px-2.5 py-0.5 rounded-md text-[10px] font-extrabold border uppercase tracking-wider ${
+                        (booking.bookingSource === "PHONE"
+                          ? "bg-purple-50 text-purple-700 border-purple-200"
+                          : booking.bookingSource === "WHATSAPP"
+                          ? "bg-emerald-50 text-emerald-700 border-emerald-200"
+                          : booking.bookingSource === "WALK_IN"
+                          ? "bg-amber-50 text-amber-700 border-amber-200"
+                          : booking.bookingSource === "ADMIN"
+                          ? "bg-slate-900 text-white border-slate-900"
+                          : "bg-blue-50 text-blue-700 border-blue-200")
+                      }`}
+                    >
+                      Source: {booking.bookingSource || "ONLINE"}
+                    </span>
+
                     {/* PAYMENT STATUS BADGE */}
                     {isPaid ? (
                       <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-extrabold bg-emerald-50 text-emerald-700 border border-emerald-200">
@@ -299,6 +329,14 @@ export default async function AdminBookingsPage({
                       <p className="text-xs text-slate-500 font-mono">ID: {booking.id}</p>
                       <p className="text-[11px] text-slate-400">
                         Booked on {formatDate(booking.createdAt)}
+                      </p>
+                      <p className="text-[10px] font-semibold text-slate-500">
+                        Created By:{" "}
+                        <span className="text-slate-800 font-bold">
+                          {booking.createdBy?.name
+                            ? `${booking.createdBy.name} (Admin)`
+                            : "Customer / Online"}
+                        </span>
                       </p>
                     </div>
                   </div>
@@ -378,8 +416,9 @@ export default async function AdminBookingsPage({
                     
                     <div className="mt-1 text-[11px] text-slate-500 space-y-0.5">
                       <p>Rent: {formatAmount(booking.rentalAmount)}</p>
-                      {booking.taxAmount ? <p>Tax: {formatAmount(booking.taxAmount)}</p> : null}
-                      {booking.deliveryCharge ? <p>Delivery: {formatAmount(booking.deliveryCharge)}</p> : null}
+                      {Number(booking.taxAmount) > 0 ? <p>Tax: {formatAmount(booking.taxAmount)}</p> : null}
+                      {Number(booking.deliveryCharge) > 0 ? <p>Delivery: {formatAmount(booking.deliveryCharge)}</p> : null}
+                      {Number(booking.discountAmount) > 0 ? <p className="text-emerald-600 font-semibold">Discount: -{formatAmount(booking.discountAmount)}</p> : null}
                     </div>
 
                     <div className="mt-2.5">

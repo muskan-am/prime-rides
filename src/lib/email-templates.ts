@@ -1,8 +1,10 @@
 import "server-only";
 
 // ==================================================
-// APP URL HELPER
+// APP URL & LOGO HELPERS
 // ==================================================
+export const DEFAULT_PRODUCTION_URL = "https://prime-rides-two.vercel.app";
+
 export const getAppUrl = (): string => {
   if (process.env.NEXT_PUBLIC_APP_URL) {
     return process.env.NEXT_PUBLIC_APP_URL.replace(/\/$/, "");
@@ -11,9 +13,24 @@ export const getAppUrl = (): string => {
     return process.env.APP_URL.replace(/\/$/, "");
   }
   if (process.env.VERCEL_URL) {
-    return `https://${process.env.VERCEL_URL}`.replace(/\/$/, "");
+    const vercelHost = process.env.VERCEL_URL.replace(/^https?:\/\//, "").replace(/\/$/, "");
+    if (vercelHost && !vercelHost.includes("localhost")) {
+      return `https://${vercelHost}`;
+    }
   }
-  return "http://localhost:3000";
+  return DEFAULT_PRODUCTION_URL;
+};
+
+/**
+ * Returns an absolute public HTTPS URL for the Prime Rides logo in HTML emails.
+ * Ensures localhost or unroutable URLs are never used for email logo rendering.
+ */
+export const getEmailLogoUrl = (): string => {
+  const appUrl = getAppUrl();
+  if (!appUrl || appUrl.includes("localhost") || appUrl.startsWith("http://")) {
+    return `${DEFAULT_PRODUCTION_URL}/prime-rides-logo.png`;
+  }
+  return `${appUrl}/prime-rides-logo.png`;
 };
 
 // ==================================================
@@ -131,8 +148,7 @@ export function createButton(label: string, url: string): string {
 }
 
 export function createEmailLayout(options: EmailLayoutOptions): string {
-  const appUrl = getAppUrl();
-  const logoUrl = `${appUrl}/prime-rides-logo.png`;
+  const logoUrl = getEmailLogoUrl();
   const currentYear = new Date().getFullYear();
 
   return `<!DOCTYPE html>
