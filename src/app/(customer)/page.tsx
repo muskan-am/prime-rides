@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { Car, ShieldCheck, Tag, Headphones, Compass, KeyRound } from "lucide-react";
+import { Car, ShieldCheck, Headphones, MapPin, Tag } from "lucide-react";
 import Navbar from "@/components/customer/Navbar";
 import CouponTicker from "@/components/customer/CouponTicker";
 import Footer from "@/components/customer/Footer";
@@ -14,6 +14,12 @@ import FAQSection from "@/components/customer/FAQSection";
 import ContactSection from "@/components/customer/ContactSection";
 import ExploringCities, { ExploringCityItem } from "@/components/customer/ExploringCities";
 import { prisma } from "@/lib/prisma";
+import {
+  calculateApprovedReviews,
+  formatFuelType,
+  formatTransmission,
+  formatVehicleCategory,
+} from "@/lib/rating";
 
 export const revalidate = 0;
 
@@ -49,9 +55,17 @@ export default async function Home() {
         },
         include: {
           images: { orderBy: { sortOrder: "asc" } },
+          inventory: {
+            where: { isActive: true },
+            include: { location: true },
+          },
+          reviews: {
+            select: { rating: true },
+          },
+          specifications: true,
         },
         orderBy: [{ searchPriority: "desc" }, { createdAt: "desc" }],
-        take: 20,
+        take: 24,
       }),
       prisma.location.findMany({
         where: { isActive: true },
@@ -115,21 +129,8 @@ export default async function Home() {
     }));
 
     featuredVehicles = dbVehicles.map((v) => {
-      const fuel = v.fuelType
-        ? v.fuelType.toUpperCase() === "PETROL"
-          ? "Petrol"
-          : v.fuelType.toUpperCase() === "DIESEL"
-          ? "Diesel"
-          : v.fuelType.charAt(0).toUpperCase() + v.fuelType.slice(1).toLowerCase()
-        : "Petrol";
-
-      const transmission = v.transmission
-        ? v.transmission.toUpperCase() === "AUTOMATIC"
-          ? "Automatic"
-          : v.transmission.toUpperCase() === "MANUAL"
-          ? "Manual"
-          : v.transmission.charAt(0).toUpperCase() + v.transmission.slice(1).toLowerCase()
-        : "Automatic";
+      const primaryLocation =
+        v.inventory?.find((inv) => inv.isActive && inv.location?.name)?.location?.name || "Main Hub";
 
       const primaryImg =
         v.primaryImage ||
@@ -139,20 +140,33 @@ export default async function Home() {
 
       const allImages = v.images && v.images.length > 0 ? v.images.map((img) => img.url) : [primaryImg];
 
+      const { averageRating, reviewCount } = calculateApprovedReviews(v.reviews);
+
+      const yearSpec = v.specifications?.find((s) =>
+        s.name.toLowerCase().includes("year")
+      )?.value;
+      const modelYear = yearSpec ? parseInt(yearSpec, 10) : 2023;
+
       return {
         id: v.id,
         brand: v.brand,
         model: v.model,
         variant: v.variant || "",
-        type: v.variant || "SUV",
-        fuel,
-        transmission,
+        type: v.vehicleType || formatVehicleCategory(v.variant, v.model, v.brand),
+        vehicleType: v.vehicleType || formatVehicleCategory(v.variant, v.model, v.brand),
+        fuel: formatFuelType(v.fuelType),
+        transmission: formatTransmission(v.transmission),
         seats: v.seatingCapacity || 5,
         hasAirConditioning: v.hasAirConditioning !== false,
         price: Number(v.basePrice),
+        deposit: Number(v.deposit),
+        location: primaryLocation,
         image: primaryImg,
         images: allImages,
         badge: v.variant || (v.searchPriority > 0 ? "Popular" : "Verified"),
+        rating: averageRating,
+        reviewCount,
+        modelYear,
       };
     });
   } catch (error) {
@@ -161,93 +175,107 @@ export default async function Home() {
 
   return (
     <div className="min-h-screen bg-slate-50">
-      <Navbar />
-      <CouponTicker coupons={isTickerEnabled ? coupons : []} />
-
-      <main>
-        {/* Energetic Automotive Hero Section with Background Video */}
-        <section className="relative overflow-hidden bg-[#0A1128] text-white">
-          {/* Background Highway Video */}
+      {/* Top Hero Section with Scenic Car Background & Transparent Navbar */}
+      <div className="relative overflow-hidden bg-black text-white">
+        {/* Background Image / Video */}
+        <div className="absolute inset-0 z-0">
+          <img
+            src="/car-hero.png"
+            alt="Prime Rides Luxury Car"
+            className="h-full w-full object-cover object-center"
+          />
           <video
             autoPlay
             muted
             loop
             playsInline
-            className="absolute inset-0 h-full w-full object-cover object-center pointer-events-none z-0"
+            className="absolute inset-0 h-full w-full object-cover object-center -z-10"
             aria-hidden="true"
           >
             <source src="/car.mp4" type="video/mp4" />
           </video>
+        </div>
 
-          {/* Clean Subtle Dark Overlay for Text Contrast */}
-          <div className="absolute inset-0 bg-gradient-to-b from-black/40 via-black/20 to-black/50 pointer-events-none z-1" />
+        {/* Subtle Neutral Gradient on Left for High Text Legibility */}
+        <div className="absolute inset-y-0 left-0 w-full sm:w-3/4 lg:w-3/5 bg-gradient-to-r from-black/60 via-black/20 to-transparent z-[1] pointer-events-none" />
 
-          <div className="relative z-10 mx-auto max-w-7xl px-4 pt-16 pb-28 sm:px-6 lg:px-8">
-            <div className="mx-auto max-w-4xl text-center space-y-6">
-              {/* Headline */}
-              <h1 className="text-4xl font-black tracking-tight text-white sm:text-6xl lg:text-7xl leading-none drop-shadow-md">
-                Your Ride.{" "}
-                <span className="bg-gradient-to-r from-blue-400 via-cyan-300 to-white bg-clip-text text-transparent">
-                  Your Freedom.
-                </span>
-              </h1>
+        {/* Top Promotional Ticker & Transparent Navbar */}
+        <div className="relative z-20">
+          <CouponTicker coupons={isTickerEnabled ? coupons : []} />
+          <Navbar transparent={true} />
+        </div>
 
-              {/* Supporting Text */}
-              <p className="mx-auto max-w-2xl text-lg text-slate-200 sm:text-xl font-normal leading-relaxed drop-shadow-sm">
-                Premium self-drive cars for every journey across Delhi NCR, Goa, and Bangalore. Book your car. Hit the road. Enjoy the journey.
-              </p>
+        {/* Hero Content Section */}
+        <section className="relative z-10 mx-auto w-full max-w-7xl px-4 pt-4 pb-20 sm:pt-6 sm:pb-24 lg:pb-28 sm:px-6 lg:px-8">
+          <div className="max-w-2xl text-left space-y-3.5 sm:space-y-4">
+            {/* Pre-heading Tagline Badge */}
+            <div className="inline-flex items-center gap-2 rounded-full border border-white/20 bg-black/40 px-3.5 py-1.5 backdrop-blur-md shadow-sm">
+              <span className="h-2 w-2 rounded-full bg-blue-400 animate-pulse" />
+              <span className="text-xs sm:text-sm font-bold tracking-wider text-slate-200 uppercase">
+                Self-Drive Car Rental
+              </span>
+            </div>
 
-              {/* Action Buttons */}
-              <div className="flex flex-wrap items-center justify-center gap-4 pt-2">
-                <a
-                  href="#search-section"
-                  className="flex h-13 items-center gap-2.5 rounded-2xl bg-blue-600 px-7 text-sm font-extrabold text-white shadow-lg shadow-blue-600/30 transition-all hover:bg-blue-500 hover:shadow-blue-500/50 hover:scale-[1.02]"
-                >
-                  <KeyRound className="h-4 w-4" />
-                  <span>Find Your Ride</span>
-                </a>
+            {/* Main Headline */}
+            <h1 className="text-4xl sm:text-6xl lg:text-7xl font-black tracking-tight text-white leading-[1.05]">
+              Your Ride.
+              <br />
+              <span className="text-[#38BDF8]">
+                Your Freedom.
+              </span>
+            </h1>
 
-                <Link
-                  href="/cars"
-                  className="flex h-13 items-center gap-2.5 rounded-2xl border border-slate-700 bg-slate-900/80 px-7 text-sm font-bold text-slate-200 backdrop-blur-md transition-all hover:bg-slate-800 hover:border-slate-600 hover:text-white"
-                >
-                  <Compass className="h-4 w-4 text-blue-400" />
-                  <span>Explore Cars</span>
-                </Link>
+            {/* Subtitle */}
+            <p className="text-sm sm:text-base lg:text-lg text-slate-200 font-normal max-w-xl leading-relaxed">
+              Premium self-drive cars for every journey across Delhi NCR, Goa, and Bangalore.
+            </p>
+
+            {/* Action Buttons */}
+            <div className="flex flex-wrap items-center gap-3.5 pt-2 sm:pt-3">
+              <a
+                href="#search-section"
+                className="inline-flex items-center gap-2.5 rounded-full bg-blue-600 hover:bg-blue-500 px-6 sm:px-7 py-3.5 text-sm sm:text-base font-bold text-white shadow-xl shadow-blue-600/40 transition-all hover:scale-105 active:scale-95"
+              >
+                <Car className="h-4 w-4 shrink-0" />
+                <span>Find Your Ride</span>
+                <span className="text-base leading-none">→</span>
+              </a>
+
+              <Link
+                href="/cars"
+                className="inline-flex items-center rounded-full border border-white/30 bg-black/20 hover:bg-black/35 px-6 sm:px-7 py-3.5 text-sm sm:text-base font-semibold text-white backdrop-blur-md transition-all hover:border-white shadow-sm active:scale-95"
+              >
+                <span>Explore Cars</span>
+              </Link>
+            </div>
+
+            {/* Feature Badges Row (Exact Reference UI) */}
+            <div className="flex flex-wrap items-center gap-4 sm:gap-6 pt-4 text-xs sm:text-sm font-medium text-white">
+              <div className="flex items-center gap-2">
+                <ShieldCheck className="h-4 w-4 text-[#38BDF8] shrink-0" />
+                <span>Verified Cars</span>
               </div>
 
-              {/* Text Feature Row */}
-              <div className="flex flex-wrap items-center justify-center gap-x-6 gap-y-3 pt-6 max-w-4xl mx-auto text-sm font-semibold text-slate-200">
-                <div className="flex items-center gap-2">
-                  <ShieldCheck className="h-4 w-4 text-blue-400 shrink-0" />
-                  <span>Trusted Service</span>
-                </div>
+              <div className="flex items-center gap-2">
+                <Tag className="h-4 w-4 text-[#38BDF8] shrink-0" />
+                <span>Transparent Pricing</span>
+              </div>
 
-                <span className="hidden sm:inline text-slate-600 font-light">|</span>
+              <div className="flex items-center gap-2">
+                <MapPin className="h-4 w-4 text-[#38BDF8] shrink-0" />
+                <span>Flexible Pickup</span>
+              </div>
 
-                <div className="flex items-center gap-2">
-                  <Car className="h-4 w-4 text-blue-400 shrink-0" />
-                  <span>Wide Car Selection</span>
-                </div>
-
-                <span className="hidden sm:inline text-slate-600 font-light">|</span>
-
-                <div className="flex items-center gap-2">
-                  <Tag className="h-4 w-4 text-blue-400 shrink-0" />
-                  <span>Best Prices</span>
-                </div>
-
-                <span className="hidden sm:inline text-slate-600 font-light">|</span>
-
-                <div className="flex items-center gap-2">
-                  <Headphones className="h-4 w-4 text-blue-400 shrink-0" />
-                  <span>24/7 Support</span>
-                </div>
+              <div className="flex items-center gap-2">
+                <Headphones className="h-4 w-4 text-[#38BDF8] shrink-0" />
+                <span>24/7 Support</span>
               </div>
             </div>
           </div>
         </section>
+      </div>
 
+      <main>
         {/* Floating Search Section */}
         <section id="search-section" className="relative -mt-16 px-4 z-20 sm:px-6 lg:px-8">
           <SearchBox locations={locations} />

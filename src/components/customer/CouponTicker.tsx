@@ -87,11 +87,11 @@ export default function CouponTicker({ coupons = [] }: CouponTickerProps) {
     <div
       role="region"
       aria-label="Promotional Offers and Coupons Ticker"
-      className="relative z-40 w-full overflow-hidden bg-[#0A1128] border-b border-slate-800/80 text-white select-none h-10 sm:h-11 flex items-center shadow-inner"
+      className="relative z-40 w-full overflow-hidden bg-[#0A1128]/70 backdrop-blur-md border-b border-white/10 text-white select-none h-10 sm:h-11 flex items-center shadow-sm"
     >
       {/* Subtle Side Fade Overlay for Smooth Visual Flow */}
-      <div className="absolute inset-y-0 left-0 w-10 sm:w-20 bg-gradient-to-r from-[#0A1128] to-transparent z-10 pointer-events-none" />
-      <div className="absolute inset-y-0 right-0 w-10 sm:w-20 bg-gradient-to-l from-[#0A1128] to-transparent z-10 pointer-events-none" />
+      <div className="absolute inset-y-0 left-0 w-10 sm:w-20 bg-gradient-to-r from-[#0A1128]/90 to-transparent z-10 pointer-events-none" />
+      <div className="absolute inset-y-0 right-0 w-10 sm:w-20 bg-gradient-to-l from-[#0A1128]/90 to-transparent z-10 pointer-events-none" />
 
       {/* Infinite Scrolling Track */}
       <div className="flex w-full overflow-hidden">

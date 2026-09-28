@@ -61,6 +61,8 @@ export type ReviewItem = {
   rating: number;
   comment: string | null;
   userName?: string;
+  userImage?: string;
+  createdAt?: string;
 };
 
 export type DetailVehicle = {
@@ -68,13 +70,14 @@ export type DetailVehicle = {
   brand: string;
   model: string;
   variant: string | null;
+  vehicleType?: string | null;
   fuelType: string;
   transmission: string;
   seatingCapacity: number;
   hasAirConditioning?: boolean;
   basePrice: number;
   deposit: number;
-  speedLimit: number | null;
+  speedLimit?: number | null;
   rentalTerms: string | null;
   isAvailable: boolean;
   primaryImage: string;
@@ -86,6 +89,7 @@ export type DetailVehicle = {
   primaryLocation: string;
   averageRating: string | null;
   reviewCount: number;
+  ratingDistribution?: Record<number, number>;
   reviews: ReviewItem[];
 };
 
@@ -136,6 +140,7 @@ export default function CarDetailClient({
   const [selectedPlanId, setSelectedPlanId] = useState<string | null>(
     searchParamsState.monthlyPlanId || null
   );
+  const [visibleReviewsLimit, setVisibleReviewsLimit] = useState(4);
 
   // 1. Short-Term Special Rental Packages (< 30 days)
   const shortTermPackages = vehicle.rentalPackages.filter(
@@ -235,10 +240,8 @@ export default function CarDetailClient({
         "Valid original driving license (min 1 year old) is required.",
         "Minimum rental age is 21 years.",
         "Fuel is not included (return with same fuel level).",
-        vehicle.speedLimit
-          ? `Speed limit of ${vehicle.speedLimit} km/h strictly enforced.`
-          : "Speed limit of 120 km/h strictly enforced.",
         "Vehicle must be returned at agreed location and time.",
+        "Clean, sanitized vehicle handover with verified documentation.",
       ];
 
   const documentsList = [
@@ -444,9 +447,9 @@ export default function CarDetailClient({
 
                   <div className="rounded-2xl border border-slate-200/80 bg-white p-2.5 sm:p-3 text-center shadow-xs transition-all hover:border-blue-300 hover:shadow-md col-span-2 sm:col-span-2 min-w-0">
                     <ShieldCheck className="mx-auto h-4 sm:h-5 w-4 sm:w-5 text-blue-600 mb-1" />
-                    <p className="text-[10px] sm:text-[11px] font-semibold text-slate-500">Speed Limit</p>
+                    <p className="text-[10px] sm:text-[11px] font-semibold text-slate-500">Car / Vehicle Type</p>
                     <p className="mt-0.5 text-xs font-extrabold text-slate-900 truncate">
-                      {vehicle.speedLimit ? `${vehicle.speedLimit} km/h` : "120 km/h"}
+                      {vehicle.vehicleType || "SUV"}
                     </p>
                   </div>
                 </div>
@@ -651,38 +654,171 @@ export default function CarDetailClient({
           )}
 
           {/* Real Customer Reviews Section */}
-          {vehicle.reviews.length > 0 && (
-            <div className="mt-8 sm:mt-12 rounded-3xl border border-slate-200/80 bg-white p-5 sm:p-8 shadow-sm">
-              <h3 className="text-lg sm:text-xl font-extrabold text-slate-900 mb-4 sm:mb-6 flex items-center gap-2">
-                <Star className="h-5 w-5 text-amber-500 fill-amber-500 shrink-0" />
-                <span>Customer Reviews ({vehicle.reviewCount})</span>
-              </h3>
+          <div className="mt-8 sm:mt-12 rounded-3xl border border-slate-200/80 bg-white p-6 sm:p-8 shadow-sm">
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-6 border-b border-slate-100">
+              <div>
+                <h3 className="text-xl sm:text-2xl font-black text-slate-900 tracking-tight flex items-center gap-2">
+                  <Star className="h-6 w-6 text-amber-500 fill-amber-500 shrink-0" />
+                  <span>Customer Reviews</span>
+                </h3>
+                <p className="text-xs sm:text-sm text-slate-500 mt-1">
+                  Verified feedback from guests who completed bookings with this vehicle.
+                </p>
+              </div>
 
-              <div className="grid gap-4 sm:grid-cols-2">
-                {vehicle.reviews.map((rev) => (
-                  <div
-                    key={rev.id}
-                    className="rounded-2xl bg-slate-50 p-4 sm:p-5 border border-slate-100 space-y-2"
-                  >
-                    <div className="flex items-center justify-between gap-2">
-                      <span className="text-xs sm:text-sm font-bold text-slate-900 truncate">
-                        {rev.userName || "Verified Customer"}
-                      </span>
-                      <div className="flex items-center gap-1 text-xs font-extrabold text-amber-500 shrink-0">
-                        <Star className="h-3.5 w-3.5 fill-amber-500" />
-                        <span>{rev.rating}.0</span>
+              {vehicle.reviewCount > 0 && (
+                <div className="inline-flex items-center gap-2 rounded-2xl bg-amber-50 border border-amber-200/80 px-4 py-2 self-start sm:self-auto">
+                  <span className="text-2xl font-black text-amber-700">
+                    {vehicle.averageRating || "5.0"}
+                  </span>
+                  <div className="text-left">
+                    <div className="flex items-center text-amber-500">
+                      {[1, 2, 3, 4, 5].map((star) => (
+                        <Star
+                          key={star}
+                          className={`h-3.5 w-3.5 ${
+                            star <= Math.round(Number(vehicle.averageRating || 5))
+                              ? "fill-amber-400 text-amber-400"
+                              : "text-slate-200"
+                          }`}
+                        />
+                      ))}
+                    </div>
+                    <span className="text-[11px] font-bold text-slate-600 block">
+                      Based on {vehicle.reviewCount} review{vehicle.reviewCount > 1 ? "s" : ""}
+                    </span>
+                  </div>
+                </div>
+              )}
+            </div>
+
+            {vehicle.reviewCount === 0 ? (
+              <div className="py-10 text-center space-y-2">
+                <div className="mx-auto w-12 h-12 rounded-full bg-slate-100 text-slate-400 flex items-center justify-center">
+                  <Star className="h-6 w-6" />
+                </div>
+                <h4 className="text-base font-bold text-slate-700">No reviews yet</h4>
+                <p className="text-xs text-slate-400 max-w-sm mx-auto">
+                  Be the first to share your experience after completing a rental with this car.
+                </p>
+              </div>
+            ) : (
+              <div className="pt-6 space-y-8">
+                {/* Rating Distribution Breakdown */}
+                {vehicle.ratingDistribution && (
+                  <div className="grid gap-6 md:grid-cols-[200px_1fr] items-center rounded-2xl bg-slate-50/80 p-5 border border-slate-100">
+                    <div className="text-center sm:text-left space-y-1">
+                      <div className="text-4xl font-black text-slate-900">
+                        {vehicle.averageRating}
+                        <span className="text-lg text-slate-400 font-bold"> / 5</span>
+                      </div>
+                      <p className="text-xs font-semibold text-slate-500">
+                        Overall Experience Rating
+                      </p>
+                    </div>
+
+                    <div className="space-y-1.5">
+                      {[5, 4, 3, 2, 1].map((star) => {
+                        const count = vehicle.ratingDistribution?.[star] || 0;
+                        const percent =
+                          vehicle.reviewCount > 0
+                            ? Math.round((count / vehicle.reviewCount) * 100)
+                            : 0;
+
+                        return (
+                          <div
+                            key={star}
+                            className="flex items-center gap-3 text-xs font-semibold"
+                          >
+                            <span className="w-8 text-right font-bold text-slate-700">
+                              {star} ★
+                            </span>
+                            <div className="h-2.5 flex-1 rounded-full bg-slate-200 overflow-hidden">
+                              <div
+                                className="h-full bg-amber-400 rounded-full transition-all duration-500"
+                                style={{ width: `${percent}%` }}
+                              />
+                            </div>
+                            <span className="w-12 text-slate-400 text-right">
+                              {count} ({percent}%)
+                            </span>
+                          </div>
+                        );
+                      })}
+                    </div>
+                  </div>
+                )}
+
+                {/* Reviews List */}
+                <div className="grid gap-4 sm:grid-cols-2">
+                  {vehicle.reviews.slice(0, visibleReviewsLimit).map((rev) => (
+                    <div
+                      key={rev.id}
+                      className="rounded-2xl bg-slate-50 p-5 border border-slate-100 space-y-3 flex flex-col justify-between transition-all hover:border-slate-300"
+                    >
+                      <div className="space-y-2">
+                        <div className="flex items-start justify-between gap-2">
+                          <div className="flex items-center gap-2.5">
+                            <div className="h-8 w-8 rounded-full bg-blue-600 text-white font-black text-xs flex items-center justify-center shrink-0">
+                              {(rev.userName || "C").charAt(0).toUpperCase()}
+                            </div>
+                            <div>
+                              <span className="text-xs sm:text-sm font-bold text-slate-900 block truncate">
+                                {rev.userName || "Verified Customer"}
+                              </span>
+                              {rev.createdAt && (
+                                <span className="text-[10px] text-slate-400 font-medium">
+                                  {new Date(rev.createdAt).toLocaleDateString("en-IN", {
+                                    day: "numeric",
+                                    month: "short",
+                                    year: "numeric",
+                                  })}
+                                </span>
+                              )}
+                            </div>
+                          </div>
+
+                          <div className="flex items-center text-amber-400 shrink-0">
+                            {[1, 2, 3, 4, 5].map((s) => (
+                              <Star
+                                key={s}
+                                className={`h-3.5 w-3.5 ${
+                                  s <= rev.rating
+                                    ? "fill-amber-400 text-amber-400"
+                                    : "text-slate-200"
+                                }`}
+                              />
+                            ))}
+                          </div>
+                        </div>
+
+                        {rev.comment && (
+                          <p className="text-xs text-slate-600 leading-relaxed pt-1">
+                            "{rev.comment}"
+                          </p>
+                        )}
                       </div>
                     </div>
-                    {rev.comment && (
-                      <p className="text-xs text-slate-600 leading-relaxed">
-                        "{rev.comment}"
-                      </p>
-                    )}
+                  ))}
+                </div>
+
+                {/* Load More Button */}
+                {vehicle.reviews.length > visibleReviewsLimit && (
+                  <div className="text-center pt-2">
+                    <button
+                      type="button"
+                      onClick={() =>
+                        setVisibleReviewsLimit((prev) => prev + 4)
+                      }
+                      className="inline-flex items-center gap-2 rounded-xl border border-slate-200 bg-white hover:bg-slate-50 px-5 py-2.5 text-xs sm:text-sm font-bold text-slate-700 shadow-xs transition-all cursor-pointer hover:scale-105 active:scale-95"
+                    >
+                      <span>Load More Reviews ({vehicle.reviews.length - visibleReviewsLimit} remaining)</span>
+                    </button>
                   </div>
-                ))}
+                )}
               </div>
-            </div>
-          )}
+            )}
+          </div>
 
           {/* Car Details FAQ Accordion */}
           <CarDetailFAQ />

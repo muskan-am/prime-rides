@@ -177,7 +177,7 @@ export default function NotificationBell({
   const buttonStyle =
     variant === "admin-dark"
       ? "relative inline-flex h-10 w-10 items-center justify-center rounded-xl border border-slate-700 bg-slate-800/80 text-slate-200 transition-all hover:bg-slate-700 hover:text-white focus:outline-none focus:ring-2 focus:ring-blue-500"
-      : "relative inline-flex h-10 w-10 items-center justify-center rounded-xl border border-slate-200 bg-white text-slate-700 transition-all hover:bg-slate-50 hover:text-blue-600 focus:outline-none focus:ring-2 focus:ring-blue-600/20";
+      : "relative inline-flex h-10 w-10 items-center justify-center rounded-full border border-slate-200 bg-white text-slate-700 shadow-sm transition-all hover:bg-slate-100 hover:text-blue-600 focus:outline-none focus:ring-2 focus:ring-blue-600/20";
 
   return (
     <div className={`relative inline-block ${className}`} ref={containerRef}>

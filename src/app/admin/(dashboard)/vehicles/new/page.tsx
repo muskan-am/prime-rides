@@ -22,6 +22,7 @@ export default function NewVehiclePage() {
       brand: formData.get("brand"),
       model: formData.get("model"),
       variant: formData.get("variant"),
+      vehicleType: formData.get("vehicleType"),
       registrationNumber: formData.get("registrationNumber"),
       fuelType: formData.get("fuelType"),
       transmission: formData.get("transmission"),
@@ -144,6 +145,27 @@ export default function NewVehiclePage() {
                   placeholder="e.g. 4x4 Legender"
                   className="w-full h-11 px-4 rounded-xl bg-slate-50 border border-slate-300 text-slate-900 placeholder-slate-400 focus:outline-none focus:bg-white focus:border-blue-600 focus:ring-2 focus:ring-blue-600/20 text-sm font-medium"
                 />
+              </div>
+
+              {/* Vehicle Type */}
+              <div>
+                <label htmlFor="vehicleType" className="block text-xs font-bold uppercase tracking-wider text-slate-700 mb-1.5">
+                  Car / Vehicle Type *
+                </label>
+                <select
+                  id="vehicleType"
+                  name="vehicleType"
+                  defaultValue="SUV"
+                  className="w-full h-11 px-3 rounded-xl bg-white border border-slate-300 text-slate-800 focus:outline-none focus:border-blue-600 focus:ring-2 focus:ring-blue-600/20 text-sm font-semibold"
+                >
+                  <option value="SUV">SUV</option>
+                  <option value="Sedan">Sedan</option>
+                  <option value="Hatchback">Hatchback</option>
+                  <option value="MUV/MPV">MUV/MPV</option>
+                  <option value="Luxury Sedan">Luxury Sedan</option>
+                  <option value="Compact SUV">Compact SUV</option>
+                  <option value="Luxury SUV">Luxury SUV</option>
+                </select>
               </div>
 
               {/* Registration Number */}

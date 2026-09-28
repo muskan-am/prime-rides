@@ -5,27 +5,14 @@ import { prisma } from "@/lib/prisma";
 import CarDetailClient, {
   DetailVehicle,
 } from "@/components/customer/CarDetailClient";
+import {
+  calculateApprovedReviews,
+  formatFuelType,
+  formatTransmission,
+  formatVehicleCategory,
+} from "@/lib/rating";
 
 export const revalidate = 0;
-
-function formatFuelType(fuel: string | null | undefined): string {
-  if (!fuel) return "Petrol";
-  const upper = fuel.toUpperCase();
-  if (upper === "PETROL") return "Petrol";
-  if (upper === "DIESEL") return "Diesel";
-  if (upper === "ELECTRIC") return "Electric";
-  if (upper === "HYBRID") return "Hybrid";
-  if (upper === "CNG") return "CNG";
-  return fuel.charAt(0).toUpperCase() + fuel.slice(1).toLowerCase();
-}
-
-function formatTransmission(trans: string | null | undefined): string {
-  if (!trans) return "Automatic";
-  const upper = trans.toUpperCase();
-  if (upper === "AUTOMATIC") return "Automatic";
-  if (upper === "MANUAL") return "Manual";
-  return trans.charAt(0).toUpperCase() + trans.slice(1).toLowerCase();
-}
 
 type PageProps = {
   params: Promise<{ id: string }>;
@@ -93,13 +80,12 @@ export default async function CarDetailPage({
     vehicle.availabilityStatus === "AVAILABLE" &&
     vehicle.maintenanceStatus === "GOOD";
 
-  const reviewCount = vehicle.reviews.length;
-  const averageRating =
-    reviewCount > 0
-      ? (
-          vehicle.reviews.reduce((sum, r) => sum + r.rating, 0) / reviewCount
-        ).toFixed(1)
-      : null;
+  const approvedReviews = (vehicle.reviews || []).filter(
+    (r: any) => !r.status || r.status === "APPROVED"
+  );
+
+  const { averageRating: avgNum, reviewCount, ratingDistribution } = calculateApprovedReviews(vehicle.reviews);
+  const averageRating = avgNum !== null ? avgNum.toFixed(1) : null;
 
   const defaultFeatures = [
     `${formatTransmission(vehicle.transmission)} Transmission`,
@@ -122,6 +108,7 @@ export default async function CarDetailPage({
     brand: vehicle.brand,
     model: vehicle.model,
     variant: vehicle.variant,
+    vehicleType: vehicle.vehicleType || formatVehicleCategory(vehicle.variant, vehicle.model, vehicle.brand),
     fuelType: formatFuelType(vehicle.fuelType),
     transmission: formatTransmission(vehicle.transmission),
     seatingCapacity: vehicle.seatingCapacity || 5,
@@ -159,11 +146,14 @@ export default async function CarDetailPage({
     primaryLocation,
     averageRating,
     reviewCount,
-    reviews: vehicle.reviews.map((r) => ({
+    ratingDistribution,
+    reviews: approvedReviews.map((r) => ({
       id: r.id,
       rating: r.rating,
       comment: r.comment,
       userName: r.user?.name || undefined,
+      userImage: r.user?.image || undefined,
+      createdAt: r.createdAt.toISOString(),
     })),
   };
 

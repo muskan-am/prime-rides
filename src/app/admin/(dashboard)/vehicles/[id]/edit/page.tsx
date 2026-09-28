@@ -8,6 +8,7 @@ type VehicleForm = {
   brand: string;
   model: string;
   variant: string;
+  vehicleType: string;
   registrationNumber: string;
   fuelType: string;
   transmission: string;
@@ -27,6 +28,7 @@ const initialForm: VehicleForm = {
   brand: "",
   model: "",
   variant: "",
+  vehicleType: "SUV",
   registrationNumber: "",
   fuelType: "",
   transmission: "",
@@ -72,6 +74,7 @@ export default function EditVehiclePage() {
           brand: vehicle.brand || "",
           model: vehicle.model || "",
           variant: vehicle.variant || "",
+          vehicleType: vehicle.vehicleType || "SUV",
           registrationNumber: vehicle.registrationNumber || "",
           fuelType: vehicle.fuelType || "",
           transmission: vehicle.transmission || "",
@@ -227,6 +230,21 @@ export default function EditVehiclePage() {
               <FormField label="Brand *" name="brand" value={form.brand} onChange={handleChange} placeholder="e.g. Toyota" />
               <FormField label="Model *" name="model" value={form.model} onChange={handleChange} placeholder="e.g. Fortuner" />
               <FormField label="Variant" name="variant" value={form.variant} onChange={handleChange} placeholder="e.g. Legender" />
+              <SelectField
+                label="Car / Vehicle Type *"
+                name="vehicleType"
+                value={form.vehicleType}
+                onChange={handleChange}
+                options={[
+                  "SUV",
+                  "Sedan",
+                  "Hatchback",
+                  "MUV/MPV",
+                  "Luxury Sedan",
+                  "Compact SUV",
+                  "Luxury SUV",
+                ]}
+              />
               <FormField label="Registration Plate" name="registrationNumber" value={form.registrationNumber} onChange={handleChange} placeholder="e.g. UP32AB1234" />
             </div>
           </section>

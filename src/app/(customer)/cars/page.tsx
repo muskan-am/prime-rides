@@ -5,27 +5,15 @@ import CarsCatalogClient, {
 } from "@/components/customer/CarsCatalogClient";
 import Navbar from "@/components/customer/Navbar";
 import Footer from "@/components/customer/Footer";
+import { DEFAULT_FILTER_SETTINGS, FilterSettings } from "@/lib/filterSettings";
+import {
+  calculateApprovedReviews,
+  formatFuelType,
+  formatTransmission,
+  formatVehicleCategory,
+} from "@/lib/rating";
 
 export const revalidate = 0;
-
-function formatFuelType(fuel: string | null | undefined): string {
-  if (!fuel) return "Petrol";
-  const upper = fuel.toUpperCase();
-  if (upper === "PETROL") return "Petrol";
-  if (upper === "DIESEL") return "Diesel";
-  if (upper === "ELECTRIC") return "Electric";
-  if (upper === "HYBRID") return "Hybrid";
-  if (upper === "CNG") return "CNG";
-  return fuel.charAt(0).toUpperCase() + fuel.slice(1).toLowerCase();
-}
-
-function formatTransmission(trans: string | null | undefined): string {
-  if (!trans) return "Automatic";
-  const upper = trans.toUpperCase();
-  if (upper === "AUTOMATIC") return "Automatic";
-  if (upper === "MANUAL") return "Manual";
-  return trans.charAt(0).toUpperCase() + trans.slice(1).toLowerCase();
-}
 
 type CarsPageProps = {
   searchParams: Promise<{ [key: string]: string | string[] | undefined }>;
@@ -88,8 +76,10 @@ export default async function CarsPage({ searchParams }: CarsPageProps) {
     }
   }
 
+  let filterSettings: FilterSettings = DEFAULT_FILTER_SETTINGS;
+
   try {
-    const [vehicles, dbLocations] = await Promise.all([
+    const [vehicles, dbLocations, dbFilterSetting] = await Promise.all([
       prisma.vehicle.findMany({
         where: {
           availabilityStatus: "AVAILABLE",
@@ -106,6 +96,10 @@ export default async function CarsPage({ searchParams }: CarsPageProps) {
             where: { isActive: true },
             include: { location: true },
           },
+          reviews: {
+            select: { rating: true },
+          },
+          specifications: true,
         },
         orderBy: [
           { searchPriority: "desc" },
@@ -116,7 +110,31 @@ export default async function CarsPage({ searchParams }: CarsPageProps) {
         where: { isActive: true },
         orderBy: { name: "asc" },
       }),
+      prisma.systemSetting.findUnique({
+        where: { key: "filter_settings" },
+      }),
     ]);
+
+    if (dbFilterSetting?.value) {
+      try {
+        const parsed = JSON.parse(dbFilterSetting.value);
+        filterSettings = {
+          ...DEFAULT_FILTER_SETTINGS,
+          ...parsed,
+          distance: { ...DEFAULT_FILTER_SETTINGS.distance, ...(parsed.distance || {}) },
+          deliveryType: { ...DEFAULT_FILTER_SETTINGS.deliveryType, ...(parsed.deliveryType || {}) },
+          priceRange: { ...DEFAULT_FILTER_SETTINGS.priceRange, ...(parsed.priceRange || {}) },
+          carType: { ...DEFAULT_FILTER_SETTINGS.carType, ...(parsed.carType || {}) },
+          transmission: { ...DEFAULT_FILTER_SETTINGS.transmission, ...(parsed.transmission || {}) },
+          fuelType: { ...DEFAULT_FILTER_SETTINGS.fuelType, ...(parsed.fuelType || {}) },
+          seats: { ...DEFAULT_FILTER_SETTINGS.seats, ...(parsed.seats || {}) },
+          userRatings: { ...DEFAULT_FILTER_SETTINGS.userRatings, ...(parsed.userRatings || {}) },
+          modelYear: { ...DEFAULT_FILTER_SETTINGS.modelYear, ...(parsed.modelYear || {}) },
+        };
+      } catch {
+        filterSettings = DEFAULT_FILTER_SETTINGS;
+      }
+    }
 
     const formattedVehicles: FormattedVehicle[] = vehicles.map((v) => {
       const locationNames = v.inventory
@@ -140,8 +158,17 @@ export default async function CarsPage({ searchParams }: CarsPageProps) {
       const isAvailable =
         v.availabilityStatus === "AVAILABLE" && v.maintenanceStatus === "GOOD";
 
+      // Calculate approved rating from centralized helper
+      const { averageRating, reviewCount } = calculateApprovedReviews(v.reviews);
+
       const badge =
         v.variant || (v.searchPriority > 0 ? "Popular" : "Verified");
+
+      // Extract Year
+      const yearSpec = v.specifications?.find((s) =>
+        s.name.toLowerCase().includes("year")
+      )?.value;
+      const modelYear = yearSpec ? parseInt(yearSpec, 10) : 2023;
 
       return {
         id: v.id,
@@ -149,6 +176,8 @@ export default async function CarsPage({ searchParams }: CarsPageProps) {
         name: `${v.brand} ${v.model}`,
         model: v.model,
         variant: v.variant || "",
+        type: v.vehicleType || formatVehicleCategory(v.variant, v.model, v.brand),
+        vehicleType: v.vehicleType || formatVehicleCategory(v.variant, v.model, v.brand),
         fuel: formatFuelType(v.fuelType),
         transmission: formatTransmission(v.transmission),
         seats: v.seatingCapacity || 5,
@@ -163,6 +192,9 @@ export default async function CarsPage({ searchParams }: CarsPageProps) {
         images: allImages,
         badge,
         searchPriority: v.searchPriority,
+        rating: averageRating,
+        reviewCount,
+        modelYear,
       };
     });
 
@@ -171,14 +203,40 @@ export default async function CarsPage({ searchParams }: CarsPageProps) {
       name: loc.name,
     }));
 
+    const rawVehicleType =
+      typeof resolvedParams.vehicleType === "string"
+        ? resolvedParams.vehicleType
+        : typeof resolvedParams.type === "string"
+        ? resolvedParams.type
+        : typeof resolvedParams.category === "string"
+        ? resolvedParams.category
+        : undefined;
+
+    const initialParams = {
+      location: locationParam,
+      vehicleType: rawVehicleType,
+      type: rawVehicleType,
+      category: rawVehicleType,
+      fuel: typeof resolvedParams.fuel === "string" ? resolvedParams.fuel : undefined,
+      transmission: typeof resolvedParams.transmission === "string" ? resolvedParams.transmission : undefined,
+      seats: typeof resolvedParams.seats === "string" ? resolvedParams.seats : undefined,
+      minPrice: typeof resolvedParams.minPrice === "string" ? parseInt(resolvedParams.minPrice, 10) : undefined,
+      maxPrice: typeof resolvedParams.maxPrice === "string" ? parseInt(resolvedParams.maxPrice, 10) : undefined,
+      rating: typeof resolvedParams.rating === "string" ? parseFloat(resolvedParams.rating) : undefined,
+      search: typeof resolvedParams.search === "string" ? resolvedParams.search : undefined,
+      sort: typeof resolvedParams.sort === "string" ? resolvedParams.sort : undefined,
+    };
+
     return (
       <CarsCatalogClient
         initialVehicles={formattedVehicles}
         locations={locations}
         initialLocationQuery={locationParam}
+        initialParams={initialParams}
         isDateFilterActive={isDateFilterActive}
         startDateText={startDateText}
         endDateText={endDateText}
+        filterSettings={filterSettings}
       />
     );
   } catch (error) {

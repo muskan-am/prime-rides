@@ -304,7 +304,7 @@ export default function VehicleImages({
           type="url"
           value={url}
           onChange={(e) => setUrl(e.target.value)}
-          placeholder="https://example.com/car-image.jpg"
+          placeholder="https://example.com/car-image.png"
           className="h-11 min-w-0 flex-1 rounded-lg border bg-background px-3 text-sm outline-none transition focus:ring-2 focus:ring-ring"
         />
 

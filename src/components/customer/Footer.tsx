@@ -1,6 +1,6 @@
 import Link from "next/link";
-import Image from "next/image";
 import { ShieldCheck, MapPin, Phone, Mail, ArrowRight, Lock } from "lucide-react";
+import BrandLogo from "@/components/common/BrandLogo";
 
 export default function Footer() {
   return (
@@ -11,16 +11,8 @@ export default function Footer() {
 
           {/* Column 1: Brand & Tagline */}
           <div className="space-y-4">
-            <Link href="/" className="inline-block">
-              <div className="relative h-12 w-[88px] overflow-hidden rounded-xl shadow-sm border border-white/10">
-                <Image
-                  src="/prime-rides-logo.png"
-                  alt="Prime Rides Logo"
-                  fill
-                  sizes="88px"
-                  className="object-cover rounded-xl"
-                />
-              </div>
+            <Link href="/" className="inline-block hover:opacity-90 transition-opacity">
+              <BrandLogo variant="white" />
             </Link>
 
             <p className="text-sm leading-relaxed text-slate-400">

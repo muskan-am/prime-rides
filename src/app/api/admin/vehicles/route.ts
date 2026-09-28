@@ -30,6 +30,7 @@ export async function POST(request: Request) {
       brand,
       model,
       variant,
+      vehicleType,
       registrationNumber,
       fuelType,
       transmission,
@@ -174,6 +175,11 @@ export async function POST(request: Request) {
           typeof variant === "string" && variant.trim()
             ? variant.trim()
             : null,
+
+        vehicleType:
+          typeof vehicleType === "string" && vehicleType.trim()
+            ? vehicleType.trim()
+            : "SUV",
 
         registrationNumber:
           cleanRegistrationNumber,

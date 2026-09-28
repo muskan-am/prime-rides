@@ -8,6 +8,7 @@ import Navbar from "@/components/customer/Navbar";
 import Footer from "@/components/customer/Footer";
 import LogoutButton from "@/components/auth/LogoutButton";
 import PayNowButton from "@/components/booking/PayNowButton";
+import BookingReviewButton from "@/components/customer/BookingReviewButton";
 import { prisma } from "@/lib/prisma";
 
 type DashboardPageProps = {
@@ -81,6 +82,7 @@ export default async function DashboardPage({ searchParams }: DashboardPageProps
               address: true,
             },
           },
+          review: true,
         },
         orderBy: {
           createdAt: "desc",
@@ -298,6 +300,17 @@ export default async function DashboardPage({ searchParams }: DashboardPageProps
                               <span className="text-slate-500">Total Amount: </span>
                               <span className="text-base font-black text-slate-900">₹{Number(booking.totalAmount).toLocaleString("en-IN")}</span>
                             </div>
+
+                            {booking.status === "COMPLETED" && (
+                              <BookingReviewButton
+                                bookingId={booking.id}
+                                vehicleId={booking.vehicle.id}
+                                vehicleBrand={booking.vehicle.brand}
+                                vehicleModel={booking.vehicle.model}
+                                vehicleImage={booking.vehicle.primaryImage}
+                                existingReview={booking.review}
+                              />
+                            )}
 
                             {(booking.status === "PENDING" || booking.paymentStatus !== "SUCCESS") && (
                               <PayNowButton

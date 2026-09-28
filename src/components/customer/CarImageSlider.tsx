@@ -162,27 +162,6 @@ export default function CarImageSlider({
           >
             <ChevronRight className="h-4 w-4" />
           </button>
-
-          {/* Dots Indicator */}
-          <div className="absolute bottom-3 left-1/2 -translate-x-1/2 z-30 flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-slate-950/50 backdrop-blur-md border border-white/10">
-            {gallery.map((_, idx) => (
-              <button
-                key={idx}
-                type="button"
-                onClick={(e) => {
-                  e.preventDefault();
-                  e.stopPropagation();
-                  setCurrentIndex(idx);
-                }}
-                aria-label={`Go to image ${idx + 1}`}
-                className={`h-1.5 rounded-full transition-all duration-300 ${
-                  idx === currentIndex
-                    ? "w-4 bg-blue-400 shadow-sm shadow-blue-400/50"
-                    : "w-1.5 bg-white/50 hover:bg-white"
-                }`}
-              />
-            ))}
-          </div>
         </>
       )}
     </div>

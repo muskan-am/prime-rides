@@ -122,6 +122,7 @@ export async function PUT(
       brand,
       model,
       variant,
+      vehicleType,
       registrationNumber,
       fuelType,
       transmission,
@@ -242,6 +243,8 @@ export async function PUT(
         model: model.trim(),
 
         variant: variant?.trim() || null,
+
+        vehicleType: vehicleType?.trim() || "SUV",
 
         registrationNumber:
           registrationNumber?.trim() || null,

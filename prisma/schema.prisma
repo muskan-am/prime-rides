@@ -75,6 +75,12 @@ enum PackageType {
   YEARLY
 }
 
+enum ReviewStatus {
+  PENDING
+  APPROVED
+  HIDDEN
+}
+
 
 
 
@@ -191,20 +197,21 @@ model Vehicle {
   brand                String
   model                String
   variant              String?
-  registrationNumber   String? @unique
+  vehicleType          String?                   @default("SUV")
+  registrationNumber   String?                   @unique
   fuelType             String?
   transmission         String?
   seatingCapacity      Int?
-  hasAirConditioning   Boolean @default(true)
+  hasAirConditioning   Boolean                   @default(true)
 
   basePrice            Decimal
-  deposit              Decimal @default(0)
+  deposit              Decimal                   @default(0)
   speedLimit           Int?
   rentalTerms          String?
 
   availabilityStatus   VehicleAvailabilityStatus @default(AVAILABLE)
-  maintenanceStatus    VehicleMaintenanceStatus @default(GOOD)
-  searchPriority       Int      @default(0)
+  maintenanceStatus    VehicleMaintenanceStatus  @default(GOOD)
+  searchPriority       Int                       @default(0)
 
   primaryImage         String?
 
@@ -219,8 +226,11 @@ model Vehicle {
   enquiries            Enquiry[]
   inventory            Inventory[]
 
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
+  createdAt            DateTime                  @default(now())
+  updatedAt            DateTime                  @updatedAt
+
+  @@index([vehicleType])
+  @@index([brand, model])
 }
 
 
@@ -505,13 +515,19 @@ model Review {
 
   rating  Int
   comment String?
+  status  ReviewStatus @default(PENDING)
 
-  user    User    @relation(fields: [userId], references: [id])
-  vehicle Vehicle @relation(fields: [vehicleId], references: [id])
-  booking Booking @relation(fields: [bookingId], references: [id])
+  user    User    @relation(fields: [userId], references: [id], onDelete: Cascade)
+  vehicle Vehicle @relation(fields: [vehicleId], references: [id], onDelete: Cascade)
+  booking Booking @relation(fields: [bookingId], references: [id], onDelete: Cascade)
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
+
+  @@index([vehicleId])
+  @@index([userId])
+  @@index([status])
+  @@index([createdAt])
 }
 
 model Notification {
