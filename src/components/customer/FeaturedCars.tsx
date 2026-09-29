@@ -62,7 +62,7 @@ export default function FeaturedCars({ vehicles = [] }: FeaturedCarsProps) {
         <div className="flex flex-col justify-between gap-6 md:flex-row md:items-end">
           <div className="space-y-2">
             <div className="inline-flex items-center gap-1.5 rounded-full bg-blue-50 border border-blue-200/60 px-3 py-1 text-xs font-extrabold uppercase tracking-widest text-blue-600">
-              <Sparkles className="h-3 w-3 text-blue-600" />
+              {/* <Sparkles className="h-3 w-3 text-blue-600" /> */}
               <span>EXPLORE OUR FLEET</span>
             </div>
             <h2 className="text-3xl sm:text-4xl font-black tracking-tight text-[#0A1128]">

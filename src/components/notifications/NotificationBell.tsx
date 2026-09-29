@@ -22,7 +22,7 @@ interface NotificationItem {
 }
 
 interface NotificationBellProps {
-  variant?: "customer" | "admin" | "admin-dark";
+  variant?: "customer" | "admin" | "admin-dark" | "nova";
   className?: string;
 }
 
@@ -115,6 +115,28 @@ export default function NotificationBell({
     };
   }, [isOpen]);
 
+  const hoverTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+
+  const handleMouseEnter = () => {
+    if (hoverTimeoutRef.current) clearTimeout(hoverTimeoutRef.current);
+    if (!isOpen) {
+      fetchNotifications();
+    }
+    setIsOpen(true);
+  };
+
+  const handleMouseLeave = () => {
+    hoverTimeoutRef.current = setTimeout(() => {
+      setIsOpen(false);
+    }, 220);
+  };
+
+  useEffect(() => {
+    return () => {
+      if (hoverTimeoutRef.current) clearTimeout(hoverTimeoutRef.current);
+    };
+  }, []);
+
   const toggleDropdown = () => {
     if (!isOpen) {
       fetchNotifications();
@@ -174,13 +196,22 @@ export default function NotificationBell({
 
   const badgeText = unreadCount > 99 ? "99+" : unreadCount.toString();
 
+  const isDark = variant === "customer" || variant === "admin-dark" || variant === "nova";
+
   const buttonStyle =
     variant === "admin-dark"
       ? "relative inline-flex h-10 w-10 items-center justify-center rounded-xl border border-slate-700 bg-slate-800/80 text-slate-200 transition-all hover:bg-slate-700 hover:text-white focus:outline-none focus:ring-2 focus:ring-blue-500"
+      : isDark
+      ? "relative inline-flex h-9 w-9 items-center justify-center rounded-full bg-white/10 hover:bg-white/20 border border-white/15 text-white shadow-[0_0_12px_rgba(99,102,241,0.3)] transition-all hover:scale-105 active:scale-95 focus:outline-none"
       : "relative inline-flex h-10 w-10 items-center justify-center rounded-full border border-slate-200 bg-white text-slate-700 shadow-sm transition-all hover:bg-slate-100 hover:text-blue-600 focus:outline-none focus:ring-2 focus:ring-blue-600/20";
 
   return (
-    <div className={`relative inline-block ${className}`} ref={containerRef}>
+    <div
+      className={`relative inline-block group/bell ${className}`}
+      ref={containerRef}
+      onMouseEnter={handleMouseEnter}
+      onMouseLeave={handleMouseLeave}
+    >
       {/* Bell Button */}
       <button
         type="button"
@@ -189,28 +220,34 @@ export default function NotificationBell({
         aria-label="Notifications"
         aria-expanded={isOpen}
       >
-        <Bell className="h-5 w-5" />
+        <Bell className="h-4 w-4 sm:h-4.5 sm:w-4.5" />
 
         {unreadCount > 0 && (
-          <span className="absolute -top-1 -right-1 flex h-5 min-w-[20px] items-center justify-center rounded-full bg-blue-600 px-1 text-[10px] font-black text-white shadow-sm ring-2 ring-white animate-in zoom-in-50 duration-150">
+          <span className="absolute -top-1 -right-1 flex h-4.5 min-w-[18px] items-center justify-center rounded-full bg-indigo-600 px-1 text-[9px] font-black text-white shadow-sm ring-2 ring-[#0a0f24] animate-in zoom-in-50 duration-150">
             {badgeText}
           </span>
         )}
       </button>
 
-      {/* Dropdown Popover */}
-      {isOpen && (
-        <div
-          className="absolute right-0 top-full mt-2 w-80 sm:w-96 rounded-2xl border border-slate-200 bg-white p-3 shadow-2xl ring-1 ring-slate-900/5 z-50 animate-in fade-in-50 slide-in-from-top-2 duration-150"
-          role="region"
-          aria-label="Notification list"
-        >
+      {/* Dropdown Popover (White Theme) */}
+      <div
+        className={`absolute right-0 top-full pt-2.5 w-80 sm:w-96 z-50 transition-all duration-200 ease-out origin-top-right before:absolute before:-top-3 before:left-0 before:right-0 before:h-4 before:content-[''] ${
+          isOpen
+            ? "opacity-100 translate-y-0 scale-100 pointer-events-auto visible"
+            : "opacity-0 -translate-y-2 scale-95 pointer-events-none invisible group-hover/bell:opacity-100 group-hover/bell:translate-y-0 group-hover/bell:scale-100 group-hover/bell:pointer-events-auto group-hover/bell:visible"
+        }`}
+        role="region"
+        aria-label="Notification list"
+        onMouseEnter={handleMouseEnter}
+        onMouseLeave={handleMouseLeave}
+      >
+        <div className="rounded-2xl border border-slate-200/80 bg-white p-3 shadow-2xl ring-1 ring-slate-900/5 text-slate-900">
           {/* Header */}
           <div className="flex items-center justify-between px-2 pb-2.5 pt-1 border-b border-slate-100">
             <div className="flex items-center gap-2">
               <h3 className="text-sm font-extrabold text-slate-900">Notifications</h3>
               {unreadCount > 0 && (
-                <span className="rounded-full bg-blue-100 px-2 py-0.5 text-[10px] font-bold text-blue-700">
+                <span className="rounded-full bg-blue-50 border border-blue-200/60 px-2 py-0.5 text-[10px] font-bold text-blue-700">
                   {unreadCount} new
                 </span>
               )}
@@ -220,7 +257,7 @@ export default function NotificationBell({
               type="button"
               onClick={handleMarkAllRead}
               disabled={unreadCount === 0 || isMarkingAll}
-              className="inline-flex items-center gap-1 text-xs font-bold text-blue-600 hover:text-blue-700 hover:underline disabled:opacity-40 disabled:no-underline transition-all"
+              className="inline-flex items-center gap-1 text-xs font-bold text-blue-600 hover:text-blue-700 hover:underline disabled:opacity-40 disabled:no-underline transition-all cursor-pointer"
             >
               {isMarkingAll ? (
                 <Loader2 className="h-3 w-3 animate-spin" />
@@ -277,8 +314,8 @@ export default function NotificationBell({
                   onClick={() => handleNotificationClick(item)}
                   className={`w-full text-left rounded-xl p-3 transition-all flex items-start gap-3 group border ${
                     !item.isRead
-                      ? "bg-blue-50/70 border-blue-100 hover:bg-blue-50"
-                      : "bg-white border-transparent hover:bg-slate-50"
+                      ? "bg-blue-50/80 border-blue-100 hover:bg-blue-50 text-slate-900"
+                      : "bg-white border-transparent hover:bg-slate-50 text-slate-700"
                   }`}
                 >
                   {/* Type icon */}
@@ -328,8 +365,8 @@ export default function NotificationBell({
               View all notifications
             </Link>
           </div>
+          </div>
         </div>
-      )}
     </div>
   );
 }

@@ -176,28 +176,28 @@ export default async function Home() {
   return (
     <div className="min-h-screen bg-slate-50">
       {/* Top Hero Section with Scenic Car Background & Transparent Navbar */}
-      <div className="relative overflow-hidden bg-black text-white">
+      <div className="relative overflow-hidden bg-black text-white min-h-[560px] sm:min-h-[600px] lg:min-h-[640px]">
         {/* Background Image / Video */}
         <div className="absolute inset-0 z-0">
           <img
             src="/car-hero.png"
             alt="Prime Rides Luxury Car"
-            className="h-full w-full object-cover object-center"
+            className="h-full w-full object-cover object-[70%_center] sm:object-center"
           />
           <video
             autoPlay
             muted
             loop
             playsInline
-            className="absolute inset-0 h-full w-full object-cover object-center -z-10"
+            className="absolute inset-0 h-full w-full object-cover object-[70%_center] sm:object-center -z-10"
             aria-hidden="true"
           >
             <source src="/car.mp4" type="video/mp4" />
           </video>
         </div>
 
-        {/* Subtle Neutral Gradient on Left for High Text Legibility */}
-        <div className="absolute inset-y-0 left-0 w-full sm:w-3/4 lg:w-3/5 bg-gradient-to-r from-black/60 via-black/20 to-transparent z-[1] pointer-events-none" />
+        {/* Adaptive Contrast Gradient */}
+        <div className="absolute inset-0 bg-gradient-to-t from-black/90 via-black/45 to-black/25 sm:bg-gradient-to-r sm:from-black/75 sm:via-black/35 sm:to-transparent z-[1] pointer-events-none" />
 
         {/* Top Promotional Ticker & Transparent Navbar */}
         <div className="relative z-20">
@@ -206,18 +206,18 @@ export default async function Home() {
         </div>
 
         {/* Hero Content Section */}
-        <section className="relative z-10 mx-auto w-full max-w-7xl px-4 pt-4 pb-20 sm:pt-6 sm:pb-24 lg:pb-28 sm:px-6 lg:px-8">
+        <section className="relative z-10 mx-auto w-full max-w-7xl px-4 pt-8 sm:pt-12 lg:pt-16 pb-24 sm:pb-28 lg:pb-32 sm:px-6 lg:px-8">
           <div className="max-w-2xl text-left space-y-3.5 sm:space-y-4">
             {/* Pre-heading Tagline Badge */}
             <div className="inline-flex items-center gap-2 rounded-full border border-white/20 bg-black/40 px-3.5 py-1.5 backdrop-blur-md shadow-sm">
               <span className="h-2 w-2 rounded-full bg-blue-400 animate-pulse" />
-              <span className="text-xs sm:text-sm font-bold tracking-wider text-slate-200 uppercase">
+              <span className="text-[11px] sm:text-xs lg:text-sm font-bold tracking-wider text-slate-200 uppercase">
                 Self-Drive Car Rental
               </span>
             </div>
 
             {/* Main Headline */}
-            <h1 className="text-4xl sm:text-6xl lg:text-7xl font-black tracking-tight text-white leading-[1.05]">
+            <h1 className="text-3xl sm:text-5xl lg:text-7xl font-black tracking-tight text-white leading-[1.1] sm:leading-[1.05]">
               Your Ride.
               <br />
               <span className="text-[#38BDF8]">
@@ -226,47 +226,47 @@ export default async function Home() {
             </h1>
 
             {/* Subtitle */}
-            <p className="text-sm sm:text-base lg:text-lg text-slate-200 font-normal max-w-xl leading-relaxed">
+            <p className="text-xs sm:text-base lg:text-lg text-slate-200 font-normal max-w-xl leading-relaxed">
               Premium self-drive cars for every journey across Delhi NCR, Goa, and Bangalore.
             </p>
 
             {/* Action Buttons */}
-            <div className="flex flex-wrap items-center gap-3.5 pt-2 sm:pt-3">
+            <div className="flex flex-wrap items-center gap-2.5 sm:gap-3.5 pt-1.5 sm:pt-3">
               <a
                 href="#search-section"
-                className="inline-flex items-center gap-2.5 rounded-full bg-blue-600 hover:bg-blue-500 px-6 sm:px-7 py-3.5 text-sm sm:text-base font-bold text-white shadow-xl shadow-blue-600/40 transition-all hover:scale-105 active:scale-95"
+                className="inline-flex items-center gap-2 rounded-full bg-blue-600 hover:bg-blue-500 px-5 sm:px-7 py-3 sm:py-3.5 text-xs sm:text-base font-bold text-white shadow-xl shadow-blue-600/40 transition-all hover:scale-105 active:scale-95"
               >
                 <Car className="h-4 w-4 shrink-0" />
                 <span>Find Your Ride</span>
-                <span className="text-base leading-none">→</span>
+                <span className="text-sm sm:text-base leading-none">→</span>
               </a>
 
               <Link
                 href="/cars"
-                className="inline-flex items-center rounded-full border border-white/30 bg-black/20 hover:bg-black/35 px-6 sm:px-7 py-3.5 text-sm sm:text-base font-semibold text-white backdrop-blur-md transition-all hover:border-white shadow-sm active:scale-95"
+                className="inline-flex items-center rounded-full border border-white/30 bg-black/25 hover:bg-black/40 px-5 sm:px-7 py-3 sm:py-3.5 text-xs sm:text-base font-semibold text-white backdrop-blur-md transition-all hover:border-white shadow-sm active:scale-95"
               >
                 <span>Explore Cars</span>
               </Link>
             </div>
 
-            {/* Feature Badges Row (Exact Reference UI) */}
-            <div className="flex flex-wrap items-center gap-4 sm:gap-6 pt-4 text-xs sm:text-sm font-medium text-white">
-              <div className="flex items-center gap-2">
+            {/* Feature Badges Grid (Responsive 2-cols on mobile, row on tablet/desktop) */}
+            <div className="grid grid-cols-2 sm:flex sm:flex-wrap gap-2.5 sm:gap-5 lg:gap-6 pt-3 sm:pt-4 text-xs sm:text-sm font-medium text-white">
+              <div className="flex items-center gap-1.5 sm:gap-2">
                 <ShieldCheck className="h-4 w-4 text-[#38BDF8] shrink-0" />
                 <span>Verified Cars</span>
               </div>
 
-              <div className="flex items-center gap-2">
+              <div className="flex items-center gap-1.5 sm:gap-2">
                 <Tag className="h-4 w-4 text-[#38BDF8] shrink-0" />
                 <span>Transparent Pricing</span>
               </div>
 
-              <div className="flex items-center gap-2">
+              <div className="flex items-center gap-1.5 sm:gap-2">
                 <MapPin className="h-4 w-4 text-[#38BDF8] shrink-0" />
                 <span>Flexible Pickup</span>
               </div>
 
-              <div className="flex items-center gap-2">
+              <div className="flex items-center gap-1.5 sm:gap-2">
                 <Headphones className="h-4 w-4 text-[#38BDF8] shrink-0" />
                 <span>24/7 Support</span>
               </div>

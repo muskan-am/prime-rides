@@ -291,9 +291,10 @@ export default function ContactSection({
           {/* Section Heading (Rendered only on Homepage/Section variant) */}
           {!isPage && (
             <div className="mx-auto max-w-3xl text-center space-y-2 mb-12">
-              <p className="text-xs font-bold uppercase tracking-[0.2em] text-blue-600">
-                CONTACT US
-              </p>
+             <div className="inline-flex items-center gap-1.5 rounded-full bg-blue-50 border border-blue-200/60 px-3 py-1 text-xs font-extrabold uppercase tracking-widest text-blue-600">
+              {/* <Sparkles className="h-3 w-3 text-blue-600" /> */}
+              CONTACT US
+            </div>
               <h2 className="text-3xl sm:text-4xl font-extrabold tracking-tight text-[#0A1128]">
                 {settings.heading || "Contact & Support"}
               </h2>

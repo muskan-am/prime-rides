@@ -95,9 +95,10 @@ export default function ExploringCities({ cities }: ExploringCitiesProps) {
 
         {/* Section Header matching benchmark screenshot */}
         <div className="text-center max-w-2xl mx-auto space-y-2 mb-12">
-          <p className="text-xs font-bold uppercase tracking-[0.2em] text-blue-600">
+         <div className="inline-flex items-center gap-1.5 rounded-full border border-blue-200/80 bg-blue-50/90 px-3.5 py-1 text-xs font-bold uppercase tracking-[0.16em] text-blue-600 shadow-xs">
+            {/* <Sparkles className="h-3.5 w-3.5 text-blue-600" /> */}
             DISCOVER
-          </p>
+          </div>
           <h2 className="text-3xl sm:text-4xl font-extrabold text-[#0A1128] tracking-tight">
             Cities to Explore in India
           </h2>

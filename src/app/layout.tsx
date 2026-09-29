@@ -12,8 +12,12 @@ export const metadata: Metadata = {
   title: "Prime Rides | Premium Self-Drive Car Rentals",
   description: "Book premium self-drive cars for every journey across Delhi, Goa, and Bangalore. Hit the road with Prime Rides.",
   icons: {
-    icon: [{ url: "/prime-rides-rounded-icon.png", type: "image/png" }],
-    apple: "/prime-rides-rounded-icon.png",
+    icon: [
+      { url: "/favicon.ico", sizes: "32x32" },
+      { url: "/prime-rides-rounded-icon.png", type: "image/png", sizes: "64x64" },
+      { url: "/prime-rides-rounded-icon.svg", type: "image/svg+xml" },
+    ],
+    apple: [{ url: "/apple-touch-icon.png", sizes: "180x180", type: "image/png" }],
   },
 };
 

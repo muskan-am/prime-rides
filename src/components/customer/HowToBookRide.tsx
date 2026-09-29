@@ -38,9 +38,10 @@ export default function HowToBookRide() {
       <div className="mx-auto max-w-7xl">
         {/* Section Header */}
         <div className="text-center max-w-3xl mx-auto space-y-2 mb-16">
-          <p className="text-xs font-bold uppercase tracking-[0.2em] text-blue-600">
+          <div className="inline-flex items-center gap-1.5 rounded-full border border-blue-200/80 bg-blue-50/90 px-3.5 py-1 text-xs font-bold uppercase tracking-[0.16em] text-blue-600 shadow-xs">
+            {/* <Sparkles className="h-3.5 w-3.5 text-blue-600" /> */}
             HOW IT WORKS
-          </p>
+          </div>
           <h2 className="text-3xl sm:text-4xl font-extrabold text-[#0A1128] tracking-tight">
             How to Book a Ride?
           </h2>
