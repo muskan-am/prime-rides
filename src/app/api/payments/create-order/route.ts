@@ -1,8 +1,8 @@
 import { NextResponse } from "next/server";
 import { getServerSession } from "next-auth";
-import Razorpay from "razorpay";
 import { authOptions } from "@/auth";
 import { prisma } from "@/lib/prisma";
+import { getRazorpayConfig, getRazorpayInstance } from "@/lib/razorpay";
 
 type CreateOrderRequest = {
   bookingId?: string;
@@ -11,13 +11,13 @@ type CreateOrderRequest = {
 export async function POST(request: Request) {
   try {
     /* -----------------------------------------
-       Authentication
+       Authentication Check
     ----------------------------------------- */
     const session = await getServerSession(authOptions);
 
     if (!session?.user?.id && !session?.user?.email) {
       return NextResponse.json(
-        { error: "Please login to proceed with payment." },
+        { error: "Please sign in to proceed with payment." },
         { status: 401 }
       );
     }
@@ -25,14 +25,14 @@ export async function POST(request: Request) {
     let dbUser = session.user.id
       ? await prisma.user.findUnique({
           where: { id: session.user.id },
-          select: { id: true },
+          select: { id: true, email: true },
         })
       : null;
 
     if (!dbUser && session.user.email) {
       dbUser = await prisma.user.findUnique({
         where: { email: session.user.email },
-        select: { id: true },
+        select: { id: true, email: true },
       });
     }
 
@@ -44,9 +44,18 @@ export async function POST(request: Request) {
     }
 
     /* -----------------------------------------
-       Parse Request Body
+       Parse and Validate Request Body
     ----------------------------------------- */
-    const body = (await request.json()) as CreateOrderRequest;
+    let body: CreateOrderRequest;
+    try {
+      body = (await request.json()) as CreateOrderRequest;
+    } catch {
+      return NextResponse.json(
+        { error: "Invalid JSON request payload." },
+        { status: 400 }
+      );
+    }
+
     const bookingId = body.bookingId?.trim();
 
     if (!bookingId) {
@@ -57,10 +66,18 @@ export async function POST(request: Request) {
     }
 
     /* -----------------------------------------
-       Fetch Booking
+       Fetch Authoritative Booking from Database
     ----------------------------------------- */
     const booking = await prisma.booking.findUnique({
       where: { id: bookingId },
+      include: {
+        vehicle: {
+          select: {
+            brand: true,
+            model: true,
+          },
+        },
+      },
     });
 
     if (!booking) {
@@ -86,7 +103,7 @@ export async function POST(request: Request) {
 
     if (booking.status === "CANCELLED") {
       return NextResponse.json(
-        { error: "Cannot create payment for a cancelled booking." },
+        { error: "Cannot create payment order for a cancelled booking." },
         { status: 400 }
       );
     }
@@ -113,50 +130,53 @@ export async function POST(request: Request) {
     }
 
     /* -----------------------------------------
-       Calculate Authoritative Amount in Paise
+       Authoritative Amount Calculation in Paise
     ----------------------------------------- */
-    const amountInPaise = Math.round(Number(booking.totalAmount) * 100);
+    const totalAmountInRupees = Number(booking.totalAmount);
+    const amountInPaise = Math.round(totalAmountInRupees * 100);
 
-    if (amountInPaise <= 0) {
+    if (amountInPaise <= 0 || isNaN(amountInPaise)) {
       return NextResponse.json(
-        { error: "Invalid booking amount." },
+        { error: "Invalid booking amount calculated." },
         { status: 400 }
       );
     }
 
     /* -----------------------------------------
-       Create Razorpay Order
+       Validate Gateway Configuration
     ----------------------------------------- */
-    const keyId =
-      process.env.RAZORPAY_KEY_ID ||
-      process.env.NEXT_PUBLIC_RAZORPAY_KEY_ID;
-    const keySecret = process.env.RAZORPAY_KEY_SECRET;
+    const config = getRazorpayConfig();
 
-    if (!keyId || !keySecret) {
-      console.error(
-        "Create Order Error: Razorpay API keys missing in server environment."
-      );
+    if (!config.isConfigured) {
+      console.error("[PAYMENT_ERROR] Missing Razorpay server credentials:", {
+        hasKeyId: config.hasKeyId,
+        hasKeySecret: config.hasKeySecret,
+        environment: process.env.NODE_ENV,
+      });
       return NextResponse.json(
         {
           error:
-            "Razorpay Payment Gateway is not configured. Missing API keys on server.",
+            "Payment Gateway is not configured. Please verify server environment variables (RAZORPAY_KEY_ID & RAZORPAY_KEY_SECRET).",
         },
         { status: 500 }
       );
     }
 
+    /* -----------------------------------------
+       Create Real Razorpay Order
+    ----------------------------------------- */
     let razorpayOrderId = "";
 
     try {
-      const razorpay = new Razorpay({
-        key_id: keyId,
-        key_secret: keySecret,
-      });
+      const razorpay = getRazorpayInstance();
+
+      // Ensure receipt string does not exceed 40 chars
+      const receiptId = booking.id.length > 40 ? booking.id.slice(-40) : booking.id;
 
       const order = await razorpay.orders.create({
         amount: amountInPaise,
         currency: "INR",
-        receipt: booking.id,
+        receipt: receiptId,
         notes: {
           bookingId: booking.id,
           userId: dbUser.id,
@@ -165,38 +185,46 @@ export async function POST(request: Request) {
 
       razorpayOrderId = order.id;
 
-      // Safe diagnostic logging (RAZORPAY_KEY_SECRET is NEVER logged)
-      const maskedKey = `${keyId.slice(0, 8)}...${keyId.slice(-4)}`;
-      const amountInRupees = Number(booking.totalAmount);
       console.log("[PAYMENT_DIAGNOSTIC] Razorpay Order Creation Success:", {
-        flow: "Pay Now / Booking Checkout",
         bookingId: booking.id,
-        amountRupees: `₹${amountInRupees}`,
-        amountPaise: amountInPaise,
+        amountInPaise,
         currency: "INR",
         orderId: razorpayOrderId,
-        keyId: maskedKey,
+        keyIdPrefix: config.maskedKeyId,
       });
     } catch (razorpayErr: any) {
-      const maskedKey = keyId ? `${keyId.slice(0, 8)}...${keyId.slice(-4)}` : "MISSING";
-      console.error("[PAYMENT_DIAGNOSTIC] Razorpay SDK Order Creation Failed:", {
+      const statusCode = razorpayErr?.statusCode || razorpayErr?.status || 500;
+      const errorDescription =
+        razorpayErr?.error?.description ||
+        (razorpayErr instanceof Error ? razorpayErr.message : "Razorpay error");
+
+      console.error("[PAYMENT_DIAGNOSTIC] Razorpay Order Creation Failed:", {
         bookingId: booking.id,
-        amountPaise: amountInPaise,
-        keyId: maskedKey,
-        error: razorpayErr?.error || razorpayErr?.message || razorpayErr,
-        code: razorpayErr?.statusCode || razorpayErr?.code,
-        description: razorpayErr?.error?.description,
-        reason: razorpayErr?.error?.reason,
-        source: razorpayErr?.error?.source,
+        amountInPaise,
+        keyIdPrefix: config.maskedKeyId,
+        statusCode,
+        description: errorDescription,
+        code: razorpayErr?.error?.code,
       });
+
+      if (
+        statusCode === 401 ||
+        errorDescription?.toLowerCase().includes("authentication failed")
+      ) {
+        return NextResponse.json(
+          {
+            error:
+              "Razorpay Order Creation Failed: Authentication failed. Please check that RAZORPAY_KEY_ID and RAZORPAY_KEY_SECRET in Vercel match and have no extraneous spaces or quotes.",
+          },
+          { status: 502 }
+        );
+      }
+
       return NextResponse.json(
         {
-          error: `Razorpay Order Creation Failed: ${
-            razorpayErr?.error?.description ||
-            (razorpayErr instanceof Error ? razorpayErr.message : "Gateway error")
-          }`,
+          error: `Razorpay Order Creation Failed: ${errorDescription}`,
         },
-        { status: 500 }
+        { status: statusCode >= 400 && statusCode < 600 ? statusCode : 502 }
       );
     }
 
@@ -204,7 +232,7 @@ export async function POST(request: Request) {
        Store Order ID in Prisma
     ----------------------------------------- */
     await prisma.booking.update({
-      where: { id: bookingId },
+      where: { id: booking.id },
       data: { razorpayOrderId },
     });
 
@@ -212,20 +240,19 @@ export async function POST(request: Request) {
       orderId: razorpayOrderId,
       amount: amountInPaise,
       currency: "INR",
-      keyId,
+      keyId: config.keyId,
       bookingId: booking.id,
     });
   } catch (error) {
-    console.error("Create Razorpay Order Error:", error);
+    console.error("Create Razorpay Order Unhandled Exception:", error);
     return NextResponse.json(
       {
         error:
           error instanceof Error
             ? error.message
-            : "Failed to create Razorpay order.",
+            : "Internal server error creating payment order.",
       },
       { status: 500 }
     );
   }
 }
-

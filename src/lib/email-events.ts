@@ -10,6 +10,8 @@ import {
   bookingCancelledEmailTemplate,
   bookingCompletedEmailTemplate,
   newEnquiryEmailTemplate,
+  passwordResetEmailTemplate,
+  getAppUrl,
 } from "@/lib/email-templates";
 
 /**
@@ -596,6 +598,54 @@ export async function sendNewEnquiryEmail(
   } catch (error) {
     console.error(
       `[sendNewEnquiryEmail] Error processing new enquiry email for ID ${enquiryId}:`,
+      error
+    );
+  }
+}
+
+/**
+ * Sends Password Reset email to the user with a secure single-use reset link.
+ *
+ * Email failure is handled safely without exposing internal details to clients.
+ */
+export async function sendPasswordResetEmail(
+  userId: string,
+  recipientEmail: string,
+  customerName: string,
+  rawToken: string
+): Promise<void> {
+  try {
+    const appUrl = getAppUrl();
+    const resetUrl = `${appUrl}/reset-password?token=${encodeURIComponent(rawToken)}`;
+
+    const html = passwordResetEmailTemplate({
+      customerName: customerName || "Customer",
+      resetUrl,
+      expiryMinutes: 30,
+    });
+
+    const result = await sendTrackedEmail({
+      userId,
+      recipient: recipientEmail,
+      type: "PASSWORD_RESET",
+      subject: "Reset Your Prime Rides Password",
+      html,
+    });
+
+    if (!result.success) {
+      console.error(
+        `[sendPasswordResetEmail] Failed to send password reset email for user ${userId}:`,
+        result.error
+      );
+      return;
+    }
+
+    console.log(
+      `[sendPasswordResetEmail] Password reset email sent for user ${userId}`
+    );
+  } catch (error) {
+    console.error(
+      `[sendPasswordResetEmail] Error processing password reset email for user ${userId}:`,
       error
     );
   }

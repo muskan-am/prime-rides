@@ -637,3 +637,50 @@ export function newEnquiryEmailTemplate(data: NewEnquiryEmailData): string {
     ctaUrl: `${appUrl}/admin/enquiries`,
   });
 }
+
+// 8. PASSWORD RESET TEMPLATE
+export interface PasswordResetEmailData {
+  customerName: string;
+  resetUrl: string;
+  expiryMinutes?: number;
+}
+
+export function passwordResetEmailTemplate(data: PasswordResetEmailData): string {
+  const expiryMinutes = data.expiryMinutes || 30;
+
+  const instructionsHtml = `
+    <table role="presentation" border="0" cellpadding="0" cellspacing="0" width="100%" style="margin-top: 16px; background-color: #F8FAFC; border: 1px solid #E2E8F0; border-radius: 8px; padding: 18px 20px;">
+      <tr>
+        <td style="font-size: 14px; color: #334155; line-height: 1.6;">
+          We received a request to reset the password for your Prime Rides account. Click the button below to set a new password.
+        </td>
+      </tr>
+      <tr>
+        <td style="padding-top: 14px; font-size: 13px; color: #64748B; line-height: 1.5;">
+          <strong>Note:</strong> This link is valid for <strong>${expiryMinutes} minutes</strong> and can only be used once.
+        </td>
+      </tr>
+    </table>
+  `;
+
+  const securityNoticeHtml = `
+    <table role="presentation" border="0" cellpadding="0" cellspacing="0" width="100%" style="margin-top: 16px; background-color: #FFFBEB; border: 1px solid #FDE68A; border-radius: 8px; padding: 14px 16px;">
+      <tr>
+        <td style="font-size: 12px; color: #92400E; line-height: 1.5;">
+          <strong>Security Notice:</strong> If you did not request a password reset, please ignore this email. Your password will remain unchanged.
+        </td>
+      </tr>
+    </table>
+  `;
+
+  return createEmailLayout({
+    preheader: "Reset your Prime Rides password",
+    eyebrow: "ACCOUNT SECURITY",
+    title: "Reset Your Password",
+    introduction: `Hi ${escapeHtml(data.customerName)},`,
+    contentHtml: instructionsHtml + securityNoticeHtml,
+    ctaLabel: "Reset Password",
+    ctaUrl: data.resetUrl,
+  });
+}
+

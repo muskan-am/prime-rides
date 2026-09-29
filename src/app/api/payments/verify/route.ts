@@ -3,6 +3,7 @@ import { getServerSession } from "next-auth";
 import crypto from "crypto";
 import { authOptions } from "@/auth";
 import { prisma } from "@/lib/prisma";
+import { getRazorpayConfig } from "@/lib/razorpay";
 import { createNotification, notifyAdmins } from "@/lib/notifications";
 import { buildAdminPaymentReceivedContent } from "@/lib/admin-notification-context";
 import {
@@ -124,9 +125,9 @@ export async function POST(request: Request) {
     /* -----------------------------------------
        Signature Verification (HMAC-SHA256)
     ----------------------------------------- */
-    const keySecret = process.env.RAZORPAY_KEY_SECRET;
+    const { keySecret, isConfigured } = getRazorpayConfig();
 
-    if (!keySecret) {
+    if (!isConfigured || !keySecret) {
       console.error(
         "Verify Payment Error: Missing RAZORPAY_KEY_SECRET in server environment."
       );
