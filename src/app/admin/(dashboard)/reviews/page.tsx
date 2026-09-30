@@ -19,14 +19,36 @@ export default async function AdminReviewsPage() {
     averageRating: 0,
   };
 
+  let vehicles: Array<{
+    id: string;
+    brand: string;
+    model: string;
+    variant: string | null;
+    primaryImage: string | null;
+  }> = [];
+
   try {
-    const allReviews = await prisma.review.findMany({
-      select: {
-        id: true,
-        rating: true,
-        status: true,
-      },
-    });
+    const [allReviews, dbVehicles] = await Promise.all([
+      prisma.review.findMany({
+        select: {
+          id: true,
+          rating: true,
+          status: true,
+        },
+      }),
+      prisma.vehicle.findMany({
+        select: {
+          id: true,
+          brand: true,
+          model: true,
+          variant: true,
+          primaryImage: true,
+        },
+        orderBy: [{ brand: "asc" }, { model: "asc" }],
+      }),
+    ]);
+
+    vehicles = dbVehicles;
 
     let pending = 0;
     let approved = 0;
@@ -56,5 +78,5 @@ export default async function AdminReviewsPage() {
     console.error("Failed to load review stats for admin:", error);
   }
 
-  return <AdminReviewsClient initialSummary={summary} />;
+  return <AdminReviewsClient initialSummary={summary} vehicles={vehicles} />;
 }

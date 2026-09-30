@@ -24,6 +24,7 @@ import {
 import Navbar from "@/components/customer/Navbar";
 import Footer from "@/components/customer/Footer";
 import CarImageSlider from "@/components/customer/CarImageSlider";
+import FavoriteButton from "@/components/customer/FavoriteButton";
 import { FilterSettings, DEFAULT_FILTER_SETTINGS } from "@/lib/filterSettings";
 
 export type FormattedVehicle = {
@@ -1118,7 +1119,7 @@ export default function CarsCatalogClient({
                       className="group overflow-hidden rounded-3xl border border-slate-200/90 bg-white shadow-sm transition-all duration-300 hover:-translate-y-1 hover:shadow-xl hover:border-emerald-300 flex flex-col justify-between"
                     >
                       <div>
-                        {/* Clean Vehicle Image Container - NO OVERLAYS */}
+                        {/* Clean Vehicle Image Container */}
                         <div className="relative aspect-[16/10] overflow-hidden bg-slate-900">
                           <CarImageSlider
                             primaryImage={car.image}
@@ -1127,34 +1128,45 @@ export default function CarsCatalogClient({
                             brand={car.brand}
                             model={car.model}
                           />
+
+                          {/* Favorite / Heart Button Floating Top-Right */}
+                          <div className="absolute top-3 right-3 z-20">
+                            <FavoriteButton
+                              vehicleId={car.id}
+                              vehicleName={car.name}
+                              size="sm"
+                            />
+                          </div>
                         </div>
 
                         {/* Vehicle Information Below Image */}
                         <div className="p-5 space-y-3">
-                          {/* Name & Variant */}
-                          <div>
-                            <h3 className="text-base font-extrabold text-slate-900 tracking-tight group-hover:text-blue-600 transition-colors">
-                              {car.name}
-                            </h3>
-                            {car.variant && (
-                              <p className="text-xs font-semibold text-slate-400 mt-0.5">
-                                {car.variant}
-                              </p>
-                            )}
-                          </div>
+                          {/* Name, Variant on Left & Rating on Right */}
+                          <div className="flex items-start justify-between gap-2">
+                            <div className="min-w-0 flex-1">
+                              <h3 className="text-base font-extrabold text-slate-900 tracking-tight group-hover:text-blue-600 transition-colors truncate">
+                                {car.name}
+                              </h3>
+                              {car.variant && (
+                                <p className="text-xs font-semibold text-slate-400 mt-0.5 truncate">
+                                  {car.variant}
+                                </p>
+                              )}
+                            </div>
 
-                          {/* Rating / Reviews (Below Image) */}
-                          <div className="flex items-center gap-2">
-                            {car.reviewCount && car.reviewCount > 0 && car.rating ? (
-                              <div className="inline-flex items-center gap-1 rounded-md bg-amber-50 border border-amber-200/80 px-2 py-0.5 text-xs font-bold text-amber-700">
-                                <Star className="h-3.5 w-3.5 fill-amber-400 text-amber-400" />
-                                <span>{car.rating.toFixed(1)} ({car.reviewCount} {car.reviewCount === 1 ? "review" : "reviews"})</span>
-                              </div>
-                            ) : (
-                              <span className="text-xs font-semibold text-slate-400">
-                                No reviews yet
-                              </span>
-                            )}
+                            {/* Rating / Reviews on Right */}
+                            <div className="shrink-0 text-right">
+                              {car.reviewCount && car.reviewCount > 0 && car.rating ? (
+                                <div className="inline-flex items-center gap-1 rounded-md bg-amber-50 border border-amber-200/80 px-1.5 py-0.5 text-[11px] font-bold text-amber-700">
+                                  <Star className="h-3 w-3 fill-amber-400 text-amber-400" />
+                                  <span>{car.rating.toFixed(1)} ({car.reviewCount})</span>
+                                </div>
+                              ) : (
+                                <span className="text-[10px] font-medium text-slate-400">
+                                  No reviews yet
+                                </span>
+                              )}
+                            </div>
                           </div>
 
                           {/* Location Tag */}

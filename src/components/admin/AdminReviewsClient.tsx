@@ -21,6 +21,7 @@ import {
   ChevronLeft,
   ChevronRight,
   Sparkles,
+  Plus,
 } from "lucide-react";
 
 type ReviewUser = {
@@ -68,11 +69,23 @@ type SummaryStats = {
   averageRating: number;
 };
 
+export type AdminVehicleSelectOption = {
+  id: string;
+  brand: string;
+  model: string;
+  variant: string | null;
+  primaryImage: string | null;
+};
+
 interface AdminReviewsClientProps {
   initialSummary?: SummaryStats;
+  vehicles?: AdminVehicleSelectOption[];
 }
 
-export default function AdminReviewsClient({ initialSummary }: AdminReviewsClientProps) {
+export default function AdminReviewsClient({
+  initialSummary,
+  vehicles = [],
+}: AdminReviewsClientProps) {
   const [reviews, setReviews] = useState<AdminReviewItem[]>([]);
   const [summary, setSummary] = useState<SummaryStats>(
     initialSummary || {
@@ -100,6 +113,19 @@ export default function AdminReviewsClient({ initialSummary }: AdminReviewsClien
     type: "success" | "error";
     text: string;
   } | null>(null);
+
+  // Add Manual Review Modal State
+  const [isAddModalOpen, setIsAddModalOpen] = useState(false);
+  const [addForm, setAddForm] = useState({
+    vehicleId: vehicles[0]?.id || "",
+    rating: 5,
+    reviewerName: "",
+    reviewerEmail: "",
+    comment: "",
+    status: "APPROVED" as "APPROVED" | "PENDING" | "HIDDEN",
+  });
+  const [addLoading, setAddLoading] = useState(false);
+  const [hoverRating, setHoverRating] = useState<number | null>(null);
 
   const fetchReviews = useCallback(async () => {
     setLoading(true);
@@ -202,6 +228,45 @@ export default function AdminReviewsClient({ initialSummary }: AdminReviewsClien
     }
   };
 
+  const handleCreateReview = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!addForm.vehicleId) {
+      showToast("error", "Please select a vehicle.");
+      return;
+    }
+
+    setAddLoading(true);
+    try {
+      const res = await fetch("/api/admin/reviews", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(addForm),
+      });
+
+      const data = await res.json();
+
+      if (res.ok && data.success) {
+        showToast("success", "Review created and published successfully!");
+        setIsAddModalOpen(false);
+        setAddForm({
+          vehicleId: vehicles[0]?.id || "",
+          rating: 5,
+          reviewerName: "",
+          reviewerEmail: "",
+          comment: "",
+          status: "APPROVED",
+        });
+        fetchReviews();
+      } else {
+        throw new Error(data.error || "Failed to create review");
+      }
+    } catch (err: any) {
+      showToast("error", err.message || "Failed to create review");
+    } finally {
+      setAddLoading(false);
+    }
+  };
+
   return (
     <div className="space-y-8 pb-16">
       {/* Header Banner */}
@@ -214,19 +279,30 @@ export default function AdminReviewsClient({ initialSummary }: AdminReviewsClien
             </h1>
           </div>
           <p className="text-slate-500 text-sm mt-1">
-            Review customer feedback, approve ratings for public catalog display, and manage vehicle testimonials.
+            Review customer feedback, approve ratings for public catalog display, and add custom vehicle reviews.
           </p>
         </div>
 
-        <button
-          type="button"
-          onClick={() => fetchReviews()}
-          disabled={loading}
-          className="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl border border-slate-200 bg-white hover:bg-slate-50 text-slate-700 text-sm font-semibold transition-all shadow-xs self-start sm:self-auto cursor-pointer"
-        >
-          <RefreshCw className={`h-4 w-4 text-slate-500 ${loading ? "animate-spin" : ""}`} />
-          <span>Refresh</span>
-        </button>
+        <div className="flex items-center gap-2.5 self-start sm:self-auto flex-wrap">
+          <button
+            type="button"
+            onClick={() => setIsAddModalOpen(true)}
+            className="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl bg-blue-600 hover:bg-blue-700 text-white text-sm font-bold shadow-md shadow-blue-600/20 transition-all hover:scale-105 active:scale-95 cursor-pointer"
+          >
+            <Plus className="h-4 w-4" />
+            <span>+ Add Manual Review</span>
+          </button>
+
+          <button
+            type="button"
+            onClick={() => fetchReviews()}
+            disabled={loading}
+            className="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl border border-slate-200 bg-white hover:bg-slate-50 text-slate-700 text-sm font-semibold transition-all shadow-xs cursor-pointer"
+          >
+            <RefreshCw className={`h-4 w-4 text-slate-500 ${loading ? "animate-spin" : ""}`} />
+            <span>Refresh</span>
+          </button>
+        </div>
       </div>
 
       {/* Toast Notification */}
@@ -819,6 +895,211 @@ export default function AdminReviewsClient({ initialSummary }: AdminReviewsClien
                 {actionLoading ? "Deleting..." : "Yes, Delete"}
               </button>
             </div>
+          </div>
+        </div>
+      )}
+
+      {/* Add Manual / Custom Review Modal */}
+      {isAddModalOpen && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 overflow-y-auto">
+          <div
+            className="fixed inset-0 bg-slate-950/70 backdrop-blur-xs"
+            onClick={() => !addLoading && setIsAddModalOpen(false)}
+          />
+
+          <div className="relative w-full max-w-lg rounded-3xl border border-slate-200 bg-white p-6 sm:p-7 shadow-2xl z-10 space-y-5 my-8">
+            {/* Modal Header */}
+            <div className="flex items-center justify-between border-b border-slate-100 pb-4">
+              <div className="flex items-center gap-2.5">
+                <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-blue-50 text-blue-600">
+                  <Star className="h-5 w-5 fill-blue-600 text-blue-600" />
+                </div>
+                <div>
+                  <h3 className="text-lg font-bold text-slate-900">
+                    Add Review for Vehicle
+                  </h3>
+                  <p className="text-xs text-slate-500">
+                    Add custom customer ratings and testimonials directly to any car.
+                  </p>
+                </div>
+              </div>
+
+              <button
+                type="button"
+                onClick={() => !addLoading && setIsAddModalOpen(false)}
+                className="rounded-xl p-1.5 text-slate-400 hover:bg-slate-100 hover:text-slate-700 cursor-pointer"
+              >
+                <X className="h-5 w-5" />
+              </button>
+            </div>
+
+            {/* Modal Form */}
+            <form onSubmit={handleCreateReview} className="space-y-4">
+              {/* Vehicle Selection */}
+              <div>
+                <label className="block text-xs font-bold text-slate-700 mb-1.5">
+                  Select Vehicle <span className="text-rose-500">*</span>
+                </label>
+                <select
+                  value={addForm.vehicleId}
+                  onChange={(e) =>
+                    setAddForm((prev) => ({ ...prev, vehicleId: e.target.value }))
+                  }
+                  required
+                  className="w-full rounded-xl border border-slate-200 bg-slate-50/50 px-3.5 py-2.5 text-sm font-semibold text-slate-800 focus:border-blue-500 focus:bg-white focus:outline-none"
+                >
+                  <option value="" disabled>
+                    -- Select a vehicle from fleet --
+                  </option>
+                  {vehicles.map((v) => (
+                    <option key={v.id} value={v.id}>
+                      {v.brand} {v.model} {v.variant ? `(${v.variant})` : ""}
+                    </option>
+                  ))}
+                </select>
+              </div>
+
+              {/* Star Rating Selector */}
+              <div>
+                <label className="block text-xs font-bold text-slate-700 mb-1.5">
+                  Rating <span className="text-rose-500">*</span> ({addForm.rating} of 5 Stars)
+                </label>
+                <div className="flex items-center gap-2 p-3 rounded-2xl bg-amber-50/60 border border-amber-200/70">
+                  <div className="flex items-center gap-1">
+                    {[1, 2, 3, 4, 5].map((star) => (
+                      <button
+                        key={star}
+                        type="button"
+                        onClick={() => setAddForm((prev) => ({ ...prev, rating: star }))}
+                        onMouseEnter={() => setHoverRating(star)}
+                        onMouseLeave={() => setHoverRating(null)}
+                        className="p-1 focus:outline-none transition-transform hover:scale-125 cursor-pointer"
+                      >
+                        <Star
+                          className={`h-7 w-7 transition-colors ${
+                            star <= (hoverRating || addForm.rating)
+                              ? "fill-amber-400 text-amber-400 drop-shadow-xs"
+                              : "fill-transparent text-slate-300"
+                          }`}
+                        />
+                      </button>
+                    ))}
+                  </div>
+                  <span className="ml-auto text-xs font-black text-amber-800">
+                    {addForm.rating === 5
+                      ? "★★★★★ Excellent (5.0)"
+                      : addForm.rating === 4
+                      ? "★★★★☆ Very Good (4.0)"
+                      : addForm.rating === 3
+                      ? "★★★☆☆ Good (3.0)"
+                      : addForm.rating === 2
+                      ? "★★☆☆☆ Fair (2.0)"
+                      : "★☆☆☆☆ Poor (1.0)"}
+                  </span>
+                </div>
+              </div>
+
+              {/* Reviewer Name & Email */}
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                <div>
+                  <label className="block text-xs font-bold text-slate-700 mb-1.5">
+                    Reviewer Name <span className="text-rose-500">*</span>
+                  </label>
+                  <input
+                    type="text"
+                    required
+                    placeholder="e.g. Rahul Sharma"
+                    value={addForm.reviewerName}
+                    onChange={(e) =>
+                      setAddForm((prev) => ({ ...prev, reviewerName: e.target.value }))
+                    }
+                    className="w-full rounded-xl border border-slate-200 bg-slate-50/50 px-3.5 py-2.5 text-sm font-semibold text-slate-800 focus:border-blue-500 focus:bg-white focus:outline-none"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-xs font-bold text-slate-700 mb-1.5">
+                    Reviewer Email <span className="text-slate-400 text-[10px]">(Optional)</span>
+                  </label>
+                  <input
+                    type="email"
+                    placeholder="e.g. user@gmail.com"
+                    value={addForm.reviewerEmail}
+                    onChange={(e) =>
+                      setAddForm((prev) => ({ ...prev, reviewerEmail: e.target.value }))
+                    }
+                    className="w-full rounded-xl border border-slate-200 bg-slate-50/50 px-3.5 py-2.5 text-sm font-semibold text-slate-800 focus:border-blue-500 focus:bg-white focus:outline-none"
+                  />
+                </div>
+              </div>
+
+              {/* Review Comment / Feedback */}
+              <div>
+                <label className="block text-xs font-bold text-slate-700 mb-1.5">
+                  Review Comment / Testimonial
+                </label>
+                <textarea
+                  rows={3}
+                  placeholder="e.g. The car was in pristine condition, very clean interior and smooth transmission on the highway!"
+                  value={addForm.comment}
+                  onChange={(e) =>
+                    setAddForm((prev) => ({ ...prev, comment: e.target.value }))
+                  }
+                  className="w-full rounded-xl border border-slate-200 bg-slate-50/50 p-3 text-sm text-slate-800 focus:border-blue-500 focus:bg-white focus:outline-none resize-none"
+                />
+              </div>
+
+              {/* Publication Status */}
+              <div>
+                <label className="block text-xs font-bold text-slate-700 mb-1.5">
+                  Status
+                </label>
+                <select
+                  value={addForm.status}
+                  onChange={(e) =>
+                    setAddForm((prev) => ({
+                      ...prev,
+                      status: e.target.value as "APPROVED" | "PENDING" | "HIDDEN",
+                    }))
+                  }
+                  className="w-full rounded-xl border border-slate-200 bg-slate-50/50 px-3.5 py-2.5 text-sm font-semibold text-slate-800 focus:border-blue-500 focus:bg-white focus:outline-none"
+                >
+                  <option value="APPROVED">APPROVED (Instantly visible & calculates in rating)</option>
+                  <option value="PENDING">PENDING (In moderation queue)</option>
+                  <option value="HIDDEN">HIDDEN (Private/Hidden from catalog)</option>
+                </select>
+              </div>
+
+              {/* Action Buttons */}
+              <div className="flex items-center justify-end gap-3 pt-3 border-t border-slate-100">
+                <button
+                  type="button"
+                  onClick={() => !addLoading && setIsAddModalOpen(false)}
+                  disabled={addLoading}
+                  className="px-4 py-2.5 rounded-xl border border-slate-200 text-slate-600 font-bold text-xs hover:bg-slate-50 cursor-pointer"
+                >
+                  Cancel
+                </button>
+
+                <button
+                  type="submit"
+                  disabled={addLoading}
+                  className="inline-flex items-center gap-2 px-6 py-2.5 rounded-xl bg-blue-600 hover:bg-blue-700 text-white font-bold text-xs shadow-md shadow-blue-600/20 transition-all hover:scale-105 active:scale-95 cursor-pointer"
+                >
+                  {addLoading ? (
+                    <>
+                      <RefreshCw className="h-4 w-4 animate-spin" />
+                      <span>Publishing...</span>
+                    </>
+                  ) : (
+                    <>
+                      <CheckCircle2 className="h-4 w-4" />
+                      <span>Publish Review</span>
+                    </>
+                  )}
+                </button>
+              </div>
+            </form>
           </div>
         </div>
       )}

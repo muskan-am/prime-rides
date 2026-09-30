@@ -13,6 +13,7 @@ import HowToBookRide from "@/components/customer/HowToBookRide";
 import FAQSection from "@/components/customer/FAQSection";
 import ContactSection from "@/components/customer/ContactSection";
 import ExploringCities, { ExploringCityItem } from "@/components/customer/ExploringCities";
+import CustomerReviewsSection from "@/components/customer/CustomerReviewsSection";
 import { prisma } from "@/lib/prisma";
 import {
   calculateApprovedReviews,
@@ -44,10 +45,26 @@ export default async function Home() {
   }[] = [];
   let exploringCities: ExploringCityItem[] = [];
 
+  let customerReviews: Array<{
+    id: string;
+    rating: number;
+    comment: string | null;
+    user?: { name: string | null; image?: string | null } | null;
+    vehicle?: { brand: string; model: string } | null;
+  }> = [];
+
   let isTickerEnabled = true;
 
   try {
-    const [dbVehicles, dbLocations, dbCoupons, dbStats, dbTickerSetting, dbExploringCities] = await Promise.all([
+    const [
+      dbVehicles,
+      dbLocations,
+      dbCoupons,
+      dbStats,
+      dbTickerSetting,
+      dbExploringCities,
+      dbReviews,
+    ] = await Promise.all([
       prisma.vehicle.findMany({
         where: {
           availabilityStatus: "AVAILABLE",
@@ -91,7 +108,18 @@ export default async function Home() {
         where: { isActive: true },
         orderBy: [{ sortOrder: "asc" }, { createdAt: "asc" }],
       }),
+      prisma.review.findMany({
+        where: { status: "APPROVED" },
+        include: {
+          user: { select: { name: true, image: true } },
+          vehicle: { select: { brand: true, model: true } },
+        },
+        orderBy: { createdAt: "desc" },
+        take: 12,
+      }),
     ]);
+
+    customerReviews = dbReviews;
 
     isTickerEnabled = dbTickerSetting ? dbTickerSetting.value === "true" : true;
 
@@ -138,7 +166,12 @@ export default async function Home() {
         v.images[0]?.url ||
         "https://images.unsplash.com/photo-1606664515524-ed2f786a0bd6?auto=format&fit=crop&w=900&q=80";
 
-      const allImages = v.images && v.images.length > 0 ? v.images.map((img) => img.url) : [primaryImg];
+      const allImages = Array.from(
+        new Set([
+          primaryImg,
+          ...(v.images?.map((img) => img.url) || [])
+        ].filter(Boolean))
+      );
 
       const { averageRating, reviewCount } = calculateApprovedReviews(v.reviews);
 
@@ -300,6 +333,8 @@ export default async function Home() {
         {/* Exclusive Offers */}
         <OffersSection coupons={coupons} />
 
+        {/* Customer Reviews & Testimonials Section */}
+        <CustomerReviewsSection reviews={customerReviews} />
 
         {/* Contact & Enquiry */}
         <ContactSection />

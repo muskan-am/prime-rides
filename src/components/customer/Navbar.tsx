@@ -2,11 +2,12 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { Car, User, Calendar, ChevronDown, LogOut, Shield, Settings } from "lucide-react";
+import { Car, User, Calendar, ChevronDown, LogOut, Shield, Settings, Heart } from "lucide-react";
 import { useState, useRef, useEffect } from "react";
 import { useSession, signOut } from "next-auth/react";
 import NotificationBell from "@/components/notifications/NotificationBell";
 import BrandLogo from "@/components/common/BrandLogo";
+import { useFavorites } from "@/context/FavoritesContext";
 
 const packageSubmenu = [
   { label: "Weekly Packages", href: "/packages/weekly", description: "Best for 7-day trips & getaways" },
@@ -20,6 +21,7 @@ interface NavbarProps {
 
 export default function Navbar({ transparent = false }: NavbarProps) {
   const { data: session, status } = useSession();
+  const { favoritesCount } = useFavorites();
   const pathname = usePathname();
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [isPackagesOpen, setIsPackagesOpen] = useState(false);
@@ -299,6 +301,22 @@ export default function Navbar({ transparent = false }: NavbarProps) {
                       </Link>
 
                       <Link
+                        href="/favorites"
+                        onClick={() => setIsUserMenuOpen(false)}
+                        className="flex items-center justify-between rounded-xl px-3 py-2 text-xs font-semibold text-slate-700 hover:bg-slate-100/80 hover:text-rose-600 transition-colors"
+                      >
+                        <div className="flex items-center gap-2">
+                          <Heart className="h-4 w-4 text-rose-500 shrink-0" />
+                          <span>Favorites</span>
+                        </div>
+                        {favoritesCount > 0 && (
+                          <span className="rounded-full bg-rose-50 px-1.5 py-0.5 text-[10px] font-bold text-rose-600 border border-rose-200/60">
+                            {favoritesCount}
+                          </span>
+                        )}
+                      </Link>
+
+                      <Link
                         href="/notification-preferences"
                         onClick={() => setIsUserMenuOpen(false)}
                         className="flex items-center gap-2 rounded-xl px-3 py-2 text-xs font-semibold text-slate-700 hover:bg-slate-100/80 hover:text-blue-600 transition-colors"
@@ -416,6 +434,22 @@ export default function Navbar({ transparent = false }: NavbarProps) {
                       >
                         <Calendar className="h-4 w-4 text-blue-600 shrink-0" />
                         <span>My Bookings</span>
+                      </Link>
+
+                      <Link
+                        href="/favorites"
+                        onClick={() => setIsUserMenuOpen(false)}
+                        className="flex items-center justify-between rounded-xl px-3 py-2 text-xs font-semibold text-slate-700 hover:bg-slate-100/80 hover:text-rose-600 transition-colors"
+                      >
+                        <div className="flex items-center gap-2">
+                          <Heart className="h-4 w-4 text-rose-500 shrink-0" />
+                          <span>Favorites</span>
+                        </div>
+                        {favoritesCount > 0 && (
+                          <span className="rounded-full bg-rose-50 px-1.5 py-0.5 text-[10px] font-bold text-rose-600 border border-rose-200/60">
+                            {favoritesCount}
+                          </span>
+                        )}
                       </Link>
 
                       <Link
@@ -602,6 +636,22 @@ export default function Navbar({ transparent = false }: NavbarProps) {
                         >
                           <Calendar className="h-4 w-4 text-indigo-400" />
                           <span>My Bookings</span>
+                        </Link>
+
+                        <Link
+                          href="/favorites"
+                          onClick={() => setIsMenuOpen(false)}
+                          className="flex h-11 items-center justify-between px-4 rounded-xl border border-white/15 bg-white/5 text-xs font-semibold text-white hover:bg-white/15 transition-colors"
+                        >
+                          <div className="flex items-center gap-2">
+                            <Heart className="h-4 w-4 text-rose-400" />
+                            <span>Favorites</span>
+                          </div>
+                          {favoritesCount > 0 && (
+                            <span className="rounded-full bg-rose-500/30 px-2 py-0.5 text-[10px] font-bold text-rose-300 border border-rose-400/40">
+                              {favoritesCount}
+                            </span>
+                          )}
                         </Link>
 
                         {isAdmin && (

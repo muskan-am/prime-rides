@@ -109,6 +109,7 @@ model User {
   enquiryFollowUps EnquiryFollowUp[]
   auditLogs        AuditLog[]
   emailLogs        EmailLog[]
+  favorites        Favorite[]
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
@@ -230,6 +231,7 @@ model Vehicle {
   reviews              Review[]
   enquiries            Enquiry[]
   inventory            Inventory[]
+  favorites            Favorite[]
 
   createdAt            DateTime                  @default(now())
   updatedAt            DateTime                  @updatedAt
@@ -738,5 +740,21 @@ model EmailLog {
   @@index([bookingId])
   @@index([type])
   @@index([status])
+  @@index([createdAt])
+}
+
+model Favorite {
+  id        String   @id @default(cuid())
+  userId    String
+  vehicleId String
+
+  user    User    @relation(fields: [userId], references: [id], onDelete: Cascade)
+  vehicle Vehicle @relation(fields: [vehicleId], references: [id], onDelete: Cascade)
+
+  createdAt DateTime @default(now())
+
+  @@unique([userId, vehicleId])
+  @@index([userId])
+  @@index([vehicleId])
   @@index([createdAt])
 }

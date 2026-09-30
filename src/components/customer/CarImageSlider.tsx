@@ -1,74 +1,7 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { ChevronLeft, ChevronRight } from "lucide-react";
-
-const CAR_FALLBACK_GALLERIES: Record<string, string[]> = {
-  creta: [
-    "https://images.unsplash.com/photo-1606664515524-ed2f786a0bd6?auto=format&fit=crop&w=900&q=80",
-    "https://images.unsplash.com/photo-1549399542-7e3f8b79c341?auto=format&fit=crop&w=900&q=80",
-    "https://images.unsplash.com/photo-1503376780353-7e6692767b70?auto=format&fit=crop&w=900&q=80",
-  ],
-  bmw: [
-    "https://images.unsplash.com/photo-1555215695-3004980ad54e?auto=format&fit=crop&w=900&q=80",
-    "https://images.unsplash.com/photo-1580273916550-e323be2ae537?auto=format&fit=crop&w=900&q=80",
-    "https://images.unsplash.com/photo-1523983388277-336a66bf9bcd?auto=format&fit=crop&w=900&q=80",
-  ],
-  fortuner: [
-    "https://images.unsplash.com/photo-1533473359331-0135ef1b58bf?auto=format&fit=crop&w=900&q=80",
-    "https://images.unsplash.com/photo-1541899481282-d53bffe3c35d?auto=format&fit=crop&w=900&q=80",
-    "https://images.unsplash.com/photo-1502877338535-766e1452684a?auto=format&fit=crop&w=900&q=80",
-  ],
-  thar: [
-    "https://images.unsplash.com/photo-1519641471654-76ce0107ad1b?auto=format&fit=crop&w=900&q=80",
-    "https://images.unsplash.com/photo-1533473359331-0135ef1b58bf?auto=format&fit=crop&w=900&q=80",
-    "https://images.unsplash.com/photo-1502877338535-766e1452684a?auto=format&fit=crop&w=900&q=80",
-  ],
-  default: [
-    "https://images.unsplash.com/photo-1606664515524-ed2f786a0bd6?auto=format&fit=crop&w=900&q=80",
-    "https://images.unsplash.com/photo-1549399542-7e3f8b79c341?auto=format&fit=crop&w=900&q=80",
-    "https://images.unsplash.com/photo-1503376780353-7e6692767b70?auto=format&fit=crop&w=900&q=80",
-  ],
-};
-
-function getEnhancedGallery(
-  primaryImage: string,
-  images?: string[],
-  brand?: string,
-  model?: string
-): string[] {
-  let list: string[] = [];
-
-  if (images && images.length > 0) {
-    list = images.filter(Boolean);
-  } else if (primaryImage) {
-    list = [primaryImage];
-  }
-
-  // If list has only 1 image, add complementary high-quality photos for auto slideshow
-  if (list.length <= 1) {
-    const searchKey = `${brand || ""} ${model || ""}`.toLowerCase();
-    let fallbacks = CAR_FALLBACK_GALLERIES.default;
-
-    if (searchKey.includes("creta") || searchKey.includes("hyundai")) {
-      fallbacks = CAR_FALLBACK_GALLERIES.creta;
-    } else if (searchKey.includes("bmw") || searchKey.includes("3 series")) {
-      fallbacks = CAR_FALLBACK_GALLERIES.bmw;
-    } else if (searchKey.includes("fortuner") || searchKey.includes("toyota")) {
-      fallbacks = CAR_FALLBACK_GALLERIES.fortuner;
-    } else if (searchKey.includes("thar") || searchKey.includes("mahindra")) {
-      fallbacks = CAR_FALLBACK_GALLERIES.thar;
-    }
-
-    const combined = [
-      ...list,
-      ...fallbacks.filter((item) => !list.includes(item)),
-    ];
-    list = combined;
-  }
-
-  return list;
-}
 
 type CarImageSliderProps = {
   primaryImage: string;
@@ -76,7 +9,9 @@ type CarImageSliderProps = {
   alt: string;
   brand?: string;
   model?: string;
-  autoPlayInterval?: number;
+  autoPlay?: boolean;
+  interval?: number;
+  pauseOnHover?: boolean;
 };
 
 export default function CarImageSlider({
@@ -85,30 +20,36 @@ export default function CarImageSlider({
   alt,
   brand,
   model,
-  autoPlayInterval = 3000,
+  autoPlay = true,
+  interval = 3200,
+  pauseOnHover = true,
 }: CarImageSliderProps) {
   const [currentIndex, setCurrentIndex] = useState(0);
   const [isHovered, setIsHovered] = useState(false);
+  const touchStartX = useRef<number | null>(null);
 
-  const gallery = getEnhancedGallery(primaryImage, images, brand, model);
+  // Deduplicate and filter gallery images
+  const rawList = [
+    primaryImage,
+    ...(images && Array.isArray(images) ? images : []),
+  ].filter((img): img is string => typeof img === "string" && img.trim().length > 0);
 
+  const gallery = Array.from(new Set(rawList));
+  if (gallery.length === 0) {
+    gallery.push("/car-hero.png");
+  }
+
+  // Automatic continuous image scrolling / slideshow
   useEffect(() => {
-    if (gallery.length <= 1 || isHovered) return;
+    if (gallery.length <= 1 || !autoPlay) return;
+    if (pauseOnHover && isHovered) return;
 
     const timer = setInterval(() => {
-      setCurrentIndex((prevIndex) => (prevIndex + 1) % gallery.length);
-    }, autoPlayInterval);
+      setCurrentIndex((prev) => (prev + 1) % gallery.length);
+    }, interval);
 
     return () => clearInterval(timer);
-  }, [gallery.length, isHovered, autoPlayInterval]);
-
-  if (gallery.length === 0) {
-    return (
-      <div className="h-full w-full bg-slate-900 flex items-center justify-center text-slate-400 text-xs">
-        No Image Available
-      </div>
-    );
-  }
+  }, [gallery.length, autoPlay, pauseOnHover, isHovered, interval]);
 
   const handlePrev = (e: React.MouseEvent) => {
     e.preventDefault();
@@ -122,34 +63,64 @@ export default function CarImageSlider({
     setCurrentIndex((prev) => (prev + 1) % gallery.length);
   };
 
+  const handleTouchStart = (e: React.TouchEvent) => {
+    touchStartX.current = e.touches[0].clientX;
+  };
+
+  const handleTouchEnd = (e: React.TouchEvent) => {
+    if (touchStartX.current === null) return;
+    const diff = touchStartX.current - e.changedTouches[0].clientX;
+    if (Math.abs(diff) > 40) {
+      if (diff > 0) {
+        // swipe left -> next
+        setCurrentIndex((prev) => (prev + 1) % gallery.length);
+      } else {
+        // swipe right -> prev
+        setCurrentIndex((prev) => (prev - 1 + gallery.length) % gallery.length);
+      }
+    }
+    touchStartX.current = null;
+  };
+
+  if (gallery.length === 0) {
+    return (
+      <div className="h-full w-full bg-slate-900 flex items-center justify-center text-slate-400 text-xs">
+        No Image Available
+      </div>
+    );
+  }
+
   return (
     <div
-      className="relative h-full w-full overflow-hidden group/slider"
+      className="relative h-full w-full overflow-hidden group/slider bg-slate-900 select-none"
       onMouseEnter={() => setIsHovered(true)}
       onMouseLeave={() => setIsHovered(false)}
+      onTouchStart={handleTouchStart}
+      onTouchEnd={handleTouchEnd}
     >
-      {/* Auto-Rotating Image Track with Smooth Fade Transition */}
+      {/* Smooth Image Crossfade Display */}
       {gallery.map((imgSrc, idx) => (
         <img
           key={`${imgSrc}-${idx}`}
           src={imgSrc}
-          alt={`${alt} - view ${idx + 1}`}
-          className={`absolute inset-0 h-full w-full object-cover transition-all duration-700 ease-in-out group-hover:scale-105 ${
+          alt={`${alt || brand || model || "Car"} - photo ${idx + 1}`}
+          loading={idx === 0 ? "eager" : "lazy"}
+          className={`absolute inset-0 h-full w-full object-cover transition-all duration-700 ease-in-out ${
             idx === currentIndex
               ? "opacity-100 z-10 scale-100"
-              : "opacity-0 z-0 scale-95 pointer-events-none"
+              : "opacity-0 z-0 scale-105 pointer-events-none"
           }`}
         />
       ))}
 
-      {/* Navigation Arrows on Hover */}
+      {/* Navigation Arrows on Card Hover */}
       {gallery.length > 1 && (
-        <>
+        <div className="opacity-0 group-hover/slider:opacity-100 transition-opacity duration-200">
           <button
             type="button"
             onClick={handlePrev}
-            aria-label="Previous Car Image"
-            className="absolute left-2.5 top-1/2 -translate-y-1/2 z-30 flex h-8 w-8 items-center justify-center rounded-full bg-slate-950/60 text-white backdrop-blur-md opacity-0 transition-all duration-200 group-hover/slider:opacity-100 hover:bg-blue-600 focus:outline-none shadow-lg"
+            aria-label="Previous image"
+            className="absolute left-2.5 top-1/2 -translate-y-1/2 z-30 flex h-7 w-7 items-center justify-center rounded-full bg-black/60 text-white backdrop-blur-md transition-all hover:bg-blue-600 hover:scale-110 active:scale-95 focus:outline-none shadow-md cursor-pointer"
           >
             <ChevronLeft className="h-4 w-4" />
           </button>
@@ -157,12 +128,12 @@ export default function CarImageSlider({
           <button
             type="button"
             onClick={handleNext}
-            aria-label="Next Car Image"
-            className="absolute right-2.5 top-1/2 -translate-y-1/2 z-30 flex h-8 w-8 items-center justify-center rounded-full bg-slate-950/60 text-white backdrop-blur-md opacity-0 transition-all duration-200 group-hover/slider:opacity-100 hover:bg-blue-600 focus:outline-none shadow-lg"
+            aria-label="Next image"
+            className="absolute right-2.5 top-1/2 -translate-y-1/2 z-30 flex h-7 w-7 items-center justify-center rounded-full bg-black/60 text-white backdrop-blur-md transition-all hover:bg-blue-600 hover:scale-110 active:scale-95 focus:outline-none shadow-md cursor-pointer"
           >
             <ChevronRight className="h-4 w-4" />
           </button>
-        </>
+        </div>
       )}
     </div>
   );
