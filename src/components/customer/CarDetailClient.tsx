@@ -98,10 +98,14 @@ type CarDetailClientProps = {
   isLoggedIn: boolean;
   searchParamsState?: {
     location?: string;
+    returnLocation?: string;
     startDate?: string;
+    startTime?: string;
     endDate?: string;
+    endTime?: string;
     rentalPackageId?: string;
     monthlyPlanId?: string;
+    packageId?: string;
   };
 };
 
@@ -135,7 +139,7 @@ export default function CarDetailClient({
   };
 
   const [selectedPackageId, setSelectedPackageId] = useState<string | null>(
-    searchParamsState.rentalPackageId || null
+    searchParamsState.rentalPackageId || searchParamsState.packageId || null
   );
   const [selectedPlanId, setSelectedPlanId] = useState<string | null>(
     searchParamsState.monthlyPlanId || null
@@ -203,16 +207,27 @@ export default function CarDetailClient({
     activePriceLabel = ` / month`;
   }
 
-  // Construct URL for Booking, preserving searchParams
+  // Construct URL for Booking, preserving searchParams and exact DateTime
   const bookingParams = new URLSearchParams();
-  if (searchParamsState.startDate) {
-    bookingParams.set("startDate", searchParamsState.startDate);
-  }
-  if (searchParamsState.endDate) {
-    bookingParams.set("endDate", searchParamsState.endDate);
-  }
   if (searchParamsState.location) {
     bookingParams.set("location", searchParamsState.location);
+  }
+  if (searchParamsState.returnLocation) {
+    bookingParams.set("returnLocation", searchParamsState.returnLocation);
+  }
+  if (searchParamsState.startDate) {
+    const startVal = searchParamsState.startTime && !searchParamsState.startDate.includes("T")
+      ? `${searchParamsState.startDate}T${searchParamsState.startTime}`
+      : searchParamsState.startDate;
+    bookingParams.set("startDate", startVal);
+    if (searchParamsState.startTime) bookingParams.set("startTime", searchParamsState.startTime);
+  }
+  if (searchParamsState.endDate) {
+    const endVal = searchParamsState.endTime && !searchParamsState.endDate.includes("T")
+      ? `${searchParamsState.endDate}T${searchParamsState.endTime}`
+      : searchParamsState.endDate;
+    bookingParams.set("endDate", endVal);
+    if (searchParamsState.endTime) bookingParams.set("endTime", searchParamsState.endTime);
   }
   if (selectedPackageId) {
     bookingParams.set("rentalPackageId", selectedPackageId);
@@ -503,7 +518,7 @@ export default function CarDetailClient({
                 {vehicle.isAvailable ? (
                   <Link
                     href={bookingHref}
-                    className="flex h-12 sm:h-14 w-full items-center justify-center gap-2.5 rounded-2xl bg-gradient-to-r from-slate-950 via-blue-900 to-blue-600 text-xs sm:text-base font-extrabold text-white shadow-xl transition-all hover:scale-[1.01] hover:shadow-blue-500/25 active:scale-[0.99]"
+                    className="flex h-12 sm:h-14 w-full items-center justify-center gap-2.5 rounded-2xl bg-gradient-to-r from-slate-950 via-blue-900 to-blue-600 text-xs sm:text-base font-extrabold text-white shadow-xl transition-all hover:scale-[1.01] hover:shadow-2xl active:scale-[0.99]"
                   >
                     <span>Book This Car Now</span>
                     <ArrowRight className="h-4 sm:h-5 w-4 sm:w-5" />

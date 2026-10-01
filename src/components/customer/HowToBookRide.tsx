@@ -104,7 +104,7 @@ export default function HowToBookRide() {
         <div className="mt-14 text-center">
           <Link
             href="/cars"
-            className="inline-flex h-13 items-center gap-2.5 rounded-2xl bg-blue-600 px-8 text-sm font-extrabold text-white shadow-lg shadow-blue-600/30 transition-all hover:bg-blue-500 hover:shadow-blue-500/50 hover:scale-[1.02]"
+            className="inline-flex h-13 items-center gap-2.5 rounded-2xl bg-blue-600 px-8 text-sm font-extrabold text-white shadow-md shadow-black/15 transition-all hover:bg-blue-500 hover:shadow-lg hover:scale-[1.02]"
           >
             <span>Start Booking</span>
             <ArrowRight className="h-4 w-4" />

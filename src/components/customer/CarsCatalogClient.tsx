@@ -10,22 +10,25 @@ import {
   MapPin,
   Filter,
   ArrowRight,
-  CalendarDays,
   ChevronDown,
   ChevronUp,
   RotateCcw,
   SlidersHorizontal,
   Star,
   Info,
-  Truck,
   X,
   Car as CarIcon,
+  Sparkles,
+  CalendarDays,
+  ShieldCheck,
 } from "lucide-react";
 import Navbar from "@/components/customer/Navbar";
 import Footer from "@/components/customer/Footer";
 import CarImageSlider from "@/components/customer/CarImageSlider";
 import FavoriteButton from "@/components/customer/FavoriteButton";
+import SearchSummary from "@/components/customer/SearchSummary";
 import { FilterSettings, DEFAULT_FILTER_SETTINGS } from "@/lib/filterSettings";
+import { ParsedSearchContext } from "@/lib/datetime";
 
 export type FormattedVehicle = {
   id: string;
@@ -51,6 +54,7 @@ export type FormattedVehicle = {
   searchPriority: number;
   rating?: number | null;
   reviewCount?: number;
+  modelYear?: number;
 };
 
 export type FormattedLocation = {
@@ -82,6 +86,7 @@ type CarsCatalogClientProps = {
   isDateFilterActive?: boolean;
   startDateText?: string;
   endDateText?: string;
+  searchContext?: ParsedSearchContext;
   filterSettings?: FilterSettings;
 };
 
@@ -104,6 +109,7 @@ export default function CarsCatalogClient({
   isDateFilterActive = false,
   startDateText,
   endDateText,
+  searchContext,
   filterSettings = DEFAULT_FILTER_SETTINGS,
 }: CarsCatalogClientProps) {
   // Collapsible Accordion States for the 7 Customer Filters
@@ -154,7 +160,6 @@ export default function CarsCatalogClient({
     ) || VALID_CAR_TYPES;
 
     const combined = Array.from(new Set([...configured, ...Array.from(presentTypes)]));
-    // Prioritize categories that are either active or in configured options
     return combined.length > 0 ? combined : VALID_CAR_TYPES;
   }, [initialVehicles, filterSettings.carType?.options]);
 
@@ -224,12 +229,30 @@ export default function CarsCatalogClient({
     const url = new URL(window.location.href);
     const params = url.searchParams;
 
-    // Location
-    if (selectedLocation && selectedLocation !== "All" && selectedLocation !== "All City Hubs") {
+    // Preserve exact search parameters from searchContext if active
+    if (searchContext?.location) {
+      params.set("location", searchContext.location);
+    } else if (selectedLocation && selectedLocation !== "All" && selectedLocation !== "All City Hubs") {
       params.set("location", selectedLocation);
     } else {
       params.delete("location");
       params.delete("locationId");
+    }
+
+    if (searchContext?.returnLocation) {
+      params.set("returnLocation", searchContext.returnLocation);
+    }
+    if (searchContext?.startDate) {
+      params.set("startDate", searchContext.startDate);
+    }
+    if (searchContext?.startTime) {
+      params.set("startTime", searchContext.startTime);
+    }
+    if (searchContext?.endDate) {
+      params.set("endDate", searchContext.endDate);
+    }
+    if (searchContext?.endTime) {
+      params.set("endTime", searchContext.endTime);
     }
 
     // Car Type / Vehicle Type
@@ -312,6 +335,7 @@ export default function CarsCatalogClient({
     selectedMinRating,
     sortOption,
     searchQuery,
+    searchContext,
   ]);
 
   // Toggle helper for multi-select arrays
@@ -338,8 +362,12 @@ export default function CarsCatalogClient({
     if (typeof window !== "undefined") {
       const url = new URL(window.location.href);
       const keepParams = new URLSearchParams();
-      if (url.searchParams.get("startDate")) keepParams.set("startDate", url.searchParams.get("startDate")!);
-      if (url.searchParams.get("endDate")) keepParams.set("endDate", url.searchParams.get("endDate")!);
+      if (searchContext?.location) keepParams.set("location", searchContext.location);
+      if (searchContext?.returnLocation) keepParams.set("returnLocation", searchContext.returnLocation);
+      if (searchContext?.startDate) keepParams.set("startDate", searchContext.startDate);
+      if (searchContext?.startTime) keepParams.set("startTime", searchContext.startTime);
+      if (searchContext?.endDate) keepParams.set("endDate", searchContext.endDate);
+      if (searchContext?.endTime) keepParams.set("endTime", searchContext.endTime);
       const newQuery = keepParams.toString();
       const newPath = newQuery ? `${url.pathname}?${newQuery}` : url.pathname;
       window.history.replaceState({ ...window.history.state, as: newPath, url: newPath }, "", newPath);
@@ -371,6 +399,21 @@ export default function CarsCatalogClient({
     selectedMinRating,
     searchQuery,
   ]);
+
+  // Helper to build URL for vehicle detail page with search context preserved
+  const getVehicleDetailHref = (vehicleId: string) => {
+    const detailParams = new URLSearchParams();
+    if (searchContext?.hasSearchContext) {
+      if (searchContext.location) detailParams.set("location", searchContext.location);
+      if (searchContext.returnLocation) detailParams.set("returnLocation", searchContext.returnLocation);
+      if (searchContext.startDate) detailParams.set("startDate", searchContext.startDate);
+      if (searchContext.startTime) detailParams.set("startTime", searchContext.startTime);
+      if (searchContext.endDate) detailParams.set("endDate", searchContext.endDate);
+      if (searchContext.endTime) detailParams.set("endTime", searchContext.endTime);
+    }
+    const qs = detailParams.toString();
+    return `/cars/${vehicleId}${qs ? `?${qs}` : ""}`;
+  };
 
   // Filtered and Sorted Cars using strict AND logic between categories and OR inside categories
   const filteredCars = useMemo(() => {
@@ -817,47 +860,58 @@ export default function CarsCatalogClient({
       <Navbar />
 
       <main className="pb-24">
-        {/* Banner Header */}
-        <section className="bg-slate-950 px-4 py-12 sm:py-16 text-white sm:px-6 lg:px-8 shadow-inner">
-          <div className="mx-auto max-w-7xl">
+        {/* Banner Header - Modern White / Light Luxury Theme */}
+        <section className="relative overflow-hidden bg-gradient-to-b from-white via-slate-50 to-slate-100/75 border-b border-slate-200/80 px-4 pt-7 pb-12 sm:pt-9 sm:pb-16 sm:px-6 lg:px-8">
+          <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(#e2e8f0_1px,transparent_1px)] [background-size:24px_24px] opacity-40" />
+
+          <div className="relative mx-auto max-w-7xl">
             <div className="flex flex-col justify-between gap-6 md:flex-row md:items-end">
               <div>
-                <div className="inline-flex items-center gap-2 rounded-full border border-blue-500/30 bg-blue-950/60 px-3 py-1 text-xs font-bold text-blue-300 mb-3">
-                  <span className="h-2 w-2 rounded-full bg-emerald-400 animate-pulse" />
+                <div className="inline-flex items-center gap-2 rounded-full border border-blue-200 bg-blue-50/90 px-3 py-1 text-xs font-bold text-blue-700 mb-2.5 shadow-2xs">
+                  <span className="h-2 w-2 rounded-full bg-emerald-500 animate-pulse" />
                   Self-Drive Vehicle Fleet
                 </div>
 
-                <h1 className="text-3xl font-black tracking-tight text-white sm:text-5xl">
-                  Available Fleet Catalog
+                <h1 className="text-2xl font-black tracking-tight text-slate-900 sm:text-4xl lg:text-5xl">
+                  {isDateFilterActive ? "Available Vehicles" : "Available Fleet Catalog"}
                 </h1>
 
-                <p className="mt-2 max-w-2xl text-slate-400 text-sm sm:text-base">
-                  Choose from our verified fleet of SUVs, Sedans, Luxury, and Hatchbacks with transparent dynamic pricing and instant confirmation.
+                <p className="mt-1.5 max-w-2xl text-xs sm:text-sm lg:text-base font-medium text-slate-600">
+                  {isDateFilterActive
+                    ? "Showing vehicles available for your selected rental period with verified instant confirmation."
+                    : "Choose from our verified fleet of SUVs, Sedans, Luxury, and Hatchbacks with transparent dynamic pricing."}
                 </p>
-
-                {isDateFilterActive && (startDateText || endDateText) && (
-                  <div className="mt-3.5 inline-flex items-center gap-2 rounded-xl bg-blue-950/80 border border-blue-800/80 px-4 py-2 text-xs font-bold text-blue-300">
-                    <CalendarDays className="h-4 w-4 text-blue-400" />
-                    <span>
-                      Selected Dates:{" "}
-                      <strong className="text-white">{startDateText}</strong> to{" "}
-                      <strong className="text-white">{endDateText}</strong>
-                    </span>
-                  </div>
-                )}
               </div>
 
-              <div className="flex items-center gap-3">
-                <div className="rounded-2xl border border-slate-800 bg-slate-900 px-5 py-2.5 text-sm font-bold text-slate-300">
-                  Showing <span className="text-emerald-400 font-extrabold">{filteredCars.length}</span> verified vehicles
+              <div className="flex flex-row md:flex-col items-start md:items-end gap-2.5 shrink-0">
+                <div className="rounded-2xl border border-slate-200/90 bg-white/95 px-4 sm:px-5 py-2.5 text-xs sm:text-sm font-bold text-slate-700 shadow-xs backdrop-blur-xs ring-1 ring-slate-100">
+                  Showing <span className="text-emerald-600 font-black text-sm sm:text-base">{filteredCars.length}</span> available vehicles
+                </div>
+
+                <div className="hidden sm:flex items-center gap-1.5 text-[11px] font-semibold text-slate-500">
+                  <ShieldCheck className="h-3.5 w-3.5 text-blue-600" />
+                  <span>100% Verified Fleet • Instant Confirmation</span>
                 </div>
               </div>
             </div>
           </div>
         </section>
 
+        {/* Search Summary Component (Compact Horizontal on Desktop, Clean Stack on Mobile) */}
+        <section className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 -mt-6 sm:-mt-8 z-20 relative">
+          <SearchSummary
+            searchContext={
+              searchContext || {
+                hasSearchContext: false,
+                isValid: true,
+              }
+            }
+            locations={locations}
+          />
+        </section>
+
         {/* Mobile Filter Toggle Button & Top Controls */}
-        <div className="sticky top-16 z-30 border-b border-slate-200 bg-white/95 backdrop-blur-md px-4 py-3 shadow-xs lg:hidden">
+        <div className="sticky top-16 z-30 border-b border-slate-200 bg-white/95 backdrop-blur-md px-4 py-3 shadow-xs lg:hidden mt-4">
           <div className="flex items-center justify-between gap-3">
             <button
               type="button"
@@ -890,7 +944,7 @@ export default function CarsCatalogClient({
         </div>
 
         {/* Main Content Layout: Left Sidebar + Right Fleet Grid */}
-        <section className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 mt-8">
+        <section className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 mt-6 sm:mt-8">
           <div className="flex flex-col lg:flex-row gap-8 items-start">
             {/* Left Sidebar: Filter System (Desktop) */}
             <aside className="hidden lg:block w-72 shrink-0 sticky top-24 rounded-3xl border border-slate-200/90 bg-white p-6 shadow-sm">
@@ -1090,151 +1144,185 @@ export default function CarsCatalogClient({
                 </div>
               )}
 
-              {/* Cars Grid */}
+              {/* Cars Grid / Empty State */}
               {filteredCars.length === 0 ? (
-                <div className="rounded-3xl border border-slate-200 bg-white p-12 text-center my-6 shadow-xs space-y-4">
-                  <div className="mx-auto w-16 h-16 rounded-full bg-slate-100 flex items-center justify-center text-slate-400">
+                <div className="rounded-3xl border border-slate-200 bg-white p-8 sm:p-12 text-center my-6 shadow-xs space-y-4">
+                  <div className="mx-auto w-16 h-16 rounded-full bg-blue-50 flex items-center justify-center text-blue-600">
                     <CarIcon className="h-8 w-8" />
                   </div>
-                  <h3 className="text-xl font-bold text-slate-800">
-                    No Vehicles Found Matching Your Filters
+                  <h3 className="text-xl font-bold text-slate-900">
+                    {isDateFilterActive
+                      ? "No cars available for your selected rental period."
+                      : "No Vehicles Found Matching Your Filters"}
                   </h3>
-                  <p className="text-sm text-slate-500 max-w-md mx-auto">
-                    Try adjusting the price slider, clearing fuel, category, or transmission selections, or searching all hub locations.
-                  </p>
-                  <button
-                    type="button"
-                    onClick={handleResetFilters}
-                    className="mt-2 inline-flex items-center gap-2 rounded-xl bg-emerald-700 px-5 py-2.5 text-sm font-bold text-white shadow-md hover:bg-emerald-800 transition-all cursor-pointer"
-                  >
-                    <RotateCcw className="h-4 w-4" />
-                    Reset All Filters
-                  </button>
+                  {isDateFilterActive && (startDateText || endDateText) ? (
+                    <div className="max-w-md mx-auto space-y-3">
+                      <p className="text-xs sm:text-sm text-slate-600">
+                        All matching fleet vehicles are reserved or unavailable for this selected interval:
+                      </p>
+                      <div className="inline-flex flex-col sm:flex-row items-center justify-center gap-2 rounded-2xl bg-slate-50 border border-slate-200 px-4 py-2.5 text-xs font-bold text-slate-700">
+                        {startDateText && (
+                          <span>
+                            Pickup: <strong className="text-blue-600">{startDateText}</strong>
+                          </span>
+                        )}
+                        {startDateText && endDateText && (
+                          <span className="hidden sm:inline text-slate-300">•</span>
+                        )}
+                        {endDateText && (
+                          <span>
+                            Return: <strong className="text-sky-600">{endDateText}</strong>
+                          </span>
+                        )}
+                      </div>
+                      <p className="text-xs text-slate-500">
+                        Try modifying your pickup or return date/time, or changing the hub location.
+                      </p>
+                    </div>
+                  ) : (
+                    <p className="text-sm text-slate-500 max-w-md mx-auto">
+                      Try adjusting the price slider, clearing fuel, category, or transmission selections, or searching all hub locations.
+                    </p>
+                  )}
+                  <div className="flex flex-wrap items-center justify-center gap-3 pt-2">
+                    <button
+                      type="button"
+                      onClick={handleResetFilters}
+                      className="inline-flex items-center gap-2 rounded-xl bg-slate-900 hover:bg-slate-800 px-5 py-2.5 text-sm font-bold text-white shadow-md transition-all cursor-pointer"
+                    >
+                      <RotateCcw className="h-4 w-4" />
+                      Reset Filter Criteria
+                    </button>
+                  </div>
                 </div>
               ) : (
                 <div className="grid gap-6 sm:grid-cols-2 xl:grid-cols-3">
-                  {filteredCars.map((car) => (
-                    <article
-                      key={car.id}
-                      className="group overflow-hidden rounded-3xl border border-slate-200/90 bg-white shadow-sm transition-all duration-300 hover:-translate-y-1 hover:shadow-xl hover:border-emerald-300 flex flex-col justify-between"
-                    >
-                      <div>
-                        {/* Clean Vehicle Image Container */}
-                        <div className="relative aspect-[16/10] overflow-hidden bg-slate-900">
-                          <CarImageSlider
-                            primaryImage={car.image}
-                            images={car.images}
-                            alt={car.name}
-                            brand={car.brand}
-                            model={car.model}
-                          />
+                  {filteredCars.map((car) => {
+                    const detailHref = getVehicleDetailHref(car.id);
 
-                          {/* Favorite / Heart Button Floating Top-Right */}
-                          <div className="absolute top-3 right-3 z-20">
-                            <FavoriteButton
-                              vehicleId={car.id}
-                              vehicleName={car.name}
-                              size="sm"
+                    return (
+                      <article
+                        key={car.id}
+                        className="group overflow-hidden rounded-3xl border border-slate-200/90 bg-white shadow-sm transition-all duration-300 hover:-translate-y-1 hover:shadow-xl hover:border-emerald-300 flex flex-col justify-between"
+                      >
+                        <div>
+                          {/* Clean Vehicle Image Container */}
+                          <div className="relative aspect-[16/10] overflow-hidden bg-slate-900">
+                            <CarImageSlider
+                              primaryImage={car.image}
+                              images={car.images}
+                              alt={car.name}
+                              brand={car.brand}
+                              model={car.model}
                             />
+
+                            {/* Favorite / Heart Button Floating Top-Right */}
+                            <div className="absolute top-3 right-3 z-20">
+                              <FavoriteButton
+                                vehicleId={car.id}
+                                vehicleName={car.name}
+                                size="sm"
+                              />
+                            </div>
+                          </div>
+
+                          {/* Vehicle Information Below Image */}
+                          <div className="p-5 space-y-3">
+                            {/* Name, Variant on Left & Rating on Right */}
+                            <div className="flex items-start justify-between gap-2">
+                              <div className="min-w-0 flex-1">
+                                <h3 className="text-base font-extrabold text-slate-900 tracking-tight group-hover:text-blue-600 transition-colors truncate">
+                                  {car.name}
+                                </h3>
+                                {car.variant && (
+                                  <p className="text-xs font-semibold text-slate-400 mt-0.5 truncate">
+                                    {car.variant}
+                                  </p>
+                                )}
+                              </div>
+
+                              {/* Rating / Reviews on Right */}
+                              <div className="shrink-0 text-right">
+                                {car.reviewCount && car.reviewCount > 0 && car.rating ? (
+                                  <div className="inline-flex items-center gap-1 rounded-md bg-amber-50 border border-amber-200/80 px-1.5 py-0.5 text-[11px] font-bold text-amber-700">
+                                    <Star className="h-3 w-3 fill-amber-400 text-amber-400" />
+                                    <span>{car.rating.toFixed(1)} ({car.reviewCount})</span>
+                                  </div>
+                                ) : (
+                                  <span className="text-[10px] font-medium text-slate-400">
+                                    No reviews yet
+                                  </span>
+                                )}
+                              </div>
+                            </div>
+
+                            {/* Location Tag */}
+                            {car.location && (
+                              <div className="flex items-center gap-1.5 text-xs font-medium text-slate-500">
+                                <MapPin className="h-3.5 w-3.5 text-slate-400 shrink-0" />
+                                <span className="truncate">{car.location}</span>
+                              </div>
+                            )}
+
+                            {/* Specs Matrix: Fuel, Transmission, Seats, AC */}
+                            <div className="grid grid-cols-4 gap-1.5 text-center pt-1">
+                              <div className="rounded-xl bg-slate-50 border border-slate-100 p-2 text-slate-700 min-w-0">
+                                <Fuel className="mx-auto h-3.5 w-3.5 text-emerald-600 mb-0.5" />
+                                <span className="text-[10px] font-bold block truncate">
+                                  {car.fuel}
+                                </span>
+                              </div>
+                              <div className="rounded-xl bg-slate-50 border border-slate-100 p-2 text-slate-700 min-w-0">
+                                <Gauge className="mx-auto h-3.5 w-3.5 text-blue-600 mb-0.5" />
+                                <span className="text-[10px] font-bold block truncate">
+                                  {car.transmission}
+                                </span>
+                              </div>
+                              <div className="rounded-xl bg-slate-50 border border-slate-100 p-2 text-slate-700 min-w-0">
+                                <Users className="mx-auto h-3.5 w-3.5 text-indigo-600 mb-0.5" />
+                                <span className="text-[10px] font-bold block truncate">
+                                  {car.seats} Seats
+                                </span>
+                              </div>
+                              <div className="rounded-xl bg-slate-50 border border-slate-100 p-2 text-slate-700 min-w-0">
+                                <Wind className="mx-auto h-3.5 w-3.5 text-cyan-600 mb-0.5" />
+                                <span className="text-[10px] font-bold block truncate">
+                                  {car.hasAirConditioning !== false ? "AC" : "Non-AC"}
+                                </span>
+                              </div>
+                            </div>
                           </div>
                         </div>
 
-                        {/* Vehicle Information Below Image */}
-                        <div className="p-5 space-y-3">
-                          {/* Name, Variant on Left & Rating on Right */}
-                          <div className="flex items-start justify-between gap-2">
-                            <div className="min-w-0 flex-1">
-                              <h3 className="text-base font-extrabold text-slate-900 tracking-tight group-hover:text-blue-600 transition-colors truncate">
-                                {car.name}
-                              </h3>
-                              {car.variant && (
-                                <p className="text-xs font-semibold text-slate-400 mt-0.5 truncate">
-                                  {car.variant}
+                        {/* Bottom Price & View Details CTA */}
+                        <div className="p-5 pt-0">
+                          <div className="flex items-center justify-between border-t border-slate-100 pt-3.5">
+                            <div>
+                              <div className="flex items-baseline gap-1">
+                                <span className="text-xl font-black text-slate-900">
+                                  ₹{car.price.toLocaleString("en-IN")}
+                                </span>
+                                <span className="text-xs font-medium text-slate-500">/day</span>
+                              </div>
+                              {car.deposit > 0 && (
+                                <p className="text-[10px] text-slate-400 font-medium">
+                                  Deposit: ₹{car.deposit.toLocaleString("en-IN")}
                                 </p>
                               )}
                             </div>
 
-                            {/* Rating / Reviews on Right */}
-                            <div className="shrink-0 text-right">
-                              {car.reviewCount && car.reviewCount > 0 && car.rating ? (
-                                <div className="inline-flex items-center gap-1 rounded-md bg-amber-50 border border-amber-200/80 px-1.5 py-0.5 text-[11px] font-bold text-amber-700">
-                                  <Star className="h-3 w-3 fill-amber-400 text-amber-400" />
-                                  <span>{car.rating.toFixed(1)} ({car.reviewCount})</span>
-                                </div>
-                              ) : (
-                                <span className="text-[10px] font-medium text-slate-400">
-                                  No reviews yet
-                                </span>
-                              )}
-                            </div>
-                          </div>
-
-                          {/* Location Tag */}
-                          {car.location && (
-                            <div className="flex items-center gap-1.5 text-xs font-medium text-slate-500">
-                              <MapPin className="h-3.5 w-3.5 text-slate-400 shrink-0" />
-                              <span className="truncate">{car.location}</span>
-                            </div>
-                          )}
-
-                          {/* Specs Matrix: Fuel, Transmission, Seats, AC */}
-                          <div className="grid grid-cols-4 gap-1.5 text-center pt-1">
-                            <div className="rounded-xl bg-slate-50 border border-slate-100 p-2 text-slate-700 min-w-0">
-                              <Fuel className="mx-auto h-3.5 w-3.5 text-emerald-600 mb-0.5" />
-                              <span className="text-[10px] font-bold block truncate">
-                                {car.fuel}
-                              </span>
-                            </div>
-                            <div className="rounded-xl bg-slate-50 border border-slate-100 p-2 text-slate-700 min-w-0">
-                              <Gauge className="mx-auto h-3.5 w-3.5 text-blue-600 mb-0.5" />
-                              <span className="text-[10px] font-bold block truncate">
-                                {car.transmission}
-                              </span>
-                            </div>
-                            <div className="rounded-xl bg-slate-50 border border-slate-100 p-2 text-slate-700 min-w-0">
-                              <Users className="mx-auto h-3.5 w-3.5 text-indigo-600 mb-0.5" />
-                              <span className="text-[10px] font-bold block truncate">
-                                {car.seats} Seats
-                              </span>
-                            </div>
-                            <div className="rounded-xl bg-slate-50 border border-slate-100 p-2 text-slate-700 min-w-0">
-                              <Wind className="mx-auto h-3.5 w-3.5 text-cyan-600 mb-0.5" />
-                              <span className="text-[10px] font-bold block truncate">
-                                {car.hasAirConditioning !== false ? "AC" : "Non-AC"}
-                              </span>
-                            </div>
+                            <Link
+                              href={detailHref}
+                              className="inline-flex items-center gap-1.5 rounded-xl bg-blue-600 hover:bg-blue-700 px-4 py-2.5 text-xs sm:text-sm font-bold text-white shadow-sm shadow-black/10 transition-all hover:scale-105 active:scale-95 cursor-pointer"
+                            >
+                              <span>View Details</span>
+                              <ArrowRight className="h-3.5 w-3.5" />
+                            </Link>
                           </div>
                         </div>
-                      </div>
-
-                      {/* Bottom Price & View Details CTA */}
-                      <div className="p-5 pt-0">
-                        <div className="flex items-center justify-between border-t border-slate-100 pt-3.5">
-                          <div>
-                            <div className="flex items-baseline gap-1">
-                              <span className="text-xl font-black text-slate-900">
-                                ₹{car.price.toLocaleString("en-IN")}
-                              </span>
-                              <span className="text-xs font-medium text-slate-500">/day</span>
-                            </div>
-                            {car.deposit > 0 && (
-                              <p className="text-[10px] text-slate-400 font-medium">
-                                Deposit: ₹{car.deposit.toLocaleString("en-IN")}
-                              </p>
-                            )}
-                          </div>
-
-                          <Link
-                            href={`/cars/${car.id}`}
-                            className="inline-flex items-center gap-1.5 rounded-xl bg-blue-600 hover:bg-blue-700 px-4 py-2.5 text-xs sm:text-sm font-bold text-white shadow-md shadow-blue-600/20 transition-all hover:scale-105 active:scale-95"
-                          >
-                            <span>View Details</span>
-                            <ArrowRight className="h-3.5 w-3.5" />
-                          </Link>
-                        </div>
-                      </div>
-                    </article>
-                  ))}
+                      </article>
+                    );
+                  })}
                 </div>
               )}
             </div>

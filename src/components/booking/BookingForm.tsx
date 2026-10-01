@@ -72,8 +72,11 @@ type BookingFormProps = {
   unbookableReason?: string;
   initialSearchParams?: {
     location?: string;
+    returnLocation?: string;
     startDate?: string;
+    startTime?: string;
     endDate?: string;
+    endTime?: string;
     rentalPackageId?: string;
     monthlyPlanId?: string;
     packageId?: string;
@@ -176,12 +179,15 @@ export default function BookingForm({
      Initial Search Params Processing
   ========================================= */
 
-  const formatDatetimeLocal = (input?: string) => {
-    if (!input) return "";
-    if (input.includes("T")) {
-      return input.slice(0, 16);
+  const formatDatetimeLocal = (inputDate?: string, inputTime?: string, defaultTime = "10:00") => {
+    if (!inputDate) return "";
+    if (inputDate.includes("T")) {
+      const [d, t] = inputDate.split("T");
+      const tVal = (inputTime && inputTime.slice(0, 5)) || (t ? t.slice(0, 5) : defaultTime);
+      return `${d}T${tVal}`;
     }
-    return `${input}T10:00`;
+    const tVal = (inputTime && inputTime.slice(0, 5)) || defaultTime;
+    return `${inputDate}T${tVal}`;
   };
 
   const paramPackageId = initialSearchParams?.rentalPackageId;
@@ -230,8 +236,8 @@ export default function BookingForm({
   );
   const initialLocationId = matchedLocation?.id ?? locations[0]?.id ?? "";
 
-  const initialStartDate = formatDatetimeLocal(initialSearchParams?.startDate);
-  let initialEndDate = formatDatetimeLocal(initialSearchParams?.endDate);
+  const initialStartDate = formatDatetimeLocal(initialSearchParams?.startDate, initialSearchParams?.startTime, "10:00");
+  let initialEndDate = formatDatetimeLocal(initialSearchParams?.endDate, initialSearchParams?.endTime, "18:00");
 
   if (initialBookingType === "PACKAGE" && initialStartDate && initialPackage) {
     const pkg = globalPackages.find((p) => p.id === initialPackage) || rentalPackages.find((p) => p.id === initialPackage);

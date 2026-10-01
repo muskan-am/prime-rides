@@ -88,15 +88,15 @@ export default function Navbar({ transparent = false }: NavbarProps) {
           }`}
           style={{
             boxShadow:
-              "0px 24px 70px 0px rgba(0, 0, 0, 0.75), 0px 10px 40px 0px rgba(79, 70, 229, 0.35)",
+              "0px 14px 40px 0px rgba(0, 0, 0, 0.55)",
           }}
         >
-          {/* Continuous Rotating Conic Gradient Rotor */}
+          {/* Subtle Rotating Light Shimmer Rotor */}
           <div
-            className="absolute -top-[500%] -bottom-[500%] -left-[200%] -right-[200%] animate-nova-spin pointer-events-none will-change-transform"
+            className="absolute -top-[500%] -bottom-[500%] -left-[200%] -right-[200%] animate-nova-spin pointer-events-none will-change-transform opacity-30"
             style={{
               background:
-                "conic-gradient(from 0deg at 50% 50%, rgba(99, 102, 241, 0) 0deg, rgba(99, 102, 241, 0) 60deg, rgba(120, 100, 255, 0.75) 78deg, rgba(200, 190, 255, 0.95) 86deg, #ffffff 90deg, rgba(99, 102, 241, 0) 100deg)",
+                "conic-gradient(from 0deg at 50% 50%, transparent 0deg, transparent 75deg, rgba(255, 255, 255, 0.35) 88deg, #ffffff 90deg, transparent 95deg)",
             }}
             aria-hidden="true"
           />
@@ -107,7 +107,7 @@ export default function Navbar({ transparent = false }: NavbarProps) {
               isMenuOpen ? "rounded-[27px]" : "rounded-[25px] sm:rounded-full"
             }`}
             style={{
-              boxShadow: "inset 0px 1px 0px 0px rgba(255, 255, 255, 0.25)",
+              boxShadow: "inset 0px 1px 0px 0px rgba(255, 255, 255, 0.2)",
             }}
           />
 
@@ -116,7 +116,7 @@ export default function Navbar({ transparent = false }: NavbarProps) {
             className="absolute top-0 left-[10%] right-[10%] h-[1px] pointer-events-none"
             style={{
               background:
-                "linear-gradient(90deg, rgba(255,255,255,0) 0%, rgba(165, 180, 252, 0.95) 50%, rgba(255,255,255,0) 100%)",
+                "linear-gradient(90deg, rgba(255,255,255,0) 0%, rgba(255, 255, 255, 0.6) 50%, rgba(255,255,255,0) 100%)",
             }}
             aria-hidden="true"
           />
@@ -126,7 +126,7 @@ export default function Navbar({ transparent = false }: NavbarProps) {
             className="absolute top-0 bottom-0 left-0 w-32 pointer-events-none animate-nova-shimmer will-change-transform"
             style={{
               background:
-                "linear-gradient(105deg, rgba(255, 255, 255, 0) 0%, rgba(255, 255, 255, 0.05) 45%, rgba(255, 255, 255, 0.2) 50%, rgba(255, 255, 255, 0.05) 55%, rgba(255, 255, 255, 0) 100%)",
+                "linear-gradient(105deg, rgba(255, 255, 255, 0) 0%, rgba(255, 255, 255, 0.05) 45%, rgba(255, 255, 255, 0.15) 50%, rgba(255, 255, 255, 0.05) 55%, rgba(255, 255, 255, 0) 100%)",
             }}
             aria-hidden="true"
           />

@@ -161,7 +161,7 @@ export default function PlatformStats({ stats }: PlatformStatsProps) {
           {displayStats.map((stat, index) => (
             <div
               key={stat.id || index}
-              className="group relative flex flex-col justify-between p-6 rounded-2xl bg-slate-900/60 border border-slate-800/90 backdrop-blur-md transition-all duration-300 hover:bg-slate-900/90 hover:border-blue-500/40 hover:shadow-xl hover:shadow-blue-500/10 hover:-translate-y-1.5"
+              className="group relative flex flex-col justify-between p-6 rounded-2xl bg-slate-900/60 border border-slate-800/90 backdrop-blur-md transition-all duration-300 hover:bg-slate-900/90 hover:border-slate-700 hover:shadow-2xl hover:-translate-y-1.5"
             >
               {/* Subtle top indicator bar on hover */}
               <div className="absolute top-0 left-6 right-6 h-0.5 bg-gradient-to-r from-blue-500 to-cyan-400 opacity-0 transition-opacity duration-300 group-hover:opacity-100 rounded-full" />

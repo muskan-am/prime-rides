@@ -11,6 +11,7 @@ import {
   sendPaymentSuccessEmail,
   sendBookingConfirmedEmail,
 } from "@/lib/email-events";
+import { extractDateAndTimeString, buildDateTime } from "@/lib/datetime";
 
 type AdminBookingRequest = {
   // Customer identification
@@ -25,7 +26,9 @@ type AdminBookingRequest = {
   vehicleId: string;
   locationId: string;
   startDate: string;
+  startTime?: string;
   endDate: string;
+  endTime?: string;
   rentalPackageId?: string;
   monthlyPlanId?: string;
   packageId?: string;
@@ -165,12 +168,34 @@ export async function POST(request: Request) {
     /* -----------------------------------------
        4. Parse & Validate Dates
     ----------------------------------------- */
-    const startDate = new Date(startDateStr);
-    const endDate = new Date(endDateStr);
+    let startDate: Date | null = null;
+    let endDate: Date | null = null;
 
-    if (Number.isNaN(startDate.getTime()) || Number.isNaN(endDate.getTime())) {
+    const startExtracted = extractDateAndTimeString(startDateStr, body.startTime, "10:00");
+    const endExtracted = extractDateAndTimeString(endDateStr, body.endTime, "18:00");
+
+    if (startExtracted) {
+      startDate = buildDateTime(startExtracted.dateStr, startExtracted.timeStr);
+    }
+    if (endExtracted) {
+      endDate = buildDateTime(endExtracted.dateStr, endExtracted.timeStr);
+    }
+
+    if (!startDate || Number.isNaN(startDate.getTime())) {
+      startDate = new Date(startDateStr);
+    }
+    if (!endDate || Number.isNaN(endDate.getTime())) {
+      endDate = new Date(endDateStr);
+    }
+
+    if (
+      !startDate ||
+      !endDate ||
+      Number.isNaN(startDate.getTime()) ||
+      Number.isNaN(endDate.getTime())
+    ) {
       return NextResponse.json(
-        { error: "Please provide valid booking dates." },
+        { error: "Please provide valid booking dates and times." },
         { status: 400 }
       );
     }

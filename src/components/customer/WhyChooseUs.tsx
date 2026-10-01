@@ -113,25 +113,18 @@ export default function WhyChooseUs() {
                   isLastCardOnTablet ? "sm:col-span-2 sm:max-w-md sm:mx-auto lg:col-auto lg:max-w-none lg:mx-0 w-full" : ""
                 } ${
                   isHovered
-                    ? "lg:flex-[2.8] bg-gradient-to-br from-blue-50/95 via-white to-blue-50/50 border-blue-400 shadow-xl shadow-blue-500/12 lg:-translate-y-1.5 ring-2 ring-blue-400/30"
+                    ? "lg:flex-[2.8] bg-gradient-to-br from-slate-50/95 via-white to-slate-50 border-slate-300 shadow-xl lg:-translate-y-1.5 ring-1 ring-slate-200"
                     : isAnyHovered
-                    ? "lg:flex-[0.8] bg-white/90 border-blue-100/60 shadow-xs opacity-85 hover:opacity-100"
-                    : "lg:flex-1 bg-gradient-to-b from-white to-blue-50/35 border-blue-100/80 shadow-xs hover:border-blue-300 hover:shadow-md hover:bg-white"
+                    ? "lg:flex-[0.8] bg-white/90 border-slate-200/60 shadow-xs opacity-85 hover:opacity-100"
+                    : "lg:flex-1 bg-white border-slate-200/80 shadow-xs hover:border-slate-300 hover:shadow-md hover:bg-white"
                 }`}
               >
-                {/* Subtle radial blue background glow */}
-                <div
-                  className={`pointer-events-none absolute inset-0 bg-radial from-blue-500/10 via-transparent to-transparent transition-opacity duration-500 ${
-                    isHovered ? "opacity-100" : "opacity-0"
-                  }`}
-                />
-
                 {/* Top Section: Centered Icon & Badge */}
                 <div className="relative z-10 flex flex-col items-center">
                   <div
                     className={`flex h-13 w-13 sm:h-14 sm:w-14 lg:h-16 lg:w-16 shrink-0 items-center justify-center rounded-2xl border transition-all duration-500 ${
                       isHovered
-                        ? "bg-blue-600 border-blue-500 text-white shadow-xl shadow-blue-500/30 lg:scale-110"
+                        ? "bg-blue-600 border-blue-600 text-white shadow-md lg:scale-110"
                         : "bg-blue-50/90 border-blue-100/80 text-blue-600 group-hover:bg-blue-600 group-hover:text-white group-hover:border-blue-600 group-hover:shadow-md"
                     }`}
                   >

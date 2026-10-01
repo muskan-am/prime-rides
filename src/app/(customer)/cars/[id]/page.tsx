@@ -175,14 +175,28 @@ export default async function CarDetailPage({
     location:
       typeof resolvedSearchParams.location === "string"
         ? resolvedSearchParams.location
+        : typeof resolvedSearchParams.pickupLocation === "string"
+        ? resolvedSearchParams.pickupLocation
+        : undefined,
+    returnLocation:
+      typeof resolvedSearchParams.returnLocation === "string"
+        ? resolvedSearchParams.returnLocation
         : undefined,
     startDate:
       typeof resolvedSearchParams.startDate === "string"
         ? resolvedSearchParams.startDate
         : undefined,
+    startTime:
+      typeof resolvedSearchParams.startTime === "string"
+        ? resolvedSearchParams.startTime
+        : undefined,
     endDate:
       typeof resolvedSearchParams.endDate === "string"
         ? resolvedSearchParams.endDate
+        : undefined,
+    endTime:
+      typeof resolvedSearchParams.endTime === "string"
+        ? resolvedSearchParams.endTime
         : undefined,
     rentalPackageId:
       typeof resolvedSearchParams.rentalPackageId === "string"
@@ -191,6 +205,10 @@ export default async function CarDetailPage({
     monthlyPlanId:
       typeof resolvedSearchParams.monthlyPlanId === "string"
         ? resolvedSearchParams.monthlyPlanId
+        : undefined,
+    packageId:
+      typeof resolvedSearchParams.packageId === "string"
+        ? resolvedSearchParams.packageId
         : undefined,
   };
 

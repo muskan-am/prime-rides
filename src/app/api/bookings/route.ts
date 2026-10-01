@@ -9,6 +9,7 @@ import {
   sendBookingCreatedEmails,
   sendPaymentPendingEmail,
 } from "@/lib/email-events";
+import { extractDateAndTimeString, buildDateTime } from "@/lib/datetime";
 
 type BookingRequest = {
   vehicleId?: string;
@@ -18,7 +19,9 @@ type BookingRequest = {
   pickupOptionId?: string;
   locationId?: string;
   startDate?: string;
+  startTime?: string;
   endDate?: string;
+  endTime?: string;
   couponCode?: string;
 };
 
@@ -210,20 +213,36 @@ export async function POST(
        Parse Dates
     ----------------------------------------- */
 
-    const startDate =
-      new Date(startDateValue);
+    let startDate: Date | null = null;
+    let endDate: Date | null = null;
 
-    const endDate =
-      new Date(endDateValue);
+    const startExtracted = extractDateAndTimeString(startDateValue, body.startTime, "10:00");
+    const endExtracted = extractDateAndTimeString(endDateValue, body.endTime, "18:00");
+
+    if (startExtracted) {
+      startDate = buildDateTime(startExtracted.dateStr, startExtracted.timeStr);
+    }
+    if (endExtracted) {
+      endDate = buildDateTime(endExtracted.dateStr, endExtracted.timeStr);
+    }
+
+    if (!startDate || Number.isNaN(startDate.getTime())) {
+      startDate = new Date(startDateValue);
+    }
+    if (!endDate || Number.isNaN(endDate.getTime())) {
+      endDate = new Date(endDateValue);
+    }
 
     if (
+      !startDate ||
+      !endDate ||
       Number.isNaN(startDate.getTime()) ||
       Number.isNaN(endDate.getTime())
     ) {
       return NextResponse.json(
         {
           error:
-            "Please provide valid booking dates.",
+            "Please provide valid booking dates and times.",
         },
         {
           status: 400,

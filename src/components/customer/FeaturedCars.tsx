@@ -248,7 +248,7 @@ export default function FeaturedCars({ vehicles = [] }: FeaturedCarsProps) {
 
                           <Link
                             href={`/cars/${car.id}`}
-                            className="inline-flex items-center gap-1 rounded-xl bg-blue-600 hover:bg-blue-700 px-3.5 py-2 text-xs font-bold text-white shadow-sm shadow-blue-600/20 transition-all hover:scale-105 active:scale-95"
+                            className="inline-flex items-center gap-1 rounded-xl bg-blue-600 hover:bg-blue-700 px-3.5 py-2 text-xs font-bold text-white shadow-sm shadow-black/10 transition-all hover:scale-105 active:scale-95"
                           >
                             <span>View Details</span>
                             <ArrowRight className="h-3.5 w-3.5" />

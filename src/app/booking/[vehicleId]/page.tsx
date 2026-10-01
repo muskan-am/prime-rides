@@ -12,8 +12,11 @@ type PageProps = {
   }>;
   searchParams?: Promise<{
     location?: string;
+    returnLocation?: string;
     startDate?: string;
+    startTime?: string;
     endDate?: string;
+    endTime?: string;
     rentalPackageId?: string;
     monthlyPlanId?: string;
     packageId?: string;

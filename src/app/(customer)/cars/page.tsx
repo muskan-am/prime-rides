@@ -12,6 +12,8 @@ import {
   formatTransmission,
   formatVehicleCategory,
 } from "@/lib/rating";
+import { parseSearchContext } from "@/lib/datetime";
+import { getUnavailableVehicleIds } from "@/lib/availability";
 
 export const revalidate = 0;
 
@@ -22,58 +24,36 @@ type CarsPageProps = {
 export default async function CarsPage({ searchParams }: CarsPageProps) {
   const resolvedParams = await searchParams;
 
+  const searchContext = parseSearchContext({
+    location: resolvedParams.location,
+    pickupLocation: resolvedParams.pickupLocation,
+    returnLocation: resolvedParams.returnLocation,
+    startDate: resolvedParams.startDate,
+    startTime: resolvedParams.startTime,
+    endDate: resolvedParams.endDate,
+    endTime: resolvedParams.endTime,
+  });
+
   const locationParam =
     typeof resolvedParams.location === "string"
       ? resolvedParams.location
+      : typeof resolvedParams.pickupLocation === "string"
+      ? resolvedParams.pickupLocation
       : typeof resolvedParams.locationId === "string"
       ? resolvedParams.locationId
       : "All";
 
-  const startDateStr =
-    typeof resolvedParams.startDate === "string"
-      ? resolvedParams.startDate
-      : undefined;
-
-  const endDateStr =
-    typeof resolvedParams.endDate === "string"
-      ? resolvedParams.endDate
-      : undefined;
-
   let unavailableVehicleIds: string[] = [];
-  let isDateFilterActive = false;
-  let startDateText: string | undefined;
-  let endDateText: string | undefined;
+  const isDateFilterActive =
+    searchContext.hasSearchContext &&
+    searchContext.isValid &&
+    Boolean(searchContext.startDateTime && searchContext.endDateTime);
 
-  if (startDateStr && endDateStr) {
-    const start = new Date(startDateStr);
-    const end = new Date(endDateStr);
-
-    if (!isNaN(start.getTime()) && !isNaN(end.getTime()) && end > start) {
-      isDateFilterActive = true;
-      startDateText = start.toLocaleDateString("en-IN", {
-        day: "numeric",
-        month: "short",
-        year: "numeric",
-      });
-      endDateText = end.toLocaleDateString("en-IN", {
-        day: "numeric",
-        month: "short",
-        year: "numeric",
-      });
-
-      const overlappingBookings = await prisma.booking.findMany({
-        where: {
-          status: { in: ["PENDING", "CONFIRMED"] },
-          startDate: { lt: end },
-          endDate: { gt: start },
-        },
-        select: { vehicleId: true },
-      });
-
-      unavailableVehicleIds = Array.from(
-        new Set(overlappingBookings.map((b) => b.vehicleId))
-      );
-    }
+  if (isDateFilterActive && searchContext.startDateTime && searchContext.endDateTime) {
+    unavailableVehicleIds = await getUnavailableVehicleIds(
+      searchContext.startDateTime,
+      searchContext.endDateTime
+    );
   }
 
   let filterSettings: FilterSettings = DEFAULT_FILTER_SETTINGS;
@@ -250,8 +230,9 @@ export default async function CarsPage({ searchParams }: CarsPageProps) {
         initialLocationQuery={locationParam}
         initialParams={initialParams}
         isDateFilterActive={isDateFilterActive}
-        startDateText={startDateText}
-        endDateText={endDateText}
+        startDateText={searchContext.startFormatted}
+        endDateText={searchContext.endFormatted}
+        searchContext={searchContext}
         filterSettings={filterSettings}
       />
     );
