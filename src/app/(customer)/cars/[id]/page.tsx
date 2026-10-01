@@ -50,7 +50,21 @@ export default async function CarDetailPage({
           include: { location: true },
         },
         reviews: {
-          include: { user: true },
+          where: { status: "APPROVED" },
+          select: {
+            id: true,
+            rating: true,
+            comment: true,
+            status: true,
+            createdAt: true,
+            user: {
+              select: {
+                id: true,
+                name: true,
+                image: true,
+              },
+            },
+          },
           orderBy: { createdAt: "desc" },
         },
       },

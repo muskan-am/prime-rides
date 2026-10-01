@@ -1,4 +1,5 @@
 import Link from "next/link";
+import Image from "next/image";
 import { Car, ShieldCheck, Headphones, MapPin, Tag } from "lucide-react";
 import Navbar from "@/components/customer/Navbar";
 import CouponTicker from "@/components/customer/CouponTicker";
@@ -6,7 +7,6 @@ import Footer from "@/components/customer/Footer";
 import SearchBox, { SearchLocationItem } from "@/components/customer/SearchBox";
 import FeaturedCars, { FeaturedVehicleItem } from "@/components/customer/FeaturedCars";
 import PlatformStats from "@/components/customer/PlatformStats";
-import PopularLocations from "@/components/customer/PopularLocations";
 import OffersSection from "@/components/customer/OffersSection";
 import WhyChooseUs from "@/components/customer/WhyChooseUs";
 import HowToBookRide from "@/components/customer/HowToBookRide";
@@ -71,21 +71,33 @@ export default async function Home() {
           maintenanceStatus: "GOOD",
         },
         include: {
-          images: { orderBy: { sortOrder: "asc" } },
+          images: {
+            select: { url: true, isPrimary: true },
+            orderBy: { sortOrder: "asc" },
+          },
           inventory: {
             where: { isActive: true },
-            include: { location: true },
+            select: {
+              isActive: true,
+              location: {
+                select: { name: true },
+              },
+            },
           },
           reviews: {
+            where: { status: "APPROVED" },
             select: { rating: true },
           },
-          specifications: true,
+          specifications: {
+            select: { name: true, value: true },
+          },
         },
         orderBy: [{ searchPriority: "desc" }, { createdAt: "desc" }],
         take: 24,
       }),
       prisma.location.findMany({
         where: { isActive: true },
+        select: { id: true, name: true },
         orderBy: { name: "asc" },
       }),
       prisma.coupon.findMany({
@@ -94,23 +106,52 @@ export default async function Home() {
           validFrom: { lte: new Date() },
           validUntil: { gte: new Date() },
         },
+        select: {
+          id: true,
+          code: true,
+          title: true,
+          description: true,
+          discountType: true,
+          discountValue: true,
+          minBookingValue: true,
+          maxDiscount: true,
+          validUntil: true,
+        },
         orderBy: { createdAt: "desc" },
         take: 6,
       }),
       prisma.platformStat.findMany({
         where: { isActive: true },
+        select: {
+          id: true,
+          label: true,
+          valueNumber: true,
+          prefix: true,
+          suffix: true,
+        },
         orderBy: [{ sortOrder: "asc" }, { createdAt: "asc" }],
       }),
       prisma.systemSetting.findUnique({
         where: { key: "coupon_ticker_enabled" },
+        select: { value: true },
       }),
       prisma.exploringCity.findMany({
         where: { isActive: true },
+        select: {
+          id: true,
+          name: true,
+          subtitle: true,
+          image: true,
+          locationQuery: true,
+        },
         orderBy: [{ sortOrder: "asc" }, { createdAt: "asc" }],
       }),
       prisma.review.findMany({
         where: { status: "APPROVED" },
-        include: {
+        select: {
+          id: true,
+          rating: true,
+          comment: true,
           user: { select: { name: true, image: true } },
           vehicle: { select: { brand: true, model: true } },
         },
@@ -212,16 +253,21 @@ export default async function Home() {
       <div className="relative overflow-hidden bg-black text-white min-h-[560px] sm:min-h-[600px] lg:min-h-[640px]">
         {/* Background Image / Video */}
         <div className="absolute inset-0 z-0">
-          <img
+          <Image
             src="/car-hero.png"
             alt="Prime Rides Luxury Car"
-            className="h-full w-full object-cover object-[70%_center] sm:object-center"
+            fill
+            priority
+            sizes="100vw"
+            className="object-cover object-[70%_center] sm:object-center"
           />
           <video
             autoPlay
             muted
             loop
             playsInline
+            preload="none"
+            poster="/car-hero.png"
             className="absolute inset-0 h-full w-full object-cover object-[70%_center] sm:object-center -z-10"
             aria-hidden="true"
           >

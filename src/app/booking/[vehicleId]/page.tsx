@@ -44,46 +44,88 @@ export default async function BookingPage({
   const search = searchParams ? await searchParams : {};
 
   /* =========================================
-     Get Vehicle
+     Fetch Vehicle, Locations, Options & Taxes Concurrently
   ========================================= */
 
-  const vehicle = await prisma.vehicle.findUnique({
-    where: {
-      id: vehicleId,
-    },
-
-    include: {
-      rentalPackages: {
-        where: {
-          isActive: true,
+  const [vehicle, locations, pickupOptions, taxConfiguration] = await Promise.all([
+    prisma.vehicle.findUnique({
+      where: {
+        id: vehicleId,
+      },
+      include: {
+        rentalPackages: {
+          where: {
+            isActive: true,
+          },
+          orderBy: {
+            duration: "asc",
+          },
         },
-
-        orderBy: {
-          duration: "asc",
+        monthlyPlans: {
+          where: {
+            isActive: true,
+          },
+          orderBy: {
+            months: "asc",
+          },
+        },
+        packages: {
+          where: {
+            isActive: true,
+          },
+          orderBy: {
+            sortOrder: "asc",
+          },
         },
       },
-
-      monthlyPlans: {
-        where: {
-          isActive: true,
-        },
-
-        orderBy: {
-          months: "asc",
+    }),
+    prisma.location.findMany({
+      where: {
+        isActive: true,
+      },
+      orderBy: {
+        name: "asc",
+      },
+      select: {
+        id: true,
+        name: true,
+        address: true,
+        deliveryCharges: {
+          where: {
+            isActive: true,
+          },
+          orderBy: {
+            createdAt: "desc",
+          },
+          take: 1,
+          select: {
+            charge: true,
+          },
         },
       },
-
-      packages: {
-        where: {
-          isActive: true,
-        },
-
-        orderBy: {
-          sortOrder: "asc",
-        },
+    }),
+    prisma.pickupOption.findMany({
+      where: {
+        isActive: true,
       },
-    },
-  });
+      orderBy: {
+        name: "asc",
+      },
+      select: {
+        id: true,
+        name: true,
+        description: true,
+      },
+    }),
+    prisma.taxConfiguration.findFirst({
+      where: {
+        isActive: true,
+      },
+      orderBy: {
+        createdAt: "desc",
+      },
+    }),
+  ]);
 
   if (!vehicle) {
     notFound();
@@ -99,73 +141,6 @@ export default async function BookingPage({
       : vehicle.maintenanceStatus !== "GOOD"
       ? "This vehicle is currently undergoing maintenance and cannot be booked."
       : "";
-
-  /* =========================================
-     Get Pickup Locations
-  ========================================= */
-
-  const locations = await prisma.location.findMany({
-    where: {
-      isActive: true,
-    },
-
-    orderBy: {
-      name: "asc",
-    },
-
-    select: {
-      id: true,
-      name: true,
-      address: true,
-
-      deliveryCharges: {
-        where: {
-          isActive: true,
-        },
-
-        orderBy: {
-          createdAt: "desc",
-        },
-
-        take: 1,
-
-        select: {
-          charge: true,
-        },
-      },
-    },
-  });
-
-  /* =========================================
-     Get Pickup Options
-  ========================================= */
-
-  const pickupOptions =
-    await prisma.pickupOption.findMany({
-      where: {
-        isActive: true,
-      },
-
-      orderBy: {
-        name: "asc",
-      },
-
-      select: {
-        id: true,
-        name: true,
-        description: true,
-      },
-    });
-
-  const taxConfiguration =
-    await prisma.taxConfiguration.findFirst({
-      where: {
-        isActive: true,
-      },
-      orderBy: {
-        createdAt: "desc",
-      },
-    });
 
   /* =========================================
      Booking Page

@@ -87,8 +87,6 @@ export default function SignupPage() {
     try {
       setLoading(true);
 
-      console.log("Signup request started");
-
       const response = await fetch("/api/auth/register", {
         method: "POST",
         headers: {
@@ -102,8 +100,6 @@ export default function SignupPage() {
       });
 
       const data = await response.json();
-
-      console.log("Signup response:", data);
 
       // -----------------------------
       // API error

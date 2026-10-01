@@ -94,12 +94,23 @@ export default async function CarsPage({ searchParams }: CarsPageProps) {
           },
           inventory: {
             where: { isActive: true },
-            include: { location: true },
+            select: {
+              locationId: true,
+              isActive: true,
+              location: {
+                select: {
+                  id: true,
+                  name: true,
+                },
+              },
+            },
           },
           reviews: {
-            select: { rating: true },
+            select: { rating: true, status: true },
           },
-          specifications: true,
+          specifications: {
+            select: { name: true, value: true },
+          },
         },
         orderBy: [
           { searchPriority: "desc" },

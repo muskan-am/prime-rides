@@ -184,14 +184,6 @@ export async function POST(request: Request) {
       });
 
       razorpayOrderId = order.id;
-
-      console.log("[PAYMENT_DIAGNOSTIC] Razorpay Order Creation Success:", {
-        bookingId: booking.id,
-        amountInPaise,
-        currency: "INR",
-        orderId: razorpayOrderId,
-        keyIdPrefix: config.maskedKeyId,
-      });
     } catch (razorpayErr: any) {
       const statusCode = razorpayErr?.statusCode || razorpayErr?.status || 500;
       const errorDescription =

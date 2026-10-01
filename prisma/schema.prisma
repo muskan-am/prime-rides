@@ -238,6 +238,10 @@ model Vehicle {
 
   @@index([vehicleType])
   @@index([brand, model])
+  @@index([availabilityStatus, maintenanceStatus])
+  @@index([searchPriority, createdAt])
+  @@index([fuelType])
+  @@index([transmission])
 }
 
 
@@ -434,6 +438,11 @@ model Booking {
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
+
+  @@index([vehicleId, status, startDate, endDate])
+  @@index([userId, createdAt])
+  @@index([razorpayOrderId])
+  @@index([status, createdAt])
 }
 
 
