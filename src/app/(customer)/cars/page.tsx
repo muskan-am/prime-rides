@@ -136,7 +136,21 @@ export default async function CarsPage({ searchParams }: CarsPageProps) {
         .filter((inv) => inv.isActive && inv.locationId)
         .map((inv) => inv.locationId);
 
-      const primaryLocation = locationNames[0] || "Main Hub";
+      const targetLoc =
+        (typeof resolvedParams.location === "string" && resolvedParams.location.trim()) ||
+        (typeof resolvedParams.pickupLocation === "string" && resolvedParams.pickupLocation.trim()) ||
+        (searchContext.location && searchContext.location.trim()) ||
+        "";
+
+      const matchedLoc = targetLoc && targetLoc !== "All" && targetLoc !== "All City Hubs"
+        ? locationNames.find((name) => {
+            const nLower = name.toLowerCase().trim();
+            const tLower = targetLoc.toLowerCase().trim();
+            return nLower === tLower || nLower.includes(tLower) || tLower.includes(nLower);
+          })
+        : undefined;
+
+      const primaryLocation = matchedLoc || locationNames[0] || "Main Hub";
 
       const primaryImage =
         v.primaryImage ||

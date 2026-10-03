@@ -82,7 +82,20 @@ export default async function CarDetailPage({
     .filter((inv) => inv.isActive && inv.location?.name)
     .map((inv) => inv.location.name);
 
-  const primaryLocation = locationNames[0] || "Main Hub";
+  const searchLoc =
+    (typeof resolvedSearchParams.location === "string" && resolvedSearchParams.location.trim()) ||
+    (typeof resolvedSearchParams.pickupLocation === "string" && resolvedSearchParams.pickupLocation.trim()) ||
+    undefined;
+
+  const matchedSearchLocation = searchLoc && searchLoc !== "All" && searchLoc !== "All City Hubs"
+    ? locationNames.find((name) => {
+        const nLower = name.toLowerCase().trim();
+        const sLower = searchLoc.toLowerCase().trim();
+        return nLower === sLower || nLower.includes(sLower) || sLower.includes(nLower);
+      })
+    : undefined;
+
+  const primaryLocation = matchedSearchLocation || locationNames[0] || "Main Hub";
 
   const primaryImage =
     vehicle.primaryImage ||

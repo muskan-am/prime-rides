@@ -202,10 +202,20 @@ export default function CarsCatalogClient({
     return raw.split(",").map((s) => s.trim()).filter(Boolean);
   }, [initialParams?.seats]);
 
+  // Normalize initial location query with available locations
+  const normalizedInitialLocation = useMemo(() => {
+    const raw = (initialParams?.location || initialLocationQuery || "").trim();
+    if (!raw || raw === "All" || raw === "All City Hubs") return "All";
+    const found = locations.find((l) => {
+      const nLower = l.name.toLowerCase().trim();
+      const rLower = raw.toLowerCase().trim();
+      return nLower === rLower || l.id === raw || nLower.includes(rLower) || rLower.includes(nLower);
+    });
+    return found ? found.name : raw;
+  }, [initialParams?.location, initialLocationQuery, locations]);
+
   // Filter States
-  const [selectedLocation, setSelectedLocation] = useState(
-    initialParams?.location || initialLocationQuery
-  );
+  const [selectedLocation, setSelectedLocation] = useState(normalizedInitialLocation);
   const [homeDelivery, setHomeDelivery] = useState(
     initialParams?.delivery === "home" || false
   );
@@ -221,6 +231,34 @@ export default function CarsCatalogClient({
   );
   const [sortOption, setSortOption] = useState(initialParams?.sort || "default");
   const [searchQuery, setSearchQuery] = useState(initialParams?.search || "");
+
+  // Update selectedLocation if normalizedInitialLocation updates
+  useEffect(() => {
+    if (normalizedInitialLocation && normalizedInitialLocation !== "All") {
+      setSelectedLocation(normalizedInitialLocation);
+    }
+  }, [normalizedInitialLocation]);
+
+  // Helper to dynamically get the most relevant display location for a vehicle card
+  const getVehicleDisplayLocation = (car: FormattedVehicle) => {
+    const targetLoc =
+      selectedLocation && selectedLocation !== "All" && selectedLocation !== "All City Hubs"
+        ? selectedLocation
+        : searchContext?.location && searchContext.location !== "All" && searchContext.location !== "All City Hubs"
+        ? searchContext.location
+        : "";
+
+    if (targetLoc) {
+      const targetLower = targetLoc.toLowerCase().trim();
+      const matched = car.locationNames.find((name) => {
+        const nLower = name.toLowerCase().trim();
+        return nLower === targetLower || nLower.includes(targetLower) || targetLower.includes(nLower);
+      });
+      if (matched) return matched;
+    }
+
+    return car.location || car.locationNames[0] || "Main Hub";
+  };
 
   // Synchronize state with browser URL search parameters seamlessly
   useEffect(() => {
@@ -1257,10 +1295,10 @@ export default function CarsCatalogClient({
                             </div>
 
                             {/* Location Tag */}
-                            {car.location && (
+                            {getVehicleDisplayLocation(car) && (
                               <div className="flex items-center gap-1.5 text-xs font-medium text-slate-500">
                                 <MapPin className="h-3.5 w-3.5 text-slate-400 shrink-0" />
-                                <span className="truncate">{car.location}</span>
+                                <span className="truncate">{getVehicleDisplayLocation(car)}</span>
                               </div>
                             )}
 
