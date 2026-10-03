@@ -68,6 +68,21 @@ export async function GET(
       where: {
         id,
       },
+      include: {
+        inventory: {
+          select: {
+            locationId: true,
+            quantity: true,
+            isActive: true,
+            location: {
+              select: {
+                id: true,
+                name: true,
+              },
+            },
+          },
+        },
+      },
     });
 
     if (!vehicle) {
@@ -136,6 +151,8 @@ export async function PUT(
       maintenanceStatus,
       searchPriority,
       primaryImage,
+      locationId,
+      locationIds,
     } = body;
 
     /* ----------------------------- */
@@ -300,6 +317,51 @@ export async function PUT(
           primaryImage?.trim() || null,
       },
     });
+
+    // Update inventory locations if provided
+    const targetLocationIds: string[] = [];
+    if (Array.isArray(locationIds)) {
+      targetLocationIds.push(...locationIds.filter((id) => typeof id === "string" && id.trim()));
+    } else if (typeof locationIds === "string" && locationIds.trim()) {
+      targetLocationIds.push(locationIds.trim());
+    } else if (typeof locationId === "string" && locationId.trim()) {
+      targetLocationIds.push(locationId.trim());
+    }
+
+    if (locationIds !== undefined || locationId !== undefined) {
+      // Remove inventory for unselected locations
+      if (targetLocationIds.length > 0) {
+        await prisma.inventory.deleteMany({
+          where: {
+            vehicleId: id,
+            locationId: { notIn: targetLocationIds },
+          },
+        });
+
+        await Promise.all(
+          targetLocationIds.map((locId) =>
+            prisma.inventory.upsert({
+              where: {
+                vehicleId_locationId: {
+                  vehicleId: id,
+                  locationId: locId,
+                },
+              },
+              update: {
+                isActive: true,
+                quantity: 2,
+              },
+              create: {
+                vehicleId: id,
+                locationId: locId,
+                quantity: 2,
+                isActive: true,
+              },
+            })
+          )
+        );
+      }
+    }
 
     return NextResponse.json({
       message: "Vehicle updated successfully",

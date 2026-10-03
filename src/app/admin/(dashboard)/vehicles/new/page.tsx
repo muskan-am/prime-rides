@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 
 export default function NewVehiclePage() {
@@ -9,11 +9,44 @@ export default function NewVehiclePage() {
 
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
+  const [locations, setLocations] = useState<{ id: string; name: string }[]>([]);
+  const [selectedLocationIds, setSelectedLocationIds] = useState<string[]>([]);
+
+  // Fetch active locations
+  useEffect(() => {
+    async function loadLocations() {
+      try {
+        const res = await fetch("/api/admin/locations");
+        const data = await res.json();
+        if (data.success && Array.isArray(data.locations)) {
+          setLocations(data.locations.filter((l: any) => l.isActive));
+          if (data.locations.length > 0 && selectedLocationIds.length === 0) {
+            setSelectedLocationIds([data.locations[0].id]);
+          }
+        }
+      } catch (err) {
+        console.error("Failed to load locations:", err);
+      }
+    }
+    loadLocations();
+  }, []);
+
+  const toggleLocation = (locId: string) => {
+    setSelectedLocationIds((prev) =>
+      prev.includes(locId) ? prev.filter((id) => id !== locId) : [...prev, locId]
+    );
+  };
 
   async function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault();
 
     setError("");
+
+    if (selectedLocationIds.length === 0) {
+      setError("Please select at least one branch/location for this vehicle.");
+      return;
+    }
+
     setLoading(true);
 
     const formData = new FormData(e.currentTarget);
@@ -36,6 +69,7 @@ export default function NewVehiclePage() {
       maintenanceStatus: formData.get("maintenanceStatus"),
       searchPriority: formData.get("searchPriority"),
       primaryImage: formData.get("primaryImage"),
+      locationIds: selectedLocationIds,
     };
 
     try {
@@ -320,6 +354,44 @@ export default function NewVehiclePage() {
                 />
               </div>
             </div>
+          </section>
+
+          {/* Branch / Hub Location Assignment */}
+          <section className="space-y-4">
+            <h2 className="text-base font-bold text-[#0A1128] border-b border-slate-200 pb-2">
+              Branch & Hub Locations *
+            </h2>
+            <p className="text-xs text-slate-500">
+              Select the branches/hubs where this vehicle is stationed and available for customer pickup.
+            </p>
+
+            <div className="grid gap-3 sm:grid-cols-2">
+              {locations.map((loc) => {
+                const isChecked = selectedLocationIds.includes(loc.id);
+                return (
+                  <label
+                    key={loc.id}
+                    onClick={() => toggleLocation(loc.id)}
+                    className={`flex items-center gap-3 p-3.5 rounded-xl border cursor-pointer transition-all ${
+                      isChecked
+                        ? "border-blue-600 bg-blue-50/60 text-blue-900 font-bold shadow-xs"
+                        : "border-slate-200 bg-slate-50/50 hover:bg-slate-100 text-slate-700 font-medium"
+                    }`}
+                  >
+                    <input
+                      type="checkbox"
+                      checked={isChecked}
+                      onChange={() => {}}
+                      className="h-4 w-4 rounded text-blue-600 focus:ring-blue-500 border-slate-300"
+                    />
+                    <span className="text-sm">{loc.name}</span>
+                  </label>
+                );
+              })}
+            </div>
+            {locations.length === 0 && (
+              <p className="text-xs text-amber-600 font-medium">Loading active locations...</p>
+            )}
           </section>
 
           {/* Status & Priority */}

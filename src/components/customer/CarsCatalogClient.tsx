@@ -257,7 +257,14 @@ export default function CarsCatalogClient({
       if (matched) return matched;
     }
 
-    return car.location || car.locationNames[0] || "Main Hub";
+    if (car.locationNames && car.locationNames.length > 0) {
+      if (car.locationNames.length === 1) {
+        return car.locationNames[0];
+      }
+      return car.locationNames.join(" · ");
+    }
+
+    return car.location || "Main Hub";
   };
 
   // Synchronize state with browser URL search parameters seamlessly

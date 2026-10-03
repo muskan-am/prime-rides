@@ -150,7 +150,10 @@ export default async function CarsPage({ searchParams }: CarsPageProps) {
           })
         : undefined;
 
-      const primaryLocation = matchedLoc || locationNames[0] || "Main Hub";
+      const primaryLocation =
+        matchedLoc ||
+        (locationNames.length > 1 ? locationNames.join(" · ") : locationNames[0]) ||
+        "Main Hub";
 
       const primaryImage =
         v.primaryImage ||
